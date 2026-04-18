@@ -14,7 +14,8 @@
 use bevy::{
     prelude::*,
     render::mesh::Mesh2d,
-    sprite::MeshMaterial2d,
+    sprite::{MeshMaterial2d, Anchor},
+    text::*,
 };
 
 // ----------------------------------------------------------------------------
