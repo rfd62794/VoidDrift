@@ -2,20 +2,15 @@
 // ============================================================================
 // Scope: Phase 3 ONLY.
 // Deliverable: Mining Accumulation, Cargo Bar, Arrival Transitions.
-// Hard Scope: No mining laser, no refinery UI, no inventory screen.
 //
-// Gate 3 behaviours this file must satisfy:
-//   TB-P3-01: Arrive at AsteroidField -> Mining state
-//   TB-P3-02/07: Arrive at Station -> Unload cargo -> Idle state
-//   TB-P3-03: Cargo logs every 1s while mining
-//   TB-P3-04: Mining stops at 100/100
-//   TB-P3-05: Cargo bar scales with fill state
+// Debug: Reverted Cargo Bar to Mesh2d instead of Sprites to resolve Mali GPU
+// gralloc format errors ("Can't acquire next buffer").
 // ============================================================================
 
 use bevy::{
     prelude::*,
     render::mesh::Mesh2d,
-    sprite::{MeshMaterial2d, Anchor},
+    sprite::MeshMaterial2d,
     text::JustifyText,
 };
 
@@ -141,26 +136,18 @@ fn setup_world(
         Transform::from_xyz(0.0, 0.0, 1.0),
     ))
     .with_children(|parent| {
-        // Cargo Bar Background (Dark Grey)
+        // Cargo Bar Background (Mesh2d)
         parent.spawn((
-            Sprite {
-                color: Color::srgb(0.2, 0.2, 0.2),
-                custom_size: Some(Vec2::new(40.0, 6.0)),
-                ..default()
-            },
+            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
             Transform::from_xyz(0.0, 24.0, 1.1),
         ));
-        // Cargo Bar Fill (Cyan, Anchored Left)
+        // Cargo Bar Fill (Mesh2d)
         parent.spawn((
             CargoBarFill,
-            Sprite {
-                color: Color::srgb(0.0, 1.0, 1.0),
-                custom_size: Some(Vec2::new(40.0, 6.0)),
-                anchor: Anchor::CenterLeft,
-                ..default()
-            },
-            // Since anchor is LeftCenter, we offset X to the left edge of the background.
-            Transform::from_xyz(-20.0, 24.0, 1.2),
+            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+            Transform::from_xyz(0.0, 24.0, 1.2), // Initial center, will be updated
         ));
     });
 
@@ -196,7 +183,7 @@ fn setup_world(
         Transform::from_xyz(300.0, 500.0, 10.0), 
     ));
 
-    info!("[Voidrift Phase 3] World Initialized with Mining Loop.");
+    info!("[Voidrift Phase 3] World Initialized with Mesh2d Cargo Bars.");
 }
 
 fn spawn_marker(
@@ -314,9 +301,16 @@ fn cargo_display_system(
     for (mut transform, parent) in fill_query.iter_mut() {
         if let Ok(ship) = ship_query.get(**parent) {
             let fill_ratio = ship.cargo / ship.cargo_capacity as f32;
-            // Scale X-axis based on fill ratio. 
-            // Width 40.0 is base, scaling 0.0 to 1.0 handles the horizontal fill.
+            
+            // Manual Left-Anchor Math for Mesh2d:
+            // Background is 40.0 wide, centered at 0.0. 
+            // Left edge is at X = -20.0.
+            // Width of target bar: W = 40.0 * ratio.
+            // Center position for Mesh2d: X_center = -20.0 + W/2.0
+            
+            let fill_width = 40.0 * fill_ratio;
             transform.scale.x = fill_ratio;
+            transform.translation.x = -20.0 + (fill_width / 2.0);
         }
     }
 }
@@ -353,7 +347,7 @@ fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<Main
 fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = 1.0;
-    info!("[Voidrift Phase 3] Exited Map View.");
+    info!("[Voidrift Phase 2] Exited Map View.");
 }
 
 fn handle_input(
