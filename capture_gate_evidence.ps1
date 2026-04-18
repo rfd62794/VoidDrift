@@ -2,7 +2,7 @@
 # April 2026
 
 $ADB = "C:\Users\cheat\AppData\Local\Android\Sdk\platform-tools\adb.exe"
-$FILENAME = "gate1_screenshot.png"
+$FILENAME = "screenshots/gate1_screenshot.png"
 
 Write-Host "Capturing screen from Moto G 2025..." -ForegroundColor Cyan
 
