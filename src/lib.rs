@@ -1,6 +1,6 @@
-// Voidrift — Phase 3: Final Mining System
+// Voidrift — Phase 4: Station UI & Refinery (Deploy 1)
 // ============================================================================
-// Features: Full Mining Loop, Mesh2d Cargo Bar, Safe HUD, Fifo Rendering.
+// Features: power_cells model, ShipState::Docked, Refinery Logic.
 // ============================================================================
 
 use bevy::{
@@ -19,6 +19,10 @@ const MAP_OVERVIEW_SCALE: f32 = 1.5;
 const CARGO_CAPACITY: u32 = 100;
 const MINING_RATE: f32 = 8.0;
 
+// [PHASE 4] ECONOMIC CONSTANTS
+const REFINERY_RATIO: u32 = 10;
+const REPAIR_COST: u32 = 25;
+
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
 // ----------------------------------------------------------------------------
@@ -36,14 +40,16 @@ struct Ship {
     speed: f32,
     cargo: f32,
     cargo_capacity: u32,
-    mining_log_timer: f32, // Periodic log to monitor mining on device
+    power_cells: u32,       // [PHASE 4]
+    mining_log_timer: f32,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 enum ShipState {
     Idle,
     Navigating,
     Mining,
+    Docked,                 // [PHASE 4]
 }
 
 #[derive(Component)]
@@ -70,6 +76,9 @@ struct MainCamera;
 #[derive(Component)]
 struct CargoBarFill;
 
+#[derive(Component)]
+struct DockingUIPanel;      // [PHASE 4]
+
 // ----------------------------------------------------------------------------
 // APP SETUP
 // ----------------------------------------------------------------------------
@@ -82,7 +91,6 @@ fn main() {
                 mode: bevy::window::WindowMode::BorderlessFullscreen(
                     MonitorSelection::Primary,
                 ),
-                // [STABILITY] Fifo mode resolved the Mali GPU flicker
                 present_mode: bevy::window::PresentMode::Fifo,
                 title: "Voidrift".to_string(),
                 ..default()
@@ -95,7 +103,7 @@ fn main() {
         .add_systems(Update, (autopilot_system, camera_follow_system))
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
-        .add_systems(Update, (mining_system, cargo_display_system))
+        .add_systems(Update, (mining_system, cargo_display_system, update_docking_ui_visibility))
         .add_systems(Update, handle_input)
         .run();
 }
@@ -110,7 +118,7 @@ fn setup_world(
     commands.spawn((
         Camera2d::default(),
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 999.0), // Safe Z height
+        Transform::from_xyz(0.0, 0.0, 999.0),
     ))
     .with_children(|parent| {
         // [HUD] Toggle Button
@@ -127,15 +135,26 @@ fn setup_world(
                 Transform::from_xyz(0.0, 0.0, 0.1),
             ));
         });
+
+        // [PHASE 4] DOCKING UI Foundation (Visibility::Hidden)
+        // Spawned as child of Camera for fixed HUD positioning.
+        parent.spawn((
+            DockingUIPanel,
+            Mesh2d(meshes.add(Rectangle::new(200.0, 120.0))),
+            MeshMaterial2d(materials.add(Color::srgba(0.05, 0.05, 0.1, 0.9))),
+            Transform::from_xyz(0.0, 0.0, -0.5),
+            Visibility::Hidden,
+        ));
     });
 
-    // 2. SHIP (World Space)
+    // 2. SHIP
     commands.spawn((
         Ship { 
             state: ShipState::Idle, 
             speed: SHIP_SPEED,
             cargo: 0.0,
             cargo_capacity: CARGO_CAPACITY,
+            power_cells: 0,
             mining_log_timer: 0.0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
@@ -143,13 +162,11 @@ fn setup_world(
         Transform::from_xyz(0.0, 0.0, 1.0),
     ))
     .with_children(|parent| {
-        // Cargo Bar Background
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
             Transform::from_xyz(0.0, 24.0, 1.1),
         ));
-        // Cargo Bar Fill
         parent.spawn((
             CargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
@@ -190,7 +207,7 @@ fn setup_world(
         ));
     });
 
-    info!("[Voidrift Phase 3] World Initialized. Baseline Stable.");
+    info!("[Voidrift Phase 4] Model extensions & UI Foundation initialized.");
 }
 
 // ----------------------------------------------------------------------------
@@ -217,15 +234,17 @@ fn autopilot_system(
                         if asteroid_query.get(target_ent).is_ok() {
                             ship.state = ShipState::Mining;
                         } else if station_query.get(target_ent).is_ok() {
-                            ship.cargo = 0.0;
-                            ship.state = ShipState::Idle;
-                            info!("[Voidrift Phase 3] Cargo unloaded at Station.");
+                            // [PHASE 4] Transition to Docked & Unload
+                            ship.state = ShipState::Docked;
+                            // Unload cargo (as per current behavior, move to refinery later if needed)
+                            // ship.cargo = 0.0; // Keep cargo for refinery!
+                            info!("[Voidrift Phase 4] Docked at Station. Ore ready for refinery.");
                         }
                     } else {
                         ship.state = ShipState::Idle;
                     }
                     commands.entity(entity).remove::<AutopilotTarget>();
-                    info!("[Voidrift Phase 3] Arrived at destination.");
+                    info!("[Voidrift Phase 4] Arrived at destination.");
                 } else {
                     let move_dir = direction.normalize();
                     let movement = move_dir * ship.speed * time.delta_secs();
@@ -245,16 +264,15 @@ fn mining_system(
             let ore_this_tick = MINING_RATE * time.delta_secs();
             ship.cargo = (ship.cargo + ore_this_tick).min(ship.cargo_capacity as f32);
             
-            // Periodic log for verification
             ship.mining_log_timer += time.delta_secs();
             if ship.mining_log_timer >= 1.0 {
-                info!("[Voidrift Phase 3] Cargo: {:.1}/{}", ship.cargo, ship.cargo_capacity);
+                info!("[Voidrift Phase 4] Cargo: {:.1}/{}", ship.cargo, ship.cargo_capacity);
                 ship.mining_log_timer = 0.0;
             }
 
             if ship.cargo >= ship.cargo_capacity as f32 {
                 ship.state = ShipState::Idle;
-                info!("[Voidrift Phase 3] Mining full.");
+                info!("[Voidrift Phase 4] Mining full.");
             }
         }
     }
@@ -271,6 +289,20 @@ fn cargo_display_system(
             transform.scale.x = fill_ratio;
             transform.translation.x = -20.0 + (fill_width / 2.0);
         }
+    }
+}
+
+fn update_docking_ui_visibility(
+    ship_query: Query<&Ship>,
+    mut ui_query: Query<&mut Visibility, With<DockingUIPanel>>,
+) {
+    let ship = ship_query.single();
+    let mut ui_visibility = ui_query.single_mut();
+
+    if ship.state == ShipState::Docked {
+        *ui_visibility = Visibility::Visible;
+    } else {
+        *ui_visibility = Visibility::Hidden;
     }
 }
 
@@ -328,7 +360,7 @@ fn handle_input(
                 } else {
                     next_state.set(GameState::SpaceView);
                 }
-                info!("[Voidrift Phase 3] Toggle Button Hit.");
+                info!("[Voidrift Phase 4] Toggle Button Hit.");
                 continue;
             }
 
@@ -338,13 +370,15 @@ fn handle_input(
                     let marker_pos = marker_transform.translation.truncate();
                     if world_pos.distance(marker_pos) < 80.0 {
                         let (ship_entity, mut ship) = ship_query.single_mut();
+                        
+                        // Departure logic
                         ship.state = ShipState::Navigating;
                         commands.entity(ship_entity).insert(AutopilotTarget {
                             destination: marker_pos,
                             target_entity: Some(marker_ent),
                         });
                         next_state.set(GameState::SpaceView);
-                        info!("[Voidrift Phase 3] Autopilot Engaged: {:?}", marker_pos);
+                        info!("[Voidrift Phase 4] Departing for destination: {:?}", marker_pos);
                         break;
                     }
                 }
