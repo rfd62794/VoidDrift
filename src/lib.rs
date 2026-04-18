@@ -1,7 +1,6 @@
-// Voidrift — Phase 3 Diagnostic Step 1: Safe HUD (v3)
+// Voidrift — Phase 3: Final Mining System
 // ============================================================================
-// Goal: Resolve HUD visibility by parenting the button to the camera and 
-// using safe logical coordinates.
+// Features: Full Mining Loop, Mesh2d Cargo Bar, Safe HUD, Fifo Rendering.
 // ============================================================================
 
 use bevy::{
@@ -37,6 +36,7 @@ struct Ship {
     speed: f32,
     cargo: f32,
     cargo_capacity: u32,
+    mining_log_timer: f32, // Periodic log to monitor mining on device
 }
 
 #[derive(PartialEq, Debug)]
@@ -67,6 +67,9 @@ struct MapToggleButton;
 #[derive(Component)]
 struct MainCamera;
 
+#[derive(Component)]
+struct CargoBarFill;
+
 // ----------------------------------------------------------------------------
 // APP SETUP
 // ----------------------------------------------------------------------------
@@ -79,6 +82,7 @@ fn main() {
                 mode: bevy::window::WindowMode::BorderlessFullscreen(
                     MonitorSelection::Primary,
                 ),
+                // [STABILITY] Fifo mode resolved the Mali GPU flicker
                 present_mode: bevy::window::PresentMode::Fifo,
                 title: "Voidrift".to_string(),
                 ..default()
@@ -91,11 +95,12 @@ fn main() {
         .add_systems(Update, (autopilot_system, camera_follow_system))
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
+        .add_systems(Update, (mining_system, cargo_display_system))
         .add_systems(Update, handle_input)
         .run();
 }
 
-/// Spawns the camera (with HUD child), ship, and markers.
+/// Spawns the world objects, ship, and HUD.
 fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -105,31 +110,53 @@ fn setup_world(
     commands.spawn((
         Camera2d::default(),
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 999.0),
+        Transform::from_xyz(0.0, 0.0, 999.0), // Safe Z height
     ))
     .with_children(|parent| {
-        // [HUD] Toggle Button (Child of Camera)
-        // Stays fixed regardless of world movement.
+        // [HUD] Toggle Button
         parent.spawn((
             MapToggleButton,
             Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
-            Transform::from_xyz(100.0, 200.0, -1.0), // Local space relative to camera
-        ));
+            Transform::from_xyz(100.0, 200.0, -1.0),
+        ))
+        .with_children(|btn| {
+             btn.spawn((
+                Text2d::new("MAP"),
+                TextFont::from_font_size(24.0),
+                Transform::from_xyz(0.0, 0.0, 0.1),
+            ));
+        });
     });
 
-    // 2. SHIP
+    // 2. SHIP (World Space)
     commands.spawn((
         Ship { 
             state: ShipState::Idle, 
             speed: SHIP_SPEED,
             cargo: 0.0,
             cargo_capacity: CARGO_CAPACITY,
+            mining_log_timer: 0.0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
         Transform::from_xyz(0.0, 0.0, 1.0),
-    ));
+    ))
+    .with_children(|parent| {
+        // Cargo Bar Background
+        parent.spawn((
+            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+            Transform::from_xyz(0.0, 24.0, 1.1),
+        ));
+        // Cargo Bar Fill
+        parent.spawn((
+            CargoBarFill,
+            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+            Transform::from_xyz(0.0, 24.0, 1.2),
+        ));
+    });
 
     // 3. STATION
     commands.spawn((
@@ -138,7 +165,14 @@ fn setup_world(
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(-150.0, -200.0, 0.5),
-    ));
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            Text2d::new("STATION"),
+            TextFont::from_font_size(18.0),
+            Transform::from_xyz(0.0, -40.0, 0.1),
+        ));
+    });
 
     // 4. ASTEROID FIELD
     commands.spawn((
@@ -147,9 +181,16 @@ fn setup_world(
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.5, 0.5, 0.5))),
         Transform::from_xyz(150.0, 100.0, 0.5),
-    ));
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            Text2d::new("ASTEROID FIELD"),
+            TextFont::from_font_size(18.0),
+            Transform::from_xyz(0.0, -40.0, 0.1),
+        ));
+    });
 
-    info!("[Voidrift Phase 3] Safe HUD (Child of Camera) spawned.");
+    info!("[Voidrift Phase 3] World Initialized. Baseline Stable.");
 }
 
 // ----------------------------------------------------------------------------
@@ -178,6 +219,7 @@ fn autopilot_system(
                         } else if station_query.get(target_ent).is_ok() {
                             ship.cargo = 0.0;
                             ship.state = ShipState::Idle;
+                            info!("[Voidrift Phase 3] Cargo unloaded at Station.");
                         }
                     } else {
                         ship.state = ShipState::Idle;
@@ -190,6 +232,44 @@ fn autopilot_system(
                     transform.translation += movement.extend(0.0);
                 }
             }
+        }
+    }
+}
+
+fn mining_system(
+    time: Res<Time>,
+    mut query: Query<&mut Ship>,
+) {
+    for mut ship in query.iter_mut() {
+        if ship.state == ShipState::Mining {
+            let ore_this_tick = MINING_RATE * time.delta_secs();
+            ship.cargo = (ship.cargo + ore_this_tick).min(ship.cargo_capacity as f32);
+            
+            // Periodic log for verification
+            ship.mining_log_timer += time.delta_secs();
+            if ship.mining_log_timer >= 1.0 {
+                info!("[Voidrift Phase 3] Cargo: {:.1}/{}", ship.cargo, ship.cargo_capacity);
+                ship.mining_log_timer = 0.0;
+            }
+
+            if ship.cargo >= ship.cargo_capacity as f32 {
+                ship.state = ShipState::Idle;
+                info!("[Voidrift Phase 3] Mining full.");
+            }
+        }
+    }
+}
+
+fn cargo_display_system(
+    ship_query: Query<&Ship>,
+    mut fill_query: Query<(&mut Transform, &Parent), With<CargoBarFill>>,
+) {
+    for (mut transform, parent) in fill_query.iter_mut() {
+        if let Ok(ship) = ship_query.get(**parent) {
+            let fill_ratio = ship.cargo / ship.cargo_capacity as f32;
+            let fill_width = 40.0 * fill_ratio;
+            transform.scale.x = fill_ratio;
+            transform.translation.x = -20.0 + (fill_width / 2.0);
         }
     }
 }
@@ -214,7 +294,6 @@ fn camera_follow_system(
 fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = MAP_OVERVIEW_SCALE;
-    info!("[Voidrift Phase 3] Entered Map View.");
 }
 
 fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
@@ -231,24 +310,15 @@ fn handle_input(
     marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
     mut commands: Commands,
-    windows: Query<&Window>,
 ) {
     let (camera, camera_transform) = camera_query.single();
     
-    // Log resolution once if touch happens
-    if touches.any_just_pressed() {
-        if let Ok(w) = windows.get_single() {
-             info!("[Voidrift Phase 3] Res: Log({:.1}x{:.1}) Phys({:?}x{:?})", 
-                w.width(), w.height(), w.physical_width(), w.physical_height());
-        }
-    }
-
     for touch in touches.iter_just_pressed() {
         let touch_pos = touch.position();
         
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch_pos) {
             
-            // 1. Check HUD Button (Uses GLOBAL transform)
+            // 1. Check HUD Button
             let (toggle_g_transform, _) = toggle_query.single();
             let button_world_pos = toggle_g_transform.translation().truncate();
             
