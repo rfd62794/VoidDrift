@@ -1,6 +1,6 @@
-// Voidrift — Phase 4: Station UI & Refinery (Deploy 2)
+// Voidrift — Phase 4: Station UI & Refinery (Diagnostic Build)
 // ============================================================================
-// Features: Text2d HUD Labels, Refine Button, 10:1 Refinery Interaction.
+// Goal: Diagnose UI invisibility and flicker. Z fix and log auditing.
 // ============================================================================
 
 use bevy::{
@@ -40,7 +40,7 @@ struct Ship {
     speed: f32,
     cargo: f32,
     cargo_capacity: u32,
-    power_cells: u32,       // [PHASE 4]
+    power_cells: u32,
     mining_log_timer: f32,
 }
 
@@ -49,7 +49,7 @@ enum ShipState {
     Idle,
     Navigating,
     Mining,
-    Docked,                 // [PHASE 4]
+    Docked,
 }
 
 #[derive(Component)]
@@ -128,6 +128,8 @@ fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    info!("[Voidrift Phase 4] PresentMode: Fifo confirmed");
+
     // 1. CAMERA + HUD CHILD
     commands.spawn((
         Camera2d::default(),
@@ -150,12 +152,12 @@ fn setup_world(
             ));
         });
 
-        // [PHASE 4] DOCKING UI
+        // [PHASE 4] DOCKING UI (Z fix: +10.0)
         parent.spawn((
             DockingUIPanel,
             Mesh2d(meshes.add(Rectangle::new(200.0, 120.0))),
             MeshMaterial2d(materials.add(Color::srgba(0.05, 0.05, 0.1, 0.9))),
-            Transform::from_xyz(0.0, 0.0, -0.5),
+            Transform::from_xyz(0.0, 0.0, 10.0), // [DIAGNOSTIC] Adjusted Z
             Visibility::Hidden,
         ))
         .with_children(|panel| {
@@ -251,7 +253,7 @@ fn setup_world(
         ));
     });
 
-    info!("[Voidrift Phase 4] All UI elements initialized. Build: FINAL.");
+    info!("[Voidrift Phase 4] All UI elements initialized. Build: DIAGNOSTIC.");
 }
 
 // ----------------------------------------------------------------------------
@@ -335,15 +337,25 @@ fn cargo_display_system(
 
 fn update_docking_ui_visibility(
     ship_query: Query<&Ship>,
-    mut ui_query: Query<&mut Visibility, With<DockingUIPanel>>,
+    mut ui_query: Query<(&mut Visibility, &GlobalTransform, &Transform), With<DockingUIPanel>>,
 ) {
     let ship = ship_query.single();
-    let mut ui_visibility = ui_query.single_mut();
+    let (mut ui_visibility, global_transform, local_transform) = ui_query.single_mut();
 
+    let old_vis = *ui_visibility;
     if ship.state == ShipState::Docked {
         *ui_visibility = Visibility::Visible;
     } else {
         *ui_visibility = Visibility::Hidden;
+    }
+
+    if *ui_visibility != old_vis {
+        info!("[Voidrift Phase 4] Visibility -> {:?} (ShipState: {:?})", *ui_visibility, ship.state);
+        // Only log coordinates when it becomes visible for the first time
+        if *ui_visibility == Visibility::Visible {
+            info!("[Voidrift Phase 4] UI Spawned — GlobalTransform: {:?}", global_transform);
+            info!("[Voidrift Phase 4] Panel Z in world: {:?}", global_transform.translation().z);
+        }
     }
 }
 
@@ -427,7 +439,6 @@ fn handle_input(
                 let (btn_g_transform, _) = btn_query.single();
                 let btn_world_pos = btn_g_transform.translation().truncate();
                 
-                // Hit size 120x32
                 if world_pos.x > btn_world_pos.x - 60.0 && world_pos.x < btn_world_pos.x + 60.0 
                    && world_pos.y > btn_world_pos.y - 16.0 && world_pos.y < btn_world_pos.y + 16.0 {
                     
