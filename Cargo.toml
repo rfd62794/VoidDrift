@@ -32,7 +32,9 @@ bevy = { version = "0.15.3", default-features = false, features = [
     "android_shared_stdcxx",
     "android-game-activity",
 ] }
+bevy_egui = "0.33"
 bevy_log = "0.15.3"
+rand = "0.8"
 
 # ----------------------------------------------------------------------------
 # serde, rand, etc. are deferred to Phase 1+.
