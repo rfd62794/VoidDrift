@@ -20,13 +20,14 @@ crate-type = ["cdylib", "rlib"]
 # Adding it separately would be incorrect (confirmed by OQ-001 research).
 # ----------------------------------------------------------------------------
 [dependencies]
-bevy = { version = "0.15", default-features = false, features = [
+bevy = { version = "0.15.3", default-features = false, features = [
     "bevy_winit",
     "bevy_window",
     "bevy_render",
     "bevy_sprite",
     "bevy_text",
     "bevy_state",
+    "bevy_log",
     "bevy_asset",
     "bevy_core_pipeline",
     "android_shared_stdcxx",
