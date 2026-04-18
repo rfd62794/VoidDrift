@@ -8,7 +8,7 @@ use bevy::{
     render::mesh::Mesh2d,
     sprite::MeshMaterial2d,
 };
-use bevy_egui::{egui, EguiPlugin, EguiSettings, EguiContexts};
+use bevy_egui::{egui, EguiPlugin, EguiContextSettings, EguiContexts};
 
 // ----------------------------------------------------------------------------
 // CONSTANTS
@@ -95,10 +95,6 @@ fn main() {
             ..default()
         }))
         .add_plugins(EguiPlugin)
-        .insert_resource(EguiSettings {
-            scale_factor: EGUI_SCALE,
-            ..default()
-        })
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .add_systems(Startup, setup_world)
@@ -127,6 +123,10 @@ fn setup_world(
         Camera2d::default(),
         MainCamera,
         Transform::from_xyz(0.0, 0.0, 999.0),
+        EguiContextSettings {
+            scale_factor: EGUI_SCALE,
+            ..default()
+        },
     ));
 
     // 2. SHIP
@@ -241,7 +241,7 @@ fn hud_ui_system(
 
     // 1. MAP TOGGLE (Always available)
     egui::SidePanel::left("navigation_panel")
-        .frame(egui::Frame::none().fill(egui::Color32::from_black_alpha(0)))
+        .frame(egui::Frame::NONE.fill(egui::Color32::from_black_alpha(0)))
         .show(ctx, |ui| {
             ui.add_space(16.0);
             let label = if *state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
