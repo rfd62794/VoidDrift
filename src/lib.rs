@@ -1,14 +1,15 @@
-// Voidrift — Phase 2 Map & Navigation
+// Voidrift — Phase 3 Mining System
 // ============================================================================
-// Scope: Phase 2 ONLY.
-// Deliverable: Map View, Autopilot Move, Camera Follow.
-// Hard Scope: No mining, no station UI, no space-view touch commands.
+// Scope: Phase 3 ONLY.
+// Deliverable: Mining Accumulation, Cargo Bar, Arrival Transitions.
+// Hard Scope: No mining laser, no refinery UI, no inventory screen.
 //
-// Gate 2 behaviours this file must satisfy:
-//   TB-P2-01: Map Toggle button opens MapView
-//   TB-P2-02/03: Tapping marker sets destination
-//   TB-P2-04: Ship navigates and stops at threshold
-//   TB-P2-05: Camera follows ship in SpaceView
+// Gate 3 behaviours this file must satisfy:
+//   TB-P3-01: Arrive at AsteroidField -> Mining state
+//   TB-P3-02/07: Arrive at Station -> Unload cargo -> Idle state
+//   TB-P3-03: Cargo logs every 1s while mining
+//   TB-P3-04: Mining stops at 100/100
+//   TB-P3-05: Cargo bar scales with fill state
 // ============================================================================
 
 use bevy::{
@@ -23,8 +24,10 @@ use bevy::{
 // ----------------------------------------------------------------------------
 const SHIP_SPEED: f32 = 120.0;
 const ARRIVAL_THRESHOLD: f32 = 8.0;
-/// Manual calculate to fit markers (-150, -200) and (150, 100) + padding.
 const MAP_OVERVIEW_SCALE: f32 = 1.5;
+
+const CARGO_CAPACITY: u32 = 100;
+const MINING_RATE: f32 = 8.0; // Units per second
 
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
@@ -41,18 +44,29 @@ enum GameState {
 struct Ship {
     state: ShipState,
     speed: f32,
+    cargo: f32,
+    cargo_capacity: u32,
+    mining_log_timer: f32,
 }
 
 #[derive(PartialEq, Debug)]
 enum ShipState {
     Idle,
     Navigating,
+    Mining,
 }
 
 #[derive(Component)]
 struct AutopilotTarget {
     destination: Vec2,
+    target_entity: Option<Entity>,
 }
+
+#[derive(Component)]
+struct AsteroidField;
+
+#[derive(Component)]
+struct Station;
 
 #[derive(Component)]
 struct MapMarker;
@@ -62,6 +76,9 @@ struct MapToggleButton;
 
 #[derive(Component)]
 struct MainCamera;
+
+#[derive(Component)]
+struct CargoBarFill;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -88,6 +105,8 @@ fn main() {
         // View Transitions
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
+        // Gameplay systems
+        .add_systems(Update, (mining_system, cargo_display_system))
         // Input logic
         .add_systems(Update, handle_input)
         .run();
@@ -110,11 +129,40 @@ fn setup_world(
 
     // 2. SHIP (World Space)
     commands.spawn((
-        Ship { state: ShipState::Idle, speed: SHIP_SPEED },
+        Ship { 
+            state: ShipState::Idle, 
+            speed: SHIP_SPEED,
+            cargo: 0.0,
+            cargo_capacity: CARGO_CAPACITY,
+            mining_log_timer: 0.0,
+        },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), // Cyan
         Transform::from_xyz(0.0, 0.0, 1.0),
-    ));
+    ))
+    .with_children(|parent| {
+        // Cargo Bar Background (Dark Grey)
+        parent.spawn((
+            Sprite {
+                color: Color::srgb(0.2, 0.2, 0.2),
+                custom_size: Some(Vec2::new(40.0, 6.0)),
+                ..default()
+            },
+            Transform::from_xyz(0.0, 24.0, 1.1),
+        ));
+        // Cargo Bar Fill (Cyan, Anchored Left)
+        parent.spawn((
+            CargoBarFill,
+            Sprite {
+                color: Color::srgb(0.0, 1.0, 1.0),
+                custom_size: Some(Vec2::new(40.0, 6.0)),
+                anchor: Anchor::CenterLeft,
+                ..default()
+            },
+            // Since anchor is LeftCenter, we offset X to the left edge of the background.
+            Transform::from_xyz(-20.0, 24.0, 1.2),
+        ));
+    });
 
     // 3. STATION (Marker)
     spawn_marker(
@@ -125,6 +173,7 @@ fn setup_world(
         "Station",
         Vec2::new(-150.0, -200.0),
         Color::srgb(1.0, 1.0, 0.0), // Yellow
+        true, // IsStation
     );
 
     // 4. ASTEROID FIELD (Marker)
@@ -136,6 +185,7 @@ fn setup_world(
         "Asteroid Field",
         Vec2::new(150.0, 100.0),
         Color::srgb(0.5, 0.5, 0.5), // Grey
+        false, // IsAsteroidField
     );
 
     // 5. MAP TOGGLE BUTTON (HUD - Child of camera)
@@ -146,7 +196,7 @@ fn setup_world(
         Transform::from_xyz(300.0, 500.0, 10.0), 
     ));
 
-    info!("[Voidrift Phase 2] World Initialized with Autopilot.");
+    info!("[Voidrift Phase 3] World Initialized with Mining Loop.");
 }
 
 fn spawn_marker(
@@ -157,14 +207,22 @@ fn spawn_marker(
     label: &str,
     pos: Vec2,
     color: Color,
+    is_station: bool,
 ) {
-    commands.spawn((
+    let mut entity = commands.spawn((
         MapMarker,
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(color)),
         Transform::from_xyz(pos.x, pos.y, 0.5),
-    ))
-    .with_children(|parent| {
+    ));
+
+    if is_station {
+        entity.insert(Station);
+    } else {
+        entity.insert(AsteroidField);
+    }
+
+    entity.with_children(|parent| {
         parent.spawn((
             Text2d::new(label),
             TextFont { font, font_size: 24.0, ..default() },
@@ -183,6 +241,8 @@ fn autopilot_system(
     time: Res<Time>,
     mut query: Query<(&mut Ship, &mut Transform, Entity)>,
     target_query: Query<&AutopilotTarget>,
+    asteroid_query: Query<&AsteroidField>,
+    station_query: Query<&Station>,
     mut commands: Commands,
 ) {
     for (mut ship, mut transform, entity) in query.iter_mut() {
@@ -193,15 +253,70 @@ fn autopilot_system(
                 let distance = direction.length();
 
                 if distance < ARRIVAL_THRESHOLD {
-                    ship.state = ShipState::Idle;
+                    // Check destination tag
+                    if let Some(target_ent) = target.target_entity {
+                        if asteroid_query.get(target_ent).is_ok() {
+                            ship.state = ShipState::Mining;
+                            info!("[Voidrift Phase 3] Arrived at Asteroid Field. Mining started.");
+                        } else if station_query.get(target_ent).is_ok() {
+                            if ship.cargo > 0.0 {
+                                info!("[Voidrift Phase 3] Cargo unloaded at Station. ({:.0} units)", ship.cargo);
+                                ship.cargo = 0.0;
+                            }
+                            ship.state = ShipState::Idle;
+                            info!("[Voidrift Phase 3] Arrived at Station.");
+                        } else {
+                            ship.state = ShipState::Idle;
+                        }
+                    } else {
+                        ship.state = ShipState::Idle;
+                    }
+                    
                     commands.entity(entity).remove::<AutopilotTarget>();
-                    info!("[Voidrift Phase 2] Ship Arrived at Target.");
                 } else {
                     let move_dir = direction.normalize();
                     let movement = move_dir * ship.speed * time.delta_secs();
                     transform.translation += movement.extend(0.0);
                 }
             }
+        }
+    }
+}
+
+fn mining_system(
+    time: Res<Time>,
+    mut query: Query<&mut Ship>,
+) {
+    for mut ship in query.iter_mut() {
+        if ship.state == ShipState::Mining {
+            let ore_this_tick = MINING_RATE * time.delta_secs();
+            ship.cargo = (ship.cargo + ore_this_tick).min(ship.cargo_capacity as f32);
+            
+            // Logging timer
+            ship.mining_log_timer += time.delta_secs();
+            if ship.mining_log_timer >= 1.0 {
+                info!("[Voidrift Phase 3] Cargo: {:.0}/{}", ship.cargo, ship.cargo_capacity);
+                ship.mining_log_timer = 0.0;
+            }
+
+            if ship.cargo >= ship.cargo_capacity as f32 {
+                ship.state = ShipState::Idle;
+                info!("[Voidrift Phase 3] Cargo full — mining complete.");
+            }
+        }
+    }
+}
+
+fn cargo_display_system(
+    ship_query: Query<&Ship>,
+    mut fill_query: Query<(&mut Transform, &Parent), With<CargoBarFill>>,
+) {
+    for (mut transform, parent) in fill_query.iter_mut() {
+        if let Ok(ship) = ship_query.get(**parent) {
+            let fill_ratio = ship.cargo / ship.cargo_capacity as f32;
+            // Scale X-axis based on fill ratio. 
+            // Width 40.0 is base, scaling 0.0 to 1.0 handles the horizontal fill.
+            transform.scale.x = fill_ratio;
         }
     }
 }
@@ -232,13 +347,13 @@ fn camera_follow_system(
 fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = MAP_OVERVIEW_SCALE;
-    info!("[Voidrift Phase 2] Entered Map View.");
+    info!("[Voidrift Phase 3] Entered Map View.");
 }
 
 fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = 1.0;
-    info!("[Voidrift Phase 2] Exited Map View.");
+    info!("[Voidrift Phase 3] Exited Map View.");
 }
 
 fn handle_input(
@@ -247,7 +362,7 @@ fn handle_input(
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     toggle_query: Query<(&Transform, Entity), With<MapToggleButton>>,
-    marker_query: Query<(&Transform, &Parent), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
+    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
     mut commands: Commands,
 ) {
@@ -271,16 +386,17 @@ fn handle_input(
 
             // 2. Check Map Markers (only in MapView)
             if *state.get() == GameState::MapView {
-                for (marker_transform, _) in marker_query.iter() {
+                for (marker_transform, marker_ent) in marker_query.iter() {
                     let marker_pos = marker_transform.translation.truncate();
                     if world_pos.distance(marker_pos) < 50.0 {
                         let (ship_entity, mut ship) = ship_query.single_mut();
                         ship.state = ShipState::Navigating;
                         commands.entity(ship_entity).insert(AutopilotTarget {
                             destination: marker_pos,
+                            target_entity: Some(marker_ent),
                         });
                         next_state.set(GameState::SpaceView);
-                        info!("[Voidrift Phase 2] Autopilot Engaged: {:?}", marker_pos);
+                        info!("[Voidrift Phase 3] Autopilot Engaged: {:?}", marker_pos);
                         break;
                     }
                 }
