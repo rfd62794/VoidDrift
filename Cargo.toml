@@ -21,9 +21,12 @@ crate-type = ["cdylib", "rlib"]
 # ----------------------------------------------------------------------------
 [dependencies]
 bevy = { version = "0.15", default-features = false, features = [
+    "bevy_app",
+    "bevy_core",
     "bevy_winit",
     "bevy_window",
     "bevy_render",
+    "bevy_sprite",
     "bevy_core_pipeline",
     "android_shared_stdcxx",
     "android-game-activity",

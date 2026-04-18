@@ -1,26 +1,20 @@
-// Voidrift — Phase 0 Android Spike
+// Voidrift — Phase 1 World Scaffold
 // ============================================================================
-// Scope: Phase 0 ONLY.
-// Deliverable: Coloured screen + touch event logged to logcat.
-// No ECS components. No game systems. No sprites. No assets loaded.
+// Scope: Phase 1 ONLY.
+// Deliverable: 2D Space Scene with static Ship, Asteroid, and Station.
+// Hard Scope: No movement, no grid, no camera controller.
 //
-// Gate 0 behaviours this file must satisfy:
-//   TB-P0-02: App launches without crash
-//   TB-P0-03: Background colour is visible (not black)
-//   TB-P0-04: Touch event registers and prints to logcat
+// Gate 1 behaviours this file must satisfy:
+//   TB-P1-01: Screenshot shows Ship (origin), Asteroid (nearby), Station (offset)
 // ============================================================================
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::{Mesh2d, MeshMaterial2d}};
 
-// bevy_main is the correct Android entry point macro for Bevy 0.15.
-// It sets up the Android runtime bridge (GameActivity via android-activity).
-// Do NOT replace this with fn main() — that will not work on Android.
 #[bevy_main]
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                // Fullscreen on Android — no title bar, no decorations.
                 mode: bevy::window::WindowMode::BorderlessFullscreen(
                     MonitorSelection::Primary,
                 ),
@@ -29,20 +23,50 @@ fn main() {
             }),
             ..default()
         }))
-        // Deep-space dark background — confirms TB-P0-03 (not a black screen).
-        // RGB approx: #050512
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
+        .add_systems(Startup, setup_world)
         .add_systems(Update, log_touches)
         .run();
 }
 
+/// Spawns the camera and the three core visual entities at static positions.
+fn setup_world(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    // 2D Camera centered at origin.
+    commands.spawn(Camera2d::default());
+
+    // 1. SHIP (World Origin)
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
+        MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), // Cyan
+        Transform::from_xyz(0.0, 0.0, 1.0), // Above background
+    ));
+
+    // 2. ASTEROID (Nearby)
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::new(48.0, 48.0))),
+        MeshMaterial2d(materials.add(Color::srgb(0.5, 0.5, 0.5))), // Grey
+        Transform::from_xyz(150.0, 100.0, 0.5),
+    ));
+
+    // 3. STATION (Offset - focused for mobile visibility)
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::new(80.0, 80.0))),
+        MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))), // Yellow
+        Transform::from_xyz(-150.0, -200.0, 0.2),
+    ));
+
+    info!("[Voidrift Phase 1] World Scaffolding Initialized.");
+}
+
 /// Reads all active touches each frame and prints their position to logcat.
-/// On device: visible in `adb logcat | grep voidrift` or RustStdoutStderr.
-/// Satisfies TB-P0-04: touch event registers and prints within 3 seconds.
 fn log_touches(touches: Res<Touches>) {
     for touch in touches.iter_just_pressed() {
         info!(
-            "[Voidrift Gate0] Touch detected — id: {}, position: ({:.1}, {:.1})",
+            "[Voidrift Phase 1] Touch detected — id: {}, position: ({:.1}, {:.1})",
             touch.id(),
             touch.position().x,
             touch.position().y,
