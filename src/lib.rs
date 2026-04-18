@@ -8,6 +8,7 @@ use bevy::{
     render::mesh::Mesh2d,
     sprite::MeshMaterial2d,
 };
+use bevy_egui::{egui, EguiPlugin, EguiSettings, EguiContexts};
 
 // ----------------------------------------------------------------------------
 // CONSTANTS
@@ -15,6 +16,9 @@ use bevy::{
 const SHIP_SPEED: f32 = 120.0;
 const ARRIVAL_THRESHOLD: f32 = 8.0;
 const MAP_OVERVIEW_SCALE: f32 = 1.5;
+
+// [PHASE 4] EGUI CONFIG
+const EGUI_SCALE: f32 = 2.0;
 
 const CARGO_CAPACITY: u32 = 100;
 const MINING_RATE: f32 = 8.0;
@@ -67,19 +71,10 @@ struct Station;
 struct MapMarker;
 
 #[derive(Component)]
-struct MapToggleButton;
-
-#[derive(Component)]
 struct MainCamera;
 
 #[derive(Component)]
 struct CargoBarFill;
-
-#[derive(Component)]
-struct DockingUIPanel;
-
-#[derive(Component)]
-struct RefineButton;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -99,6 +94,11 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(EguiPlugin)
+        .insert_resource(EguiSettings {
+            scale_factor: EGUI_SCALE,
+            ..default()
+        })
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .add_systems(Startup, setup_world)
@@ -108,7 +108,7 @@ fn main() {
         .add_systems(Update, (
             mining_system, 
             cargo_display_system, 
-            update_docking_ui_visibility,
+            hud_ui_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -122,46 +122,12 @@ fn setup_world(
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
-    // 1. CAMERA + HUD CHILD
+    // 1. CAMERA
     commands.spawn((
         Camera2d::default(),
         MainCamera,
         Transform::from_xyz(0.0, 0.0, 999.0),
-    ))
-    .with_children(|parent| {
-        // [HUD] Toggle Button
-        parent.spawn((
-            MapToggleButton,
-            Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
-            MeshMaterial2d(materials.add(Color::srgba(0.8, 0.2, 0.2, 0.8))),
-            Transform::from_xyz(120.0, 220.0, -1.0),
-        ));
-
-        // [PHASE 4] DOCKING UI (Bottom Bar Layout - Text Deferred per Option C)
-        parent.spawn((
-            DockingUIPanel,
-            Mesh2d(meshes.add(Rectangle::new(400.0, 90.0))),
-            MeshMaterial2d(materials.add(Color::srgba(0.02, 0.02, 0.1, 0.9))),
-            Transform::from_xyz(0.0, -210.0, -10.0),
-            Visibility::Hidden,
-        ))
-        .with_children(|panel| {
-            // Accent line
-            panel.spawn((
-                Mesh2d(meshes.add(Rectangle::new(400.0, 2.0))),
-                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
-                Transform::from_xyz(0.0, 44.0, 0.1),
-            ));
-
-            // REFINE BUTTON (Actionable Cyan Rectangle)
-            panel.spawn((
-                RefineButton,
-                Mesh2d(meshes.add(Rectangle::new(100.0, 50.0))),
-                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
-                Transform::from_xyz(130.0, 0.0, 0.1),
-            ));
-        });
-    });
+    ));
 
     // 2. SHIP
     commands.spawn((
@@ -264,11 +230,61 @@ fn cargo_display_system(ship: Query<&Ship>, mut fill: Query<(&mut Transform, &Pa
     }
 }
 
-fn update_docking_ui_visibility(ship: Query<&Ship>, mut ui: Query<&mut Visibility, With<DockingUIPanel>>) {
-    let ship = ship.single();
-    let mut vis = ui.single_mut();
-    if ship.state == ShipState::Docked { *vis = Visibility::Visible; }
-    else { *vis = Visibility::Hidden; }
+fn hud_ui_system(
+    mut contexts: EguiContexts,
+    mut ship_query: Query<&mut Ship>,
+    state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    let mut ship = ship_query.single_mut();
+    let ctx = contexts.ctx_mut();
+
+    // 1. MAP TOGGLE (Always available)
+    egui::SidePanel::left("navigation_panel")
+        .frame(egui::Frame::none().fill(egui::Color32::from_black_alpha(0)))
+        .show(ctx, |ui| {
+            ui.add_space(16.0);
+            let label = if *state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
+            if ui.add(egui::Button::new(label).min_size(egui::vec2(80.0, 40.0))).clicked() {
+                if *state.get() == GameState::SpaceView {
+                    next_state.set(GameState::MapView);
+                } else {
+                    next_state.set(GameState::SpaceView);
+                }
+            }
+        });
+
+    // 2. REFINERY UI (Only when docked)
+    if ship.state == ShipState::Docked {
+        egui::TopBottomPanel::bottom("refinery_panel")
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.add_space(16.0);
+                    
+                    // DATA COLUMN
+                    ui.vertical(|ui| {
+                        ui.label(format!("ORE: {:.1} / {}", ship.cargo, ship.cargo_capacity));
+                        ui.label(format!("POWER CELLS: {}", ship.power_cells));
+                    });
+
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.add_space(16.0);
+                        if ui.button("REFINE").clicked() {
+                            let cells = (ship.cargo as u32) / REFINERY_RATIO;
+                            if cells > 0 {
+                                ship.cargo -= (cells * REFINERY_RATIO) as f32;
+                                ship.power_cells += cells;
+                                info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", 
+                                    (cells * REFINERY_RATIO), cells, ship.power_cells);
+                            }
+                        }
+                    });
+                });
+                ui.add_space(8.0);
+            });
+    }
 }
 
 fn camera_follow_system(state: Res<State<GameState>>, ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>, mut cam: Query<&mut Transform, With<MainCamera>>) {
@@ -291,48 +307,30 @@ fn handle_input(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    toggle_query: Query<(&GlobalTransform, Entity), With<MapToggleButton>>,
-    btn_query: Query<(&GlobalTransform, Entity), With<RefineButton>>,
-    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
+    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
     mut commands: Commands,
 ) {
     let (camera, camera_transform) = camera_query.single();
     for touch in touches.iter_just_pressed() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
-            let (toggle_gt, _) = toggle_query.single();
-            if world_pos.distance(toggle_gt.translation().truncate()) < 60.0 {
-                if *state.get() == GameState::SpaceView { next_state.set(GameState::MapView); }
-                else { next_state.set(GameState::SpaceView); }
-                continue;
-            }
-
-            let mut handled = false;
-            {
-                let (_, mut ship) = ship_query.single_mut();
-                if ship.state == ShipState::Docked {
-                    let (btn_gt, _) = btn_query.single();
-                    let bp = btn_gt.translation().truncate();
-                    if world_pos.x > bp.x - 50.0 && world_pos.x < bp.x + 50.0 && world_pos.y > bp.y - 25.0 && world_pos.y < bp.y + 25.0 {
-                        let cells = (ship.cargo as u32) / REFINERY_RATIO;
-                        if cells > 0 {
-                            ship.cargo -= (cells * REFINERY_RATIO) as f32;
-                            ship.power_cells += cells;
-                            info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", (cells * REFINERY_RATIO), cells, ship.power_cells);
-                        }
-                        handled = true;
-                    }
-                }
-            }
-
-            if !handled && *state.get() == GameState::MapView {
+            // Map interaction logic (only in MapView)
+            if *state.get() == GameState::MapView {
                 for (mt, me) in marker_query.iter() {
                     let mp = mt.translation.truncate();
                     if world_pos.distance(mp) < 80.0 {
                         let (ship_entity, mut ship) = ship_query.single_mut();
-                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { continue; }
+                        
+                        // Avoid docking redundancy
+                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { 
+                            continue; 
+                        }
+
                         ship.state = ShipState::Navigating;
-                        commands.entity(ship_entity).insert(AutopilotTarget { destination: mp, target_entity: Some(me) });
+                        commands.entity(ship_entity).insert(AutopilotTarget { 
+                            destination: mp, 
+                            target_entity: Some(me) 
+                        });
                         next_state.set(GameState::SpaceView);
                         break;
                     }
