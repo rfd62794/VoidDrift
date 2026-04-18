@@ -4,11 +4,15 @@
 $ADB = "C:\Users\cheat\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 $FILENAME = "screenshots/gate1_screenshot.png"
 
-Write-Host "Capturing screen from Moto G 2025..." -ForegroundColor Cyan
+$TEMP_REMOTE = "/sdcard/voidrift_screen.png"
+$FILENAME = "screenshots/gate2_screenshot.png"
 
-# Use System.IO.File.WriteAllBytes to ensure binary integrity on Windows
-$bytes = & $ADB exec-out screencap -p
-[System.IO.File]::WriteAllBytes($FILENAME, $bytes)
+Write-Host "Capturing screen from Moto G 2025 (Safe Mode)..." -ForegroundColor Cyan
+
+# Use shell screencap + pull to ensure binary integrity on Windows
+& $ADB shell screencap -p $TEMP_REMOTE
+& $ADB pull $TEMP_REMOTE $FILENAME
+& $ADB shell rm $TEMP_REMOTE
 
 if (Test-Path $FILENAME) {
     $size = (Get-Item $FILENAME).Length
