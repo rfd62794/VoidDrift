@@ -20,14 +20,14 @@ crate-type = ["cdylib", "rlib"]
 # Adding it separately would be incorrect (confirmed by OQ-001 research).
 # ----------------------------------------------------------------------------
 [dependencies]
-bevy = { version = "=0.15.0", default-features = false, features = [
-    # Minimum feature set for Phase 0 — coloured screen + touch events only.
-    # No renderer extras, no audio, no gltf, no pbr.
+bevy = { version = "0.15", default-features = false, features = [
     "bevy_winit",
+    "bevy_window",
     "bevy_render",
     "bevy_core_pipeline",
-    "android_shared_stdcxx",   # includes libc++_shared.so in the build
-    "x11",                     # ignored on Android, required for desktop fallback
+    "android_shared_stdcxx",
+    "android-game-activity",
+    "x11",
 ] }
 
 # ----------------------------------------------------------------------------

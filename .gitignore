@@ -31,3 +31,6 @@ Thumbs.db
 # Evidence / debug artifacts (committed manually when capturing gate evidence)
 gate0_screenshot.png
 logcat_gate0.txt
+
+# Android Studio project files
+/android/app/
