@@ -292,8 +292,15 @@ fn handle_input(
         let touch_pos = touch.position();
         
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch_pos) {
+            info!("[Voidrift Phase 3] Touch: {:?} -> World: {:?}", touch_pos, world_pos);
+            
+            // 1. Check Toggle Button (HUD)
             let (toggle_transform, _) = toggle_query.single();
-            if world_pos.distance(toggle_transform.translation.truncate()) < 40.0 {
+            let button_pos = toggle_transform.translation.truncate();
+            let dist_to_button = world_pos.distance(button_pos);
+            
+            if dist_to_button < 80.0 { // Increased from 40.0
+                info!("[Voidrift Phase 3] Button Hit! Dist: {:.1}", dist_to_button);
                 if *state.get() == GameState::SpaceView {
                     next_state.set(GameState::MapView);
                 } else {
@@ -302,10 +309,13 @@ fn handle_input(
                 continue;
             }
 
+            // 2. Check Map Markers (only in MapView)
             if *state.get() == GameState::MapView {
                 for (marker_transform, marker_ent) in marker_query.iter() {
                     let marker_pos = marker_transform.translation.truncate();
-                    if world_pos.distance(marker_pos) < 50.0 {
+                    let dist_to_marker = world_pos.distance(marker_pos);
+                    
+                    if dist_to_marker < 80.0 { // Increased from 50.0
                         let (ship_entity, mut ship) = ship_query.single_mut();
                         ship.state = ShipState::Navigating;
                         commands.entity(ship_entity).insert(AutopilotTarget {
@@ -313,6 +323,7 @@ fn handle_input(
                             target_entity: Some(marker_ent),
                         });
                         next_state.set(GameState::SpaceView);
+                        info!("[Voidrift Phase 3] Autopilot Engaged: {:?}", marker_pos);
                         break;
                     }
                 }
