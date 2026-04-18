@@ -1,7 +1,7 @@
-// Voidrift — Phase 3 Diagnostic Step 1: Stable Floor
+// Voidrift — Phase 3 Diagnostic Step 1: Stable Floor (v2)
 // ============================================================================
-// Goal: Reach a non-flickering 60fps state by stripping all non-essential
-// rendering paths (Text2d, Fullscreen).
+// Goal: Resolve the engine freeze ("No movement") and buffer starvation.
+// Changes: Disabled MSAA, removed all child entities, restored Fullscreen.
 // ============================================================================
 
 use bevy::{
@@ -37,7 +37,6 @@ struct Ship {
     speed: f32,
     cargo: f32,
     cargo_capacity: u32,
-    mining_log_timer: f32,
 }
 
 #[derive(PartialEq, Debug)]
@@ -68,9 +67,6 @@ struct MapToggleButton;
 #[derive(Component)]
 struct MainCamera;
 
-#[derive(Component)]
-struct CargoBarFill;
-
 // ----------------------------------------------------------------------------
 // APP SETUP
 // ----------------------------------------------------------------------------
@@ -80,27 +76,29 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                // [DIAGNOSTIC] Windowed mode instead of BorderlessFullscreen
-                mode: bevy::window::WindowMode::Windowed,
-                // [DIAGNOSTIC] Forced FIFO for stable Mali frame pacing
+                // Restoring Fullscreen as it worked for touches in Phase 2
+                mode: bevy::window::WindowMode::BorderlessFullscreen(
+                    MonitorSelection::Primary,
+                ),
                 present_mode: bevy::window::PresentMode::Fifo,
                 title: "Voidrift".to_string(),
                 ..default()
             }),
             ..default()
         }))
+        // [DIAGNOSTIC] Disable MSAA to reduce buffer pressure on Mali GPU
+        .insert_resource(Msaa::Off)
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .add_systems(Startup, setup_world)
         .add_systems(Update, (autopilot_system, camera_follow_system))
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
-        .add_systems(Update, (mining_system, cargo_display_system))
         .add_systems(Update, handle_input)
         .run();
 }
 
-/// Spawns the camera, ship, and markers. NO TEXT LABELS.
+/// Spawns the camera, ship, and markers. NO CHILDREN, NO TEXT.
 fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -112,36 +110,20 @@ fn setup_world(
         MainCamera,
     ));
 
-    // 2. SHIP (World Space)
+    // 2. SHIP (No children)
     commands.spawn((
         Ship { 
             state: ShipState::Idle, 
             speed: SHIP_SPEED,
             cargo: 0.0,
             cargo_capacity: CARGO_CAPACITY,
-            mining_log_timer: 0.0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
         Transform::from_xyz(0.0, 0.0, 1.0),
-    ))
-    .with_children(|parent| {
-        // Cargo Bar Background
-        parent.spawn((
-            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
-            Transform::from_xyz(0.0, 24.0, 1.1),
-        ));
-        // Cargo Bar Fill
-        parent.spawn((
-            CargoBarFill,
-            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 24.0, 1.2),
-        ));
-    });
+    ));
 
-    // 3. STATION (No Label)
+    // 3. STATION
     commands.spawn((
         MapMarker,
         Station,
@@ -150,7 +132,7 @@ fn setup_world(
         Transform::from_xyz(-150.0, -200.0, 0.5),
     ));
 
-    // 4. ASTEROID FIELD (No Label)
+    // 4. ASTEROID FIELD
     commands.spawn((
         MapMarker,
         AsteroidField,
@@ -159,7 +141,7 @@ fn setup_world(
         Transform::from_xyz(150.0, 100.0, 0.5),
     ));
 
-    // 5. MAP TOGGLE BUTTON (No Label)
+    // 5. MAP TOGGLE BUTTON
     commands.spawn((
         MapToggleButton,
         Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
@@ -167,11 +149,11 @@ fn setup_world(
         Transform::from_xyz(300.0, 500.0, 10.0), 
     ));
 
-    info!("[Voidrift Phase 3] DIAGNOSTIC: Stable Floor (No Text, Windowed).");
+    info!("[Voidrift Phase 3] DIAGNOSTIC: Stable Floor v2 (Fullscr, Msaa::Off, No children).");
 }
 
 // ----------------------------------------------------------------------------
-// SYSTEMS (REDUCED LOGGING)
+// SYSTEMS
 // ----------------------------------------------------------------------------
 
 fn autopilot_system(
@@ -212,37 +194,6 @@ fn autopilot_system(
     }
 }
 
-fn mining_system(
-    time: Res<Time>,
-    mut query: Query<&mut Ship>,
-) {
-    for mut ship in query.iter_mut() {
-        if ship.state == ShipState::Mining {
-            let ore_this_tick = MINING_RATE * time.delta_secs();
-            ship.cargo = (ship.cargo + ore_this_tick).min(ship.cargo_capacity as f32);
-            
-            if ship.cargo >= ship.cargo_capacity as f32 {
-                ship.state = ShipState::Idle;
-                info!("[Voidrift Phase 3] Mining full.");
-            }
-        }
-    }
-}
-
-fn cargo_display_system(
-    ship_query: Query<&Ship>,
-    mut fill_query: Query<(&mut Transform, &Parent), With<CargoBarFill>>,
-) {
-    for (mut transform, parent) in fill_query.iter_mut() {
-        if let Ok(ship) = ship_query.get(**parent) {
-            let fill_ratio = ship.cargo / ship.cargo_capacity as f32;
-            let fill_width = 40.0 * fill_ratio;
-            transform.scale.x = fill_ratio;
-            transform.translation.x = -20.0 + (fill_width / 2.0);
-        }
-    }
-}
-
 fn camera_follow_system(
     state: Res<State<GameState>>,
     ship_query: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
@@ -269,11 +220,13 @@ fn camera_follow_system(
 fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = MAP_OVERVIEW_SCALE;
+    info!("[Voidrift Phase 3] Entered Map View.");
 }
 
 fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = 1.0;
+    info!("[Voidrift Phase 3] Exited Map View.");
 }
 
 fn handle_input(
@@ -294,28 +247,23 @@ fn handle_input(
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch_pos) {
             info!("[Voidrift Phase 3] Touch: {:?} -> World: {:?}", touch_pos, world_pos);
             
-            // 1. Check Toggle Button (HUD)
             let (toggle_transform, _) = toggle_query.single();
             let button_pos = toggle_transform.translation.truncate();
-            let dist_to_button = world_pos.distance(button_pos);
             
-            if dist_to_button < 80.0 { // Increased from 40.0
-                info!("[Voidrift Phase 3] Button Hit! Dist: {:.1}", dist_to_button);
+            if world_pos.distance(button_pos) < 80.0 {
                 if *state.get() == GameState::SpaceView {
                     next_state.set(GameState::MapView);
                 } else {
                     next_state.set(GameState::SpaceView);
                 }
+                info!("[Voidrift Phase 3] Toggle Button Hit.");
                 continue;
             }
 
-            // 2. Check Map Markers (only in MapView)
             if *state.get() == GameState::MapView {
                 for (marker_transform, marker_ent) in marker_query.iter() {
                     let marker_pos = marker_transform.translation.truncate();
-                    let dist_to_marker = world_pos.distance(marker_pos);
-                    
-                    if dist_to_marker < 80.0 { // Increased from 50.0
+                    if world_pos.distance(marker_pos) < 80.0 {
                         let (ship_entity, mut ship) = ship_query.single_mut();
                         ship.state = ShipState::Navigating;
                         commands.entity(ship_entity).insert(AutopilotTarget {
