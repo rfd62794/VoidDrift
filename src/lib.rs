@@ -17,15 +17,13 @@ const SHIP_SPEED: f32 = 120.0;
 const ARRIVAL_THRESHOLD: f32 = 8.0;
 const MAP_OVERVIEW_SCALE: f32 = 1.5;
 
-// [PHASE 4] EGUI CONFIG
-const EGUI_SCALE: f32 = 2.0;
+// [PHASE 4] EGUI CONFIG (Increased to 3.0 for mobile readability)
+const EGUI_SCALE: f32 = 3.0;
 
 const CARGO_CAPACITY: u32 = 100;
 const MINING_RATE: f32 = 8.0;
 
-// [PHASE 4] ECONOMIC CONSTANTS
 const REFINERY_RATIO: u32 = 10;
-const REPAIR_COST: u32 = 25;
 
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
