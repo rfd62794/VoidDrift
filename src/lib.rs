@@ -15,7 +15,7 @@ use bevy::{
     prelude::*,
     render::mesh::Mesh2d,
     sprite::{MeshMaterial2d, Anchor},
-    text::*,
+    text::JustifyText,
 };
 
 // ----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ fn spawn_marker(
             Text2d::new(label),
             TextFont { font, font_size: 24.0, ..default() },
             TextColor(Color::WHITE),
-            TextLayout::new_with_justify(Justify::Center),
+            TextLayout::new_with_justify(JustifyText::Center),
             Transform::from_xyz(0.0, 40.0, 0.1),
         ));
     });
