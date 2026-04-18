@@ -28,8 +28,8 @@ voidrift.keystore
 .DS_Store
 Thumbs.db
 
-# Evidence / debug artifacts (committed manually when capturing gate evidence)
-gate0_screenshot.png
+# Evidence / debug artifacts
+/screenshots/
 logcat_gate0.txt
 
 # Android Studio project files
