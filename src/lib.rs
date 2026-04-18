@@ -8,7 +8,7 @@
 //   TB-P1-01: Screenshot shows Ship (origin), Asteroid (nearby), Station (offset)
 // ============================================================================
 
-use bevy::{prelude::*, sprite::{Mesh2d, MeshMaterial2d}};
+use bevy::{prelude::*, render::mesh::Mesh2d, sprite::MeshMaterial2d};
 
 #[bevy_main]
 fn main() {
