@@ -1,7 +1,7 @@
-// Voidrift — Phase 3 Diagnostic Step 1: Stable Floor (v2)
+// Voidrift — Phase 3 Diagnostic Step 1: Safe HUD (v3)
 // ============================================================================
-// Goal: Resolve the engine freeze ("No movement") and buffer starvation.
-// Changes: Disabled MSAA, removed all child entities, restored Fullscreen.
+// Goal: Resolve HUD visibility by parenting the button to the camera and 
+// using safe logical coordinates.
 // ============================================================================
 
 use bevy::{
@@ -76,7 +76,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                // Restoring Fullscreen as it worked for touches in Phase 2
                 mode: bevy::window::WindowMode::BorderlessFullscreen(
                     MonitorSelection::Primary,
                 ),
@@ -96,19 +95,30 @@ fn main() {
         .run();
 }
 
-/// Spawns the camera, ship, and markers. NO CHILDREN, NO TEXT.
+/// Spawns the camera (with HUD child), ship, and markers.
 fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    // 1. CAMERA
+    // 1. CAMERA + HUD CHILD
     commands.spawn((
         Camera2d::default(),
         MainCamera,
-    ));
+        Transform::from_xyz(0.0, 0.0, 999.0),
+    ))
+    .with_children(|parent| {
+        // [HUD] Toggle Button (Child of Camera)
+        // Stays fixed regardless of world movement.
+        parent.spawn((
+            MapToggleButton,
+            Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
+            Transform::from_xyz(100.0, 200.0, -1.0), // Local space relative to camera
+        ));
+    });
 
-    // 2. SHIP (No children)
+    // 2. SHIP
     commands.spawn((
         Ship { 
             state: ShipState::Idle, 
@@ -139,15 +149,7 @@ fn setup_world(
         Transform::from_xyz(150.0, 100.0, 0.5),
     ));
 
-    // 5. MAP TOGGLE BUTTON
-    commands.spawn((
-        MapToggleButton,
-        Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
-        MeshMaterial2d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
-        Transform::from_xyz(300.0, 500.0, 10.0), 
-    ));
-
-    info!("[Voidrift Phase 3] DIAGNOSTIC: Stable Floor v2 (Fullscr, Msaa::Off, No children).");
+    info!("[Voidrift Phase 3] Safe HUD (Child of Camera) spawned.");
 }
 
 // ----------------------------------------------------------------------------
@@ -196,7 +198,6 @@ fn camera_follow_system(
     state: Res<State<GameState>>,
     ship_query: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
     mut camera_query: Query<&mut Transform, With<MainCamera>>,
-    mut toggle_query: Query<&mut Transform, (With<MapToggleButton>, Without<MainCamera>, Without<Ship>)>,
 ) {
     let ship_transform = ship_query.single();
     let mut camera_transform = camera_query.single_mut();
@@ -207,11 +208,6 @@ fn camera_follow_system(
     } else {
         camera_transform.translation.x = 0.0;
         camera_transform.translation.y = 0.0;
-    }
-
-    if let Ok(mut toggle_transform) = toggle_query.get_single_mut() {
-        toggle_transform.translation.x = camera_transform.translation.x + 300.0;
-        toggle_transform.translation.y = camera_transform.translation.y + 500.0;
     }
 }
 
@@ -224,7 +220,6 @@ fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<Main
 fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
     let mut projection = camera_query.single_mut();
     projection.scale = 1.0;
-    info!("[Voidrift Phase 3] Exited Map View.");
 }
 
 fn handle_input(
@@ -232,23 +227,32 @@ fn handle_input(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    toggle_query: Query<(&Transform, Entity), With<MapToggleButton>>,
+    toggle_query: Query<(&GlobalTransform, Entity), With<MapToggleButton>>,
     marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
     mut commands: Commands,
+    windows: Query<&Window>,
 ) {
     let (camera, camera_transform) = camera_query.single();
     
+    // Log resolution once if touch happens
+    if touches.any_just_pressed() {
+        if let Ok(w) = windows.get_single() {
+             info!("[Voidrift Phase 3] Res: Log({:.1}x{:.1}) Phys({:?}x{:?})", 
+                w.width(), w.height(), w.physical_width(), w.physical_height());
+        }
+    }
+
     for touch in touches.iter_just_pressed() {
         let touch_pos = touch.position();
         
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch_pos) {
-            info!("[Voidrift Phase 3] Touch: {:?} -> World: {:?}", touch_pos, world_pos);
             
-            let (toggle_transform, _) = toggle_query.single();
-            let button_pos = toggle_transform.translation.truncate();
+            // 1. Check HUD Button (Uses GLOBAL transform)
+            let (toggle_g_transform, _) = toggle_query.single();
+            let button_world_pos = toggle_g_transform.translation().truncate();
             
-            if world_pos.distance(button_pos) < 80.0 {
+            if world_pos.distance(button_world_pos) < 60.0 {
                 if *state.get() == GameState::SpaceView {
                     next_state.set(GameState::MapView);
                 } else {
@@ -258,6 +262,7 @@ fn handle_input(
                 continue;
             }
 
+            // 2. Check Map Markers
             if *state.get() == GameState::MapView {
                 for (marker_transform, marker_ent) in marker_query.iter() {
                     let marker_pos = marker_transform.translation.truncate();
