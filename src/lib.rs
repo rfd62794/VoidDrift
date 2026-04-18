@@ -1,6 +1,6 @@
-// Voidrift — Phase 4: Station UI & Refinery (Deploy 1)
+// Voidrift — Phase 4: Station UI & Refinery (Deploy 2)
 // ============================================================================
-// Features: power_cells model, ShipState::Docked, Refinery Logic.
+// Features: Text2d HUD Labels, Refine Button, 10:1 Refinery Interaction.
 // ============================================================================
 
 use bevy::{
@@ -77,7 +77,16 @@ struct MainCamera;
 struct CargoBarFill;
 
 #[derive(Component)]
-struct DockingUIPanel;      // [PHASE 4]
+struct DockingUIPanel;
+
+#[derive(Component)]
+struct OreLabel;
+
+#[derive(Component)]
+struct CellLabel;
+
+#[derive(Component)]
+struct RefineButton;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -103,7 +112,12 @@ fn main() {
         .add_systems(Update, (autopilot_system, camera_follow_system))
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
-        .add_systems(Update, (mining_system, cargo_display_system, update_docking_ui_visibility))
+        .add_systems(Update, (
+            mining_system, 
+            cargo_display_system, 
+            update_docking_ui_visibility,
+            update_docking_ui_display
+        ))
         .add_systems(Update, handle_input)
         .run();
 }
@@ -136,15 +150,45 @@ fn setup_world(
             ));
         });
 
-        // [PHASE 4] DOCKING UI Foundation (Visibility::Hidden)
-        // Spawned as child of Camera for fixed HUD positioning.
+        // [PHASE 4] DOCKING UI
         parent.spawn((
             DockingUIPanel,
             Mesh2d(meshes.add(Rectangle::new(200.0, 120.0))),
             MeshMaterial2d(materials.add(Color::srgba(0.05, 0.05, 0.1, 0.9))),
             Transform::from_xyz(0.0, 0.0, -0.5),
             Visibility::Hidden,
-        ));
+        ))
+        .with_children(|panel| {
+            // ORE LABEL
+            panel.spawn((
+                OreLabel,
+                Text2d::new("ORE: 0/100"),
+                TextFont::from_font_size(20.0),
+                Transform::from_xyz(-80.0, 30.0, 0.1),
+            ));
+            // CELL LABEL
+            panel.spawn((
+                CellLabel,
+                Text2d::new("CELLS: 0"),
+                TextFont::from_font_size(20.0),
+                Transform::from_xyz(-80.0, 0.0, 0.1),
+            ));
+            // REFINE BUTTON
+            panel.spawn((
+                RefineButton,
+                Mesh2d(meshes.add(Rectangle::new(120.0, 32.0))),
+                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
+                Transform::from_xyz(0.0, -35.0, 0.1),
+            ))
+            .with_children(|btn| {
+                btn.spawn((
+                    Text2d::new("REFINE"),
+                    TextFont::from_font_size(18.0),
+                    TextColor(Color::BLACK),
+                    Transform::from_xyz(0.0, 0.0, 0.1),
+                ));
+            });
+        });
     });
 
     // 2. SHIP
@@ -207,7 +251,7 @@ fn setup_world(
         ));
     });
 
-    info!("[Voidrift Phase 4] Model extensions & UI Foundation initialized.");
+    info!("[Voidrift Phase 4] All UI elements initialized. Build: FINAL.");
 }
 
 // ----------------------------------------------------------------------------
@@ -234,10 +278,7 @@ fn autopilot_system(
                         if asteroid_query.get(target_ent).is_ok() {
                             ship.state = ShipState::Mining;
                         } else if station_query.get(target_ent).is_ok() {
-                            // [PHASE 4] Transition to Docked & Unload
                             ship.state = ShipState::Docked;
-                            // Unload cargo (as per current behavior, move to refinery later if needed)
-                            // ship.cargo = 0.0; // Keep cargo for refinery!
                             info!("[Voidrift Phase 4] Docked at Station. Ore ready for refinery.");
                         }
                     } else {
@@ -306,6 +347,21 @@ fn update_docking_ui_visibility(
     }
 }
 
+fn update_docking_ui_display(
+    ship_query: Query<&Ship>,
+    mut ore_query: Query<&mut Text2d, (With<OreLabel>, Without<CellLabel>)>,
+    mut cell_query: Query<&mut Text2d, (With<CellLabel>, Without<OreLabel>)>,
+) {
+    let ship = ship_query.single();
+    
+    for mut text in ore_query.iter_mut() {
+        text.0 = format!("ORE: {:.0}/{}", ship.cargo, ship.cargo_capacity);
+    }
+    for mut text in cell_query.iter_mut() {
+        text.0 = format!("CELLS: {}", ship.power_cells);
+    }
+}
+
 fn camera_follow_system(
     state: Res<State<GameState>>,
     ship_query: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
@@ -339,6 +395,7 @@ fn handle_input(
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     toggle_query: Query<(&GlobalTransform, Entity), With<MapToggleButton>>,
+    btn_query: Query<(&GlobalTransform, Entity), With<RefineButton>>,
     marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MapToggleButton>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
     mut commands: Commands,
@@ -364,7 +421,31 @@ fn handle_input(
                 continue;
             }
 
-            // 2. Check Map Markers
+            // 2. Check Refine Button (ONLY IF DOCKED)
+            let (_, mut ship) = ship_query.single_mut();
+            if ship.state == ShipState::Docked {
+                let (btn_g_transform, _) = btn_query.single();
+                let btn_world_pos = btn_g_transform.translation().truncate();
+                
+                // Hit size 120x32
+                if world_pos.x > btn_world_pos.x - 60.0 && world_pos.x < btn_world_pos.x + 60.0 
+                   && world_pos.y > btn_world_pos.y - 16.0 && world_pos.y < btn_world_pos.y + 16.0 {
+                    
+                    let cells_producible = (ship.cargo as u32) / REFINERY_RATIO;
+                    if cells_producible > 0 {
+                        let consumed = cells_producible * REFINERY_RATIO;
+                        ship.cargo -= consumed as f32;
+                        ship.power_cells += cells_producible;
+                        info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", 
+                            consumed, cells_producible, ship.power_cells);
+                    } else {
+                        info!("[Voidrift Phase 4] Refinery: insufficient ore.");
+                    }
+                    continue;
+                }
+            }
+
+            // 3. Check Map Markers
             if *state.get() == GameState::MapView {
                 for (marker_transform, marker_ent) in marker_query.iter() {
                     let marker_pos = marker_transform.translation.truncate();
