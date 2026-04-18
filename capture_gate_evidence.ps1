@@ -6,8 +6,9 @@ $FILENAME = "screenshots/gate1_screenshot.png"
 
 Write-Host "Capturing screen from Moto G 2025..." -ForegroundColor Cyan
 
-# Use exec-out for binary integrity on Windows
-& $ADB exec-out screencap -p > $FILENAME
+# Use System.IO.File.WriteAllBytes to ensure binary integrity on Windows
+$bytes = & $ADB exec-out screencap -p
+[System.IO.File]::WriteAllBytes($FILENAME, $bytes)
 
 if (Test-Path $FILENAME) {
     $size = (Get-Item $FILENAME).Length
