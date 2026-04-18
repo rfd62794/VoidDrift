@@ -86,8 +86,6 @@ fn main() {
             }),
             ..default()
         }))
-        // [DIAGNOSTIC] Disable MSAA to reduce buffer pressure on Mali GPU
-        .insert_resource(Msaa::Off)
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .add_systems(Startup, setup_world)
