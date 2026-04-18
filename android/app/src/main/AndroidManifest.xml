@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AndroidManifest.xml
+    Seeded from: github.com/bevyengine/bevy tree release-0.15.2
+    Path: examples/mobile/android_example/app/src/main/AndroidManifest.xml
+
+    Adaptations (per Phase 0 Directive Section 5.4):
+      - android:label: "Bevy Example" → "Voidrift"
+      - android.app.lib_name value: "bevy_mobile_example" → "voidrift"
+        (must match [lib] name in Cargo.toml exactly)
+      - tools:targetApi: "33" → "35" (Moto G 2025)
+      - android:roundIcon removed (no icon assets at Phase 0)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:label="Voidrift"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        tools:targetApi="35">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
+
+            <!--
+                lib_name MUST match the [lib] name in Cargo.toml.
+                Cargo.toml: [lib] name = "voidrift"
+                This value: "voidrift"
+                Mismatch here causes a silent UnsatisfiedLinkError on launch.
+            -->
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="voidrift" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+    </application>
+
+</manifest>

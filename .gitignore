@@ -1,0 +1,33 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# Android build artifacts
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/jniLibs/
+# Gradle wrapper jar — download on first use, don't commit binary
+android/gradle/wrapper/gradle-wrapper.jar
+
+# Keystore — NEVER commit
+voidrift.keystore
+*.jks
+*.keystore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Evidence / debug artifacts (committed manually when capturing gate evidence)
+gate0_screenshot.png
+logcat_gate0.txt

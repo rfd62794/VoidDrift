@@ -1,0 +1,43 @@
+[package]
+name = "voidrift"
+version = "0.1.0"
+edition = "2021"
+
+# ----------------------------------------------------------------------------
+# Lib crate only — cdylib required for Android .so output.
+# No [[bin]] target at Phase 0. Desktop runs via `cargo run` against lib.
+# ----------------------------------------------------------------------------
+[lib]
+name = "voidrift"
+crate-type = ["cdylib", "rlib"]
+
+# ----------------------------------------------------------------------------
+# Bevy pinned at 0.15 — confirmed by OQ-001 research (April 2026).
+# DO NOT upgrade without a new directive. Bevy 0.18 is current but 0.15 has
+# the most complete Android/GameActivity community documentation.
+#
+# bevy_android is NOT listed here — it is bundled inside the bevy crate.
+# Adding it separately would be incorrect (confirmed by OQ-001 research).
+# ----------------------------------------------------------------------------
+[dependencies]
+bevy = { version = "0.15", default-features = false, features = [
+    # Minimum feature set for Phase 0 — coloured screen + touch events only.
+    # No renderer extras, no audio, no gltf, no pbr.
+    "bevy_winit",
+    "bevy_render",
+    "bevy_core_pipeline",
+    "android_shared_stdcxx",   # includes libc++_shared.so in the build
+    "x11",                     # ignored on Android, required for desktop fallback
+] }
+
+# ----------------------------------------------------------------------------
+# serde, rand, etc. are deferred to Phase 1+.
+# Do not add them here — they are out of Phase 0 scope.
+# ----------------------------------------------------------------------------
+
+[profile.release]
+opt-level     = 3
+lto           = true
+codegen-units = 1
+panic         = "abort"
+strip         = true

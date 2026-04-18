@@ -1,0 +1,7 @@
+// Top-level build file.
+// Seeded from: github.com/bevyengine/bevy tree release-0.15.2
+// Path: examples/mobile/android_example/build.gradle
+// Adaptation: none required at root level.
+plugins {
+    alias(libs.plugins.android.application) apply false
+}

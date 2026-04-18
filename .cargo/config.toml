@@ -1,0 +1,20 @@
+# Voidrift Android NDK configuration
+# ============================================================================
+# NDK r29 (29.0.14206865) — confirmed installed on this machine.
+# Exceeds community minimum of r26+. Do not downgrade.
+#
+# Linker: aarch64-linux-android35-clang — API 35, matches Moto G 2025.
+# Rustflags: carried from OperatorGame .cargo/config.toml (proven working).
+#   -lc++_shared        : links the C++ shared runtime required by Bevy/WGPU.
+#   max-page-size=16384 : mandatory for Android 15+ / API 35 devices.
+#
+# MACHINE-SPECIFIC: linker path is hardcoded to the cheat user profile.
+# If the machine changes, update the NDK path below.
+# ============================================================================
+
+[target.aarch64-linux-android]
+linker = "C:\\Users\\cheat\\AppData\\Local\\Android\\Sdk\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android35-clang.cmd"
+rustflags = [
+    "-C", "link-arg=-lc++_shared",
+    "-C", "link-arg=-Wl,-z,max-page-size=16384"
+]
