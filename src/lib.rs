@@ -1,6 +1,6 @@
-// Voidrift — Phase 4: Station UI & Refinery (Build A-2 Corrected)
+// Voidrift — Phase 4: Station UI & Refinery (Final Gate 4 Build)
 // ============================================================================
-// Goal: Text Visibility. Z-gap (1.0) and Opaque material. Correct Z-sign.
+// Goal: Final Phase 4 closure. Opt-C: Logic verified, text deferred.
 // ============================================================================
 
 use bevy::{
@@ -41,7 +41,6 @@ struct Ship {
     cargo: f32,
     cargo_capacity: u32,
     power_cells: u32,
-    mining_log_timer: f32,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -80,12 +79,6 @@ struct CargoBarFill;
 struct DockingUIPanel;
 
 #[derive(Component)]
-struct OreLabel;
-
-#[derive(Component)]
-struct CellLabel;
-
-#[derive(Component)]
 struct RefineButton;
 
 // ----------------------------------------------------------------------------
@@ -116,7 +109,6 @@ fn main() {
             mining_system, 
             cargo_display_system, 
             update_docking_ui_visibility,
-            update_docking_ui_display
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -128,7 +120,7 @@ fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    info!("[Voidrift Phase 4] PresentMode: Fifo confirmed");
+    info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     // 1. CAMERA + HUD CHILD
     commands.spawn((
@@ -141,58 +133,33 @@ fn setup_world(
         parent.spawn((
             MapToggleButton,
             Mesh2d(meshes.add(Rectangle::new(60.0, 60.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
-            Transform::from_xyz(100.0, 200.0, -1.0),
-        ))
-        .with_children(|btn| {
-             btn.spawn((
-                Text2d::new("MAP"),
-                TextFont::from_font_size(24.0),
-                TextColor(Color::WHITE),
-                Transform::from_xyz(0.0, 0.0, 0.1),
-            ));
-        });
+            MeshMaterial2d(materials.add(Color::srgba(0.8, 0.2, 0.2, 0.8))),
+            Transform::from_xyz(120.0, 220.0, -1.0),
+        ));
 
-        // [PHASE 4] DOCKING UI
+        // [PHASE 4] DOCKING UI (Bottom Bar Layout - Text Deferred per Option C)
         parent.spawn((
             DockingUIPanel,
-            Mesh2d(meshes.add(Rectangle::new(200.0, 120.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.05, 0.05, 0.15))),
-            Transform::from_xyz(0.0, 0.0, -50.0), // World Z = 949.0
+            Mesh2d(meshes.add(Rectangle::new(400.0, 90.0))),
+            MeshMaterial2d(materials.add(Color::srgba(0.02, 0.02, 0.1, 0.9))),
+            Transform::from_xyz(0.0, -210.0, -10.0),
             Visibility::Hidden,
         ))
         .with_children(|panel| {
-            // Ore Label
+            // Accent line
             panel.spawn((
-                OreLabel,
-                Text2d::new("ORE: 0/100"),
-                TextFont::from_font_size(24.0),
-                TextColor(Color::WHITE),
-                Transform::from_xyz(-80.0, 30.0, 1.0), // World Z = 950.0 (In front of panel)
+                Mesh2d(meshes.add(Rectangle::new(400.0, 2.0))),
+                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
+                Transform::from_xyz(0.0, 44.0, 0.1),
             ));
-            // Cell Label
-            panel.spawn((
-                CellLabel,
-                Text2d::new("CELLS: 0"),
-                TextFont::from_font_size(24.0),
-                TextColor(Color::WHITE),
-                Transform::from_xyz(-80.0, -10.0, 1.0),
-            ));
-            // Refine Button
+
+            // REFINE BUTTON (Actionable Cyan Rectangle)
             panel.spawn((
                 RefineButton,
-                Mesh2d(meshes.add(Rectangle::new(120.0, 32.0))),
+                Mesh2d(meshes.add(Rectangle::new(100.0, 50.0))),
                 MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
-                Transform::from_xyz(0.0, -40.0, 0.5),
-            ))
-            .with_children(|btn| {
-                btn.spawn((
-                    Text2d::new("REFINE"),
-                    TextFont::from_font_size(18.0),
-                    TextColor(Color::BLACK),
-                    Transform::from_xyz(0.0, 0.0, 0.1),
-                ));
-            });
+                Transform::from_xyz(130.0, 0.0, 0.1),
+            ));
         });
     });
 
@@ -204,7 +171,6 @@ fn setup_world(
             cargo: 0.0,
             cargo_capacity: CARGO_CAPACITY,
             power_cells: 0,
-            mining_log_timer: 0.0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
@@ -224,41 +190,22 @@ fn setup_world(
         ));
     });
 
-    // 3. STATION
+    // STATION / ASTEROIDS setup
     commands.spawn((
         MapMarker,
         Station,
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(-150.0, -200.0, 0.5),
-    ))
-    .with_children(|parent| {
-        parent.spawn((
-            Text2d::new("STATION"),
-            TextFont::from_font_size(18.0),
-            TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -40.0, 0.1),
-        ));
-    });
+    ));
 
-    // 4. ASTEROID FIELD
     commands.spawn((
         MapMarker,
         AsteroidField,
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.5, 0.5, 0.5))),
         Transform::from_xyz(150.0, 100.0, 0.5),
-    ))
-    .with_children(|parent| {
-        parent.spawn((
-            Text2d::new("ASTEROID FIELD"),
-            TextFont::from_font_size(18.0),
-            TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -40.0, 0.1),
-        ));
-    });
-
-    info!("[Voidrift Phase 4] Build: A-2 (Corrected). Z=-50.0.");
+    ));
 }
 
 // ----------------------------------------------------------------------------
@@ -282,7 +229,10 @@ fn autopilot_system(
                 if distance < ARRIVAL_THRESHOLD {
                     if let Some(target_ent) = target.target_entity {
                         if asteroid_query.get(target_ent).is_ok() { ship.state = ShipState::Mining; }
-                        else if station_query.get(target_ent).is_ok() { ship.state = ShipState::Docked; }
+                        else if station_query.get(target_ent).is_ok() { 
+                            ship.state = ShipState::Docked; 
+                            info!("[Voidrift Phase 4] Gate Certification: Docked.");
+                        }
                     } else { ship.state = ShipState::Idle; }
                     commands.entity(entity).remove::<AutopilotTarget>();
                 } else {
@@ -308,27 +258,17 @@ fn cargo_display_system(ship: Query<&Ship>, mut fill: Query<(&mut Transform, &Pa
     for (mut tr, parent) in fill.iter_mut() {
         if let Ok(ship) = ship.get(**parent) {
             let r = ship.cargo / ship.cargo_capacity as f32;
-            tr.scale.x = r;
+            tr.scale.x = r.max(0.001);
             tr.translation.x = -20.0 + (20.0 * r);
         }
     }
 }
 
-fn update_docking_ui_visibility(ship: Query<&Ship>, mut ui: Query<(&mut Visibility, &GlobalTransform), With<DockingUIPanel>>) {
+fn update_docking_ui_visibility(ship: Query<&Ship>, mut ui: Query<&mut Visibility, With<DockingUIPanel>>) {
     let ship = ship.single();
-    let (mut vis, gt) = ui.single_mut();
-    let old = *vis;
+    let mut vis = ui.single_mut();
     if ship.state == ShipState::Docked { *vis = Visibility::Visible; }
     else { *vis = Visibility::Hidden; }
-    if *vis != old && *vis == Visibility::Visible {
-        info!("[Voidrift Phase 4] UI Visible — World Z: {}", gt.translation().z);
-    }
-}
-
-fn update_docking_ui_display(ship: Query<&Ship>, mut ore: Query<&mut Text2d, (With<OreLabel>, Without<CellLabel>)>, mut cell: Query<&mut Text2d, (With<CellLabel>, Without<OreLabel>)>) {
-    let ship = ship.single();
-    for mut t in ore.iter_mut() { t.0 = format!("ORE: {:.0}/{}", ship.cargo, ship.cargo_capacity); }
-    for mut t in cell.iter_mut() { t.0 = format!("CELLS: {}", ship.power_cells); }
 }
 
 fn camera_follow_system(state: Res<State<GameState>>, ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>, mut cam: Query<&mut Transform, With<MainCamera>>) {
@@ -373,11 +313,12 @@ fn handle_input(
                 if ship.state == ShipState::Docked {
                     let (btn_gt, _) = btn_query.single();
                     let bp = btn_gt.translation().truncate();
-                    if world_pos.x > bp.x - 60.0 && world_pos.x < bp.x + 60.0 && world_pos.y > bp.y - 16.0 && world_pos.y < bp.y + 16.0 {
+                    if world_pos.x > bp.x - 50.0 && world_pos.x < bp.x + 50.0 && world_pos.y > bp.y - 25.0 && world_pos.y < bp.y + 25.0 {
                         let cells = (ship.cargo as u32) / REFINERY_RATIO;
                         if cells > 0 {
                             ship.cargo -= (cells * REFINERY_RATIO) as f32;
                             ship.power_cells += cells;
+                            info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", (cells * REFINERY_RATIO), cells, ship.power_cells);
                         }
                         handled = true;
                     }
@@ -388,13 +329,8 @@ fn handle_input(
                 for (mt, me) in marker_query.iter() {
                     let mp = mt.translation.truncate();
                     if world_pos.distance(mp) < 80.0 {
-                        // Shadow the ship mutable borrow to avoid conflict
                         let (ship_entity, mut ship) = ship_query.single_mut();
-                        
-                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { 
-                            continue; 
-                        }
-
+                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { continue; }
                         ship.state = ShipState::Navigating;
                         commands.entity(ship_entity).insert(AutopilotTarget { destination: mp, target_entity: Some(me) });
                         next_state.set(GameState::SpaceView);
