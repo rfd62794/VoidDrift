@@ -39,13 +39,28 @@ $GradlewPath = Join-Path $AndroidDir "gradlew.bat"
 $LibName     = "voidrift"
 $AbiTarget   = "arm64-v8a"
 
+# Resolve ADB path from Android SDK — do not rely on system PATH.
+# SDK location is the same machine-specific path used for the NDK linker.
+$SdkRootEarly = $env:ANDROID_SDK_ROOT
+if (-not $SdkRootEarly) { $SdkRootEarly = $env:ANDROID_HOME }
+if (-not $SdkRootEarly) { $SdkRootEarly = "$env:LOCALAPPDATA\Android\Sdk" }
+$AdbExe = Join-Path $SdkRootEarly "platform-tools\adb.exe"
+if (-not (Test-Path $AdbExe)) {
+    # Fall back to adb on PATH if platform-tools not found at expected location
+    $AdbExe = "adb"
+}
+
+# Logcat filter pattern — stored in variable to prevent PowerShell misreading
+# the regex | alternation characters as pipeline operators at parse time.
+$LogcatPattern = 'voidrift|bevy|wgpu|RustStdoutStderr|AndroidRuntime|FATAL'
+
 # ---------------------------------------------------------------------------
 # Logcat-only shortcut
 # ---------------------------------------------------------------------------
 if ($LogcatOnly) {
     Write-Host "[Voidrift] Starting logcat filter..." -ForegroundColor Cyan
-    Write-Host "[Voidrift] Filter: voidrift | bevy | wgpu | RustStdoutStderr | AndroidRuntime" -ForegroundColor DarkGray
-    adb logcat | Select-String -Pattern "voidrift|bevy|wgpu|RustStdoutStderr|AndroidRuntime|FATAL"
+    Write-Host "[Voidrift] Filter: $LogcatPattern" -ForegroundColor DarkGray
+    & $AdbExe logcat | Select-String -Pattern $LogcatPattern
     exit 0
 }
 
@@ -89,12 +104,13 @@ Write-Host "  Rust target aarch64-linux-android: installed" -ForegroundColor Dar
 
 # ADB (only needed if not BuildOnly)
 if (-not $BuildOnly) {
-    try {
-        $adbVersion = & adb version 2>&1 | Select-Object -First 1
-        Write-Host "  ADB: $adbVersion" -ForegroundColor DarkGray
-    } catch {
-        Write-Host "  WARNING: ADB not found in PATH. Install required for device install step." -ForegroundColor Yellow
+    $adbTest = & $AdbExe version 2>&1
+    if ($LASTEXITCODE -ne 0 -or $adbTest -match "not recognized") {
+        Write-Host "  ERROR: ADB not found at $AdbExe" -ForegroundColor Red
+        Write-Host "  Ensure Android Studio is installed with platform-tools." -ForegroundColor Yellow
+        exit 1
     }
+    Write-Host "  ADB: $($adbTest | Select-Object -First 1)" -ForegroundColor DarkGray
 }
 
 Write-Host "  Prerequisites OK." -ForegroundColor Green
@@ -171,11 +187,11 @@ if ($BuildOnly) {
 Write-Host ""
 Write-Host "[4/5] Installing APK on device..." -ForegroundColor Cyan
 
-$devices = & adb devices 2>&1
+$devices = & $AdbExe devices 2>&1
 Write-Host "  Connected devices:" -ForegroundColor DarkGray
 $devices | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
-& adb install -r $ApkPath
+& $AdbExe install -r $ApkPath
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  ERROR: ADB install failed (exit code $LASTEXITCODE)." -ForegroundColor Red
     Write-Host "  Is the device connected with USB debugging enabled?" -ForegroundColor Yellow
@@ -192,13 +208,13 @@ Write-Host "  Press Ctrl+C to stop logcat." -ForegroundColor DarkGray
 Write-Host ""
 
 # Launch the app
-& adb shell am start -n "com.rfditservices.voidrift/.MainActivity" 2>&1
+& $AdbExe shell am start -n "com.rfditservices.voidrift/.MainActivity" 2>&1
 
 Write-Host ""
 Write-Host "  === LOGCAT (filtered) ===" -ForegroundColor Cyan
-Write-Host "  Watching for: voidrift | bevy | wgpu | RustStdoutStderr | AndroidRuntime | FATAL" -ForegroundColor DarkGray
+Write-Host "  Watching for: $LogcatPattern" -ForegroundColor DarkGray
 Write-Host ""
 
 # Clear logcat first, then tail
-& adb logcat -c
-& adb logcat | Select-String -Pattern "voidrift|bevy|wgpu|RustStdoutStderr|AndroidRuntime|FATAL"
+& $AdbExe logcat -c
+& $AdbExe logcat | Select-String -Pattern $LogcatPattern
