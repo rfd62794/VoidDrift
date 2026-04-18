@@ -13,7 +13,8 @@ We will use `bevy_egui` for all screenspace HUD and UI elements (Station panels,
 
 Key constraints:
 - Unified UI architecture: No mixing of `bevy_ui` or camera-parented meshes with `egui`.
-- Fixed Scaling: `EGUI_SCALE` locked at 2.0 for the Moto G 2025 to ensure thumb-friendly hit targets and high-DPI clarity.
+- Fixed Scaling: `EGUI_SCALE` locked at 3.0 for the Moto G 2025.
+- Rationale for Scale: Initial device testing with 2.0 proved too small for reliable thumb interaction on the high-DPI (2400x1080 class) display. 3.0 ensures HUD elements and resource text are clearly readable and accessible in a handheld context.
 - Rendering Layer: `egui` handles its own font atlas and render pass, effectively bypassing the driver issues encountered with `Text2d`.
 
 ## Consequences
