@@ -1,6 +1,6 @@
-// Voidrift — Phase 4: Station UI & Refinery (Diagnostic Build)
+// Voidrift — Phase 4: Station UI & Refinery (Build A-2 Corrected)
 // ============================================================================
-// Goal: Diagnose UI invisibility and flicker. Z fix and log auditing.
+// Goal: Text Visibility. Z-gap (1.0) and Opaque material. Correct Z-sign.
 // ============================================================================
 
 use bevy::{
@@ -148,39 +148,42 @@ fn setup_world(
              btn.spawn((
                 Text2d::new("MAP"),
                 TextFont::from_font_size(24.0),
+                TextColor(Color::WHITE),
                 Transform::from_xyz(0.0, 0.0, 0.1),
             ));
         });
 
-        // [PHASE 4] DOCKING UI (Z fix: +10.0)
+        // [PHASE 4] DOCKING UI
         parent.spawn((
             DockingUIPanel,
             Mesh2d(meshes.add(Rectangle::new(200.0, 120.0))),
-            MeshMaterial2d(materials.add(Color::srgba(0.05, 0.05, 0.1, 0.9))),
-            Transform::from_xyz(0.0, 0.0, 10.0), // [DIAGNOSTIC] Adjusted Z
+            MeshMaterial2d(materials.add(Color::srgb(0.05, 0.05, 0.15))),
+            Transform::from_xyz(0.0, 0.0, -50.0), // World Z = 949.0
             Visibility::Hidden,
         ))
         .with_children(|panel| {
-            // ORE LABEL
+            // Ore Label
             panel.spawn((
                 OreLabel,
                 Text2d::new("ORE: 0/100"),
-                TextFont::from_font_size(20.0),
-                Transform::from_xyz(-80.0, 30.0, 0.1),
+                TextFont::from_font_size(24.0),
+                TextColor(Color::WHITE),
+                Transform::from_xyz(-80.0, 30.0, 1.0), // World Z = 950.0 (In front of panel)
             ));
-            // CELL LABEL
+            // Cell Label
             panel.spawn((
                 CellLabel,
                 Text2d::new("CELLS: 0"),
-                TextFont::from_font_size(20.0),
-                Transform::from_xyz(-80.0, 0.0, 0.1),
+                TextFont::from_font_size(24.0),
+                TextColor(Color::WHITE),
+                Transform::from_xyz(-80.0, -10.0, 1.0),
             ));
-            // REFINE BUTTON
+            // Refine Button
             panel.spawn((
                 RefineButton,
                 Mesh2d(meshes.add(Rectangle::new(120.0, 32.0))),
                 MeshMaterial2d(materials.add(Color::srgb(0.0, 0.8, 0.8))),
-                Transform::from_xyz(0.0, -35.0, 0.1),
+                Transform::from_xyz(0.0, -40.0, 0.5),
             ))
             .with_children(|btn| {
                 btn.spawn((
@@ -233,6 +236,7 @@ fn setup_world(
         parent.spawn((
             Text2d::new("STATION"),
             TextFont::from_font_size(18.0),
+            TextColor(Color::WHITE),
             Transform::from_xyz(0.0, -40.0, 0.1),
         ));
     });
@@ -249,11 +253,12 @@ fn setup_world(
         parent.spawn((
             Text2d::new("ASTEROID FIELD"),
             TextFont::from_font_size(18.0),
+            TextColor(Color::WHITE),
             Transform::from_xyz(0.0, -40.0, 0.1),
         ));
     });
 
-    info!("[Voidrift Phase 4] All UI elements initialized. Build: DIAGNOSTIC.");
+    info!("[Voidrift Phase 4] Build: A-2 (Corrected). Z=-50.0.");
 }
 
 // ----------------------------------------------------------------------------
@@ -274,23 +279,14 @@ fn autopilot_system(
                 let current_pos = transform.translation.truncate();
                 let direction = target.destination - current_pos;
                 let distance = direction.length();
-
                 if distance < ARRIVAL_THRESHOLD {
                     if let Some(target_ent) = target.target_entity {
-                        if asteroid_query.get(target_ent).is_ok() {
-                            ship.state = ShipState::Mining;
-                        } else if station_query.get(target_ent).is_ok() {
-                            ship.state = ShipState::Docked;
-                            info!("[Voidrift Phase 4] Docked at Station. Ore ready for refinery.");
-                        }
-                    } else {
-                        ship.state = ShipState::Idle;
-                    }
+                        if asteroid_query.get(target_ent).is_ok() { ship.state = ShipState::Mining; }
+                        else if station_query.get(target_ent).is_ok() { ship.state = ShipState::Docked; }
+                    } else { ship.state = ShipState::Idle; }
                     commands.entity(entity).remove::<AutopilotTarget>();
-                    info!("[Voidrift Phase 4] Arrived at destination.");
                 } else {
-                    let move_dir = direction.normalize();
-                    let movement = move_dir * ship.speed * time.delta_secs();
+                    let movement = direction.normalize() * ship.speed * time.delta_secs();
                     transform.translation += movement.extend(0.0);
                 }
             }
@@ -298,108 +294,57 @@ fn autopilot_system(
     }
 }
 
-fn mining_system(
-    time: Res<Time>,
-    mut query: Query<&mut Ship>,
-) {
+fn mining_system(time: Res<Time>, mut query: Query<&mut Ship>) {
     for mut ship in query.iter_mut() {
         if ship.state == ShipState::Mining {
-            let ore_this_tick = MINING_RATE * time.delta_secs();
-            ship.cargo = (ship.cargo + ore_this_tick).min(ship.cargo_capacity as f32);
-            
-            ship.mining_log_timer += time.delta_secs();
-            if ship.mining_log_timer >= 1.0 {
-                info!("[Voidrift Phase 4] Cargo: {:.1}/{}", ship.cargo, ship.cargo_capacity);
-                ship.mining_log_timer = 0.0;
-            }
-
-            if ship.cargo >= ship.cargo_capacity as f32 {
-                ship.state = ShipState::Idle;
-                info!("[Voidrift Phase 4] Mining full.");
-            }
+            let ore = MINING_RATE * time.delta_secs();
+            ship.cargo = (ship.cargo + ore).min(ship.cargo_capacity as f32);
+            if ship.cargo >= ship.cargo_capacity as f32 { ship.state = ShipState::Idle; }
         }
     }
 }
 
-fn cargo_display_system(
-    ship_query: Query<&Ship>,
-    mut fill_query: Query<(&mut Transform, &Parent), With<CargoBarFill>>,
-) {
-    for (mut transform, parent) in fill_query.iter_mut() {
-        if let Ok(ship) = ship_query.get(**parent) {
-            let fill_ratio = ship.cargo / ship.cargo_capacity as f32;
-            let fill_width = 40.0 * fill_ratio;
-            transform.scale.x = fill_ratio;
-            transform.translation.x = -20.0 + (fill_width / 2.0);
+fn cargo_display_system(ship: Query<&Ship>, mut fill: Query<(&mut Transform, &Parent), With<CargoBarFill>>) {
+    for (mut tr, parent) in fill.iter_mut() {
+        if let Ok(ship) = ship.get(**parent) {
+            let r = ship.cargo / ship.cargo_capacity as f32;
+            tr.scale.x = r;
+            tr.translation.x = -20.0 + (20.0 * r);
         }
     }
 }
 
-fn update_docking_ui_visibility(
-    ship_query: Query<&Ship>,
-    mut ui_query: Query<(&mut Visibility, &GlobalTransform, &Transform), With<DockingUIPanel>>,
-) {
-    let ship = ship_query.single();
-    let (mut ui_visibility, global_transform, local_transform) = ui_query.single_mut();
-
-    let old_vis = *ui_visibility;
-    if ship.state == ShipState::Docked {
-        *ui_visibility = Visibility::Visible;
-    } else {
-        *ui_visibility = Visibility::Hidden;
-    }
-
-    if *ui_visibility != old_vis {
-        info!("[Voidrift Phase 4] Visibility -> {:?} (ShipState: {:?})", *ui_visibility, ship.state);
-        // Only log coordinates when it becomes visible for the first time
-        if *ui_visibility == Visibility::Visible {
-            info!("[Voidrift Phase 4] UI Spawned — GlobalTransform: {:?}", global_transform);
-            info!("[Voidrift Phase 4] Panel Z in world: {:?}", global_transform.translation().z);
-        }
+fn update_docking_ui_visibility(ship: Query<&Ship>, mut ui: Query<(&mut Visibility, &GlobalTransform), With<DockingUIPanel>>) {
+    let ship = ship.single();
+    let (mut vis, gt) = ui.single_mut();
+    let old = *vis;
+    if ship.state == ShipState::Docked { *vis = Visibility::Visible; }
+    else { *vis = Visibility::Hidden; }
+    if *vis != old && *vis == Visibility::Visible {
+        info!("[Voidrift Phase 4] UI Visible — World Z: {}", gt.translation().z);
     }
 }
 
-fn update_docking_ui_display(
-    ship_query: Query<&Ship>,
-    mut ore_query: Query<&mut Text2d, (With<OreLabel>, Without<CellLabel>)>,
-    mut cell_query: Query<&mut Text2d, (With<CellLabel>, Without<OreLabel>)>,
-) {
-    let ship = ship_query.single();
-    
-    for mut text in ore_query.iter_mut() {
-        text.0 = format!("ORE: {:.0}/{}", ship.cargo, ship.cargo_capacity);
-    }
-    for mut text in cell_query.iter_mut() {
-        text.0 = format!("CELLS: {}", ship.power_cells);
-    }
+fn update_docking_ui_display(ship: Query<&Ship>, mut ore: Query<&mut Text2d, (With<OreLabel>, Without<CellLabel>)>, mut cell: Query<&mut Text2d, (With<CellLabel>, Without<OreLabel>)>) {
+    let ship = ship.single();
+    for mut t in ore.iter_mut() { t.0 = format!("ORE: {:.0}/{}", ship.cargo, ship.cargo_capacity); }
+    for mut t in cell.iter_mut() { t.0 = format!("CELLS: {}", ship.power_cells); }
 }
 
-fn camera_follow_system(
-    state: Res<State<GameState>>,
-    ship_query: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
-    mut camera_query: Query<&mut Transform, With<MainCamera>>,
-) {
-    let ship_transform = ship_query.single();
-    let mut camera_transform = camera_query.single_mut();
-
+fn camera_follow_system(state: Res<State<GameState>>, ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>, mut cam: Query<&mut Transform, With<MainCamera>>) {
+    let st = ship.single();
+    let mut ct = cam.single_mut();
     if *state.get() == GameState::SpaceView {
-        camera_transform.translation.x = ship_transform.translation.x;
-        camera_transform.translation.y = ship_transform.translation.y;
+        ct.translation.x = st.translation.x;
+        ct.translation.y = st.translation.y;
     } else {
-        camera_transform.translation.x = 0.0;
-        camera_transform.translation.y = 0.0;
+        ct.translation.x = 0.0;
+        ct.translation.y = 0.0;
     }
 }
 
-fn enter_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
-    let mut projection = camera_query.single_mut();
-    projection.scale = MAP_OVERVIEW_SCALE;
-}
-
-fn exit_map_view(mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>) {
-    let mut projection = camera_query.single_mut();
-    projection.scale = 1.0;
-}
+fn enter_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { cam.single_mut().scale = MAP_OVERVIEW_SCALE; }
+fn exit_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { cam.single_mut().scale = 1.0; }
 
 fn handle_input(
     touches: Res<Touches>,
@@ -413,64 +358,46 @@ fn handle_input(
     mut commands: Commands,
 ) {
     let (camera, camera_transform) = camera_query.single();
-    
     for touch in touches.iter_just_pressed() {
-        let touch_pos = touch.position();
-        
-        if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch_pos) {
-            
-            // 1. Check HUD Button
-            let (toggle_g_transform, _) = toggle_query.single();
-            let button_world_pos = toggle_g_transform.translation().truncate();
-            
-            if world_pos.distance(button_world_pos) < 60.0 {
-                if *state.get() == GameState::SpaceView {
-                    next_state.set(GameState::MapView);
-                } else {
-                    next_state.set(GameState::SpaceView);
-                }
-                info!("[Voidrift Phase 4] Toggle Button Hit.");
+        if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
+            let (toggle_gt, _) = toggle_query.single();
+            if world_pos.distance(toggle_gt.translation().truncate()) < 60.0 {
+                if *state.get() == GameState::SpaceView { next_state.set(GameState::MapView); }
+                else { next_state.set(GameState::SpaceView); }
                 continue;
             }
 
-            // 2. Check Refine Button (ONLY IF DOCKED)
-            let (_, mut ship) = ship_query.single_mut();
-            if ship.state == ShipState::Docked {
-                let (btn_g_transform, _) = btn_query.single();
-                let btn_world_pos = btn_g_transform.translation().truncate();
-                
-                if world_pos.x > btn_world_pos.x - 60.0 && world_pos.x < btn_world_pos.x + 60.0 
-                   && world_pos.y > btn_world_pos.y - 16.0 && world_pos.y < btn_world_pos.y + 16.0 {
-                    
-                    let cells_producible = (ship.cargo as u32) / REFINERY_RATIO;
-                    if cells_producible > 0 {
-                        let consumed = cells_producible * REFINERY_RATIO;
-                        ship.cargo -= consumed as f32;
-                        ship.power_cells += cells_producible;
-                        info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", 
-                            consumed, cells_producible, ship.power_cells);
-                    } else {
-                        info!("[Voidrift Phase 4] Refinery: insufficient ore.");
+            let mut handled = false;
+            {
+                let (_, mut ship) = ship_query.single_mut();
+                if ship.state == ShipState::Docked {
+                    let (btn_gt, _) = btn_query.single();
+                    let bp = btn_gt.translation().truncate();
+                    if world_pos.x > bp.x - 60.0 && world_pos.x < bp.x + 60.0 && world_pos.y > bp.y - 16.0 && world_pos.y < bp.y + 16.0 {
+                        let cells = (ship.cargo as u32) / REFINERY_RATIO;
+                        if cells > 0 {
+                            ship.cargo -= (cells * REFINERY_RATIO) as f32;
+                            ship.power_cells += cells;
+                        }
+                        handled = true;
                     }
-                    continue;
                 }
             }
 
-            // 3. Check Map Markers
-            if *state.get() == GameState::MapView {
-                for (marker_transform, marker_ent) in marker_query.iter() {
-                    let marker_pos = marker_transform.translation.truncate();
-                    if world_pos.distance(marker_pos) < 80.0 {
+            if !handled && *state.get() == GameState::MapView {
+                for (mt, me) in marker_query.iter() {
+                    let mp = mt.translation.truncate();
+                    if world_pos.distance(mp) < 80.0 {
+                        // Shadow the ship mutable borrow to avoid conflict
                         let (ship_entity, mut ship) = ship_query.single_mut();
                         
-                        // Departure logic
+                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { 
+                            continue; 
+                        }
+
                         ship.state = ShipState::Navigating;
-                        commands.entity(ship_entity).insert(AutopilotTarget {
-                            destination: marker_pos,
-                            target_entity: Some(marker_ent),
-                        });
+                        commands.entity(ship_entity).insert(AutopilotTarget { destination: mp, target_entity: Some(me) });
                         next_state.set(GameState::SpaceView);
-                        info!("[Voidrift Phase 4] Departing for destination: {:?}", marker_pos);
                         break;
                     }
                 }
