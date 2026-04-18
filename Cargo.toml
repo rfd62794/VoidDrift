@@ -20,7 +20,7 @@ crate-type = ["cdylib", "rlib"]
 # Adding it separately would be incorrect (confirmed by OQ-001 research).
 # ----------------------------------------------------------------------------
 [dependencies]
-bevy = { version = "0.15", default-features = false, features = [
+bevy = { version = "=0.15.0", default-features = false, features = [
     # Minimum feature set for Phase 0 — coloured screen + touch events only.
     # No renderer extras, no audio, no gltf, no pbr.
     "bevy_winit",
