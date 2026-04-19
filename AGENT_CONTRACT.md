@@ -4,25 +4,38 @@ repo: VoidDrift
 updated: 2026-04-18
 
 ## STRUCTURE
-src/           : Game source. lib.rs is the single source file for the slice.
-android/       : Gradle wrapper project for Android APK packaging.
-assets/        : Game assets. fonts/ contains FiraSans-Bold.ttf.
-docs/adr/      : Architectural Decision Records. Locked after acceptance.
-docs/phases/   : Phase summaries. Archival — never edited after creation.
-docs/state/    : current.md only. Always current.
-.cargo/        : NDK linker configuration. config.toml is build-critical.
+src/lib.rs          : App setup and plugin registration only
+src/constants.rs    : All game constants — single source of truth
+src/components.rs   : All Component and Resource structs
+src/systems/        : Modular system implementations (9 logic files)
+  autopilot.rs      : Ship movement and navigation
+  mining.rs         : Ore extraction and mining beam visuals
+  economy.rs        : Refinery, forge, and power economy
+  autonomous.rs     : AI drone state machine and routing
+  visuals.rs        : Starfield, thruster glow, and rotation
+  ui.rs             : egui HUD and world-space UI
+  map.rs            : Input handling and camera control
+  setup.rs          : Entity spawning and mesh generation
+android/            : Gradle project for Android packaging
+docs/adr/           : Architectural Decision Records
+docs/phases/        : Phase archival summaries
+docs/state/         : current.md (always current)
 
 ## FILE_REGISTRY
-src/lib.rs              | All game systems    | agent  | per phase
-docs/state/current.md   | Project state       | both   | every session
-docs/adr/ADR-NNN.md     | Decision records    | human  | on decision
-docs/phases/phase_NN.md | Phase summaries     | agent  | on phase complete
-AGENT_CONTRACT.md       | This file           | human  | on structural change
+src/systems/*       | Feature logic        | agent  | every session
+src/lib.rs          | App setup            | agent  | on setup change
+src/components.rs   | Data structures      | agent  | on data change
+src/constants.rs    | Game tuning          | both   | every session
+docs/state/current.md| Project status       | both   | every session
+docs/adr/ADR-NNN.md  | Decision records     | human  | on decision
+docs/phases/phase_*.md| Phase summaries      | agent  | on phase complete
 
 ## INVARIANTS
-hardware: Physical device evidence required at every gate. Agent summaries not accepted.
-scope: Every directive lists explicit file scope. Unlisted files are read-only.
-adrs: No architectural decision is made without an ADR. ADRs are locked after acceptance.
-phases: No phase begins without the prior gate passing on device.
-build: PresentMode::Fifo is mandatory. Do not change without hardware re-verification.
-ui: bevy_egui only for HUD and screenspace UI. No Text2d, no camera-parented Mesh2d.
+hardware    : Physical device evidence required at every gate
+scope       : Every directive lists explicit file scope
+adrs        : No architectural decision without an ADR
+phases      : No phase begins without prior gate passing on device
+build       : PresentMode::Fifo mandatory — do not change
+ui          : bevy_egui only for HUD — no Text2d, no camera-parented Mesh2d
+modules     : lib.rs is app setup only — no logic, no components, no constants
+constants   : All constants in constants.rs — never hardcode inline

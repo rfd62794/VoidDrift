@@ -1,58 +1,78 @@
-# Architecture — Voidrift
+# Voidrift Architecture
 
-This document provides a high-level overview of the Voidrift system architecture and the hardware-driven constraints governing its design.
+## Engine & Platform
+- Bevy 0.15 (Rust)
+- Android target: aarch64-linux-android (API 35)
+- Primary test device: Moto G 2025
+- UI: bevy_egui 0.33 (EGUI_SCALE=3.0)
+- Rendering: Mesh2d only (ADR-002)
 
-## ECS & System Design
+## Module Structure
 
-Voidrift is built on the **Bevy 0.15** Entity Component System (ECS). Game logic is decoupled into discrete systems that operate on queryable components:
+src/
+  lib.rs              — App setup and plugin registration only
+  constants.rs        — All game constants in one place
+  components.rs       — All Component and Resource structs
+  systems/
+    mod.rs            — pub mod declarations
+    setup.rs          — setup_world, entity spawning, mesh generators
+    autopilot.rs      — autopilot_system
+    mining.rs         — mining_system
+    economy.rs        — station_status_system, power_maintenance, self_preservation
+    autonomous.rs     — autonomous_ship_system, AI state machine
+    visuals.rs        — starfield_scroll_system, thruster_glow_system, ship_rotation
+    ui.rs             — hud_ui_system, cargo bars, station visuals
+    map.rs            — handle_input, camera_follow_system, map view transitions
 
-- **AutopilotSystem**: Calculates vector math for ship navigation and handles arrival logic for asteroids and stations.
-- **MiningSystem**: Accumulates resources at a fixed rate when the ship is in the `Mining` state.
-- **Refinery Interaction**: Handled via `bevy_egui` callbacks that mutate the `Ship` component directly.
-- **State Management**: The application uses Bevy `States` (`SpaceView`, `MapView`) to control camera projection and input interpretation.
+## System Inventory
 
-## Hardware Constraints (Mali GPU / Moto G 2025)
-
-Every architectural choice follows the "Physical Evidence First" rule. Three primary failures define the current stack:
-
-| Failure Mode | Symptom | Solution | Evidence |
-| :--- | :--- | :--- | :--- |
-| **Buffer Starvation** | Rapid flicker, `Can't acquire next buffer` logs. | Mandatory `PresentMode::Fifo`. | ADR-001 |
-| **Sprite Gralloc Errors** | App crash, `0x38`/`0x3b` format errors. | Mandatory `Mesh2d` for world primitives. | ADR-002 |
-| **Silent UI Failure** | Invisible `Text2d`, clipping `Mesh2d` panels. | Mandatory `bevy_egui` for all HUD elements. | ADR-003 |
-
-## System Inventory (`src/lib.rs`)
-
-| System | Responsibility |
-| :--- | :--- |
-| `setup_world` | Spawns camera, ship, station, and asteroid field. |
-| `autopilot_system` | Vector steering and arrival state transitions. |
-| `mining_system` | Resource accumulation logic. |
-| `cargo_display_system` | Updates world-space Mesh2d child (cargo bar) to reflect ship cargo. |
-| `hud_ui_system` | Unified egui HUD (Navigation panel, Refinery bottom bar). |
-| `camera_follow_system` | Interpolates camera position to ship (SpaceView) or origin (MapView). |
-| `handle_input` | Unified touch-to-world coordinate mapping and entity selection. |
-| `station_visual_system` | Mutates ColorMaterial asset when station repair is complete. |
-| `slice_completion_system` | Centered egui window for end-of-slice confirmation. |
+- `systems::setup::setup_world`: Main startup system. Spawns camera, player ship, station, and asteroid fields.
+- `systems::visuals::thruster_glow_system`: Controls Visibility of ThrusterGlow entities based on ship navigation/mining states.
+- `systems::visuals::ship_rotation_system`: Smoothly rotates ship meshes to face their current destination or preserves last heading.
+- `systems::visuals::starfield_scroll_system`: Parallax-scrolls StarLayer entities relative to camera movement with wrap-around logic.
+- `systems::autopilot::autopilot_system`: Handles player navigation logic, proximity detection for docking, and resource unloading.
+- `systems::mining::mining_system`: Manages player mining ray physics, resource extraction rate, and asteroid depletion visuals.
+- `systems::autonomous::autonomous_ship_system`: Handles high-level state machine for AI drones (Outbound, Mining, Returning, etc.).
+- `systems::economy::station_status_system`: Monitors station power reserves and issues low-power AI log warnings.
+- `systems::economy::ship_self_preservation_system`: Monitors player ship power; triggers emergency refine or auto-return.
+- `systems::economy::station_maintenance_system`: Periodic timer-based consumption of station power cells to maintain base systems.
+- `systems::ui::hud_ui_system`: Main egui dashboard for docking, refinery, ship fabrication, and drone deployment.
+- `systems::ui::station_visual_system`: Updates the world-space color of the station based on its online status.
+- `systems::ui::ship_cargo_display_system`: Updates player ship's cargo fill bar scale and color.
+- `systems::ui::autonomous_ship_cargo_display_system`: Updates AI drone cargo fill bar scale.
+- `systems::map::camera_follow_system`: Smoothes camera positioning relative to player ship or centers it on MapView.
+- `systems::map::handle_input`: Manages touch gesture detection for setting navigation targets or toggling map.
+- `systems::map::enter_map_view` / `systems::map::exit_map_view`: Transition systems triggered by GameState changes to update camera projection.
 
 ## Component Inventory
 
-- **Ship**: Core state (Idle, Navigating, Mining, Docked), speed, cargo, and power cells.
-- **Station**: Repair progress (0.0-1.0) and online status.
-- **AsteroidField**: Marker for mining interaction.
-- **AutopilotTarget**: Move-to destination and optional target entity reference.
-- **MapMarker**: Identifies entities selectable from the Map overlay.
-- **MainCamera**: Camera tag with EguiContextSettings attached.
+- `Ship`: Main player vehicle data (state, speed, cargo, power).
+- `AutonomousShip`: AI drone data and state.
+- `AutonomousAssignment`: Navigation target and goal for AI drones.
+- `Station`: Base infrastructure data (reserves, power, logs, timers).
+- `AsteroidField`: Resource source data (ore type, depletion status).
+- `AutopilotTarget`: Directional goal for navigation systems.
+- `StarLayer`: Parallax factor for starfield entities.
+- `LastHeading`: Persistent rotational state for ships.
+- `CameraDelta`: Resource tracking per-tick camera movement.
+- `MainCamera` / `PlayerShip` / `AutonomousShipTag`: Marker components.
+- `ThrusterGlow` / `MiningBeam` / `ShipCargoBarFill`: Visual marker components.
+- `MapMarker`: Marks entities visible/targetable on the map.
 
-## State Machine: ShipState
+## ShipState Machine
 
-| From | To | Trigger |
-| :--- | :--- | :--- |
-| `Idle` | `Navigating` | User taps MapMarker |
-| `Navigating` | `Mining` | Arrival at AsteroidField |
-| `Navigating` | `Docked` | Arrival at Station |
-| `Mining` | `Idle` | Cargo capacity reached |
-| `Docked` | `Idle` / `Navigating` | User departs via Map |
+Idle → Navigating → Mining → Docked → Idle
+Idle → Navigating → Idle (station arrival)
 
----
-*Reference: See [docs/adr/](docs/adr/) for detailed decision rationale.*
+## AutonomousShipState Machine
+
+Holding → Outbound → Mining → Returning → Unloading → Holding
+
+## Hardware Constraints (ADRs)
+
+ADR-001: PresentMode::Fifo — mandatory, Mali GPU buffer starvation
+ADR-002: Mesh2d only — Sprite triggers gralloc format errors
+ADR-003: bevy_egui — Text2d and camera-parented Mesh2d both fail on device
+ADR-004: Bevy 0.15 pinned — most stable Android documentation
+ADR-005: Dedicated systems for autonomous agents
+ADR-006: Module structure — lib.rs app setup only

@@ -1,46 +1,72 @@
 # Project State
-updated: 2026-04-18
-agent: human
+updated: 2026-04-19
+agent: Antigravity
 
 ## Status
-phase: Post-Slice — Phase 6 Specced, Not Started
-test_floor: N/A — Bevy project. Gate evidence on physical device.
-last_directive: docs/phases/phase_05_repair_slice_complete.md
+phase: Post-Phase 9 — Visual Polish Complete, Map Polish Next
+test_floor: Moto G 2025 (API 35) — Build verified clean.
+last_directive: Voidrift_Documentation_Update_Directive.md
 
 ## What Is Built
-MVP slice complete and verified on Moto G 2025 (API 35). Full loop proven: navigate → mine → refine → repair → station online. Six gated phases. bevy_egui confirmed as stable HUD solution on Mali GPU. Full documentation suite in place. Repository is public.
+Full production chain economy running on Moto G 2025 (API 35). Two-track 
+resource system (Magnetite/Carbon), autonomous fleet with smart routing, 
+power economy with self-preservation, station AI telemetry. Visual polish 
+complete through Step 5: parallax starfield, asteroid polygons, ship 
+triangles with rotation, thruster glows, mining beams. Codebase modularized 
+into 8 system files + dedicated constants/components. Ship does not yet stop 
+short of asteroid — known issue, deferred.
 
 ## What Is Next
-Phase 6: AI Core Module. First post-slice feature. Station produces an AI Core (cost: 50 power cells) which spawns one autonomous drone on a fixed mine → return route. This is the first step of the commander arc — the player stops being the ship and starts being the operation.
+Step 6: Map Polish — circle markers, connection lines, sector labels.
+After map polish: module-aware ADR documentation, then post-slice economy 
+expansion (five-ore mineral map, laser tiers, sector progression).
+
+## Known Issues
+- Ship does not stop short of asteroid on arrival — overshoots slightly
 
 ## Open Questions
-- Does the autonomous drone use the same AutopilotSystem as the player ship, or a separate simplified system?
-- Should the drone be visually distinct from the player ship (different color rectangle)?
-- Does the drone's cargo unload automatically on station arrival, or does the player trigger it?
-- Is the AI Core a one-time unlock or a consumable that could be built multiple times (second drone)?
+- SECTOR_3_POS confirmed as (-200.0, 300.0)? Verify against autonomous logic
+- Refinery and power inline chunks in economy.rs — extraction named correctly?
 
 ## Economy Constants (Locked)
-- SHIP_SPEED: 120.0
-- CARGO_CAPACITY: 100
-- MINING_RATE: 8.0
-- REFINERY_RATIO: 10
-- REPAIR_COST: 25
-- EGUI_SCALE: 3.0
-- AI_CORE_COST: 50  ← NEW — locked in design session
+SHIP_SPEED: 180.0
+CARGO_CAPACITY: 100
+MINING_RATE: 20.0
+REFINERY_RATIO: 10
+HULL_REFINERY_RATIO: 5
+REPAIR_COST: 25
+AI_CORE_COST_CELLS: 50
+HULL_PLATE_COST_CARBON: 5
+SHIP_HULL_COST_PLATES: 3
+POWER_COST_CYCLE_TOTAL: 4
+POWER_COST_REFINERY: 1
+POWER_COST_HULL_FORGE: 2
+POWER_COST_SHIP_FORGE: 3
+POWER_COST_AI_FABRICATE: 5
+SHIP_POWER_MAX: 10.0
+SHIP_POWER_FLOOR: 3.0
+EGUI_SCALE: 3.0
 
-## Post-Slice Roadmap (Named Deferral — Do Not Scope Until Phase 6 Ships)
-- Phase 7: Second ore type + second refined product. Economy texture.
-- Phase 8: Second module slot. Two modules, two playstyles.
-- Save/load persistence — required before any public release
-- Sector map expansion — multiple fields, gate network
-- Risk layer — ship degradation, breakdown probability
-- Threat system — NPC competition, no direct combat
-- Notifications — idle session alerts
+## Post-Slice Roadmap (Captured — Not Yet Scoped)
+Five-ore mineral map: Magnetite, Iron, Carbon, Tungsten, Titanite
+Laser tiers: Basic (Steel) → Tungsten → Composite (Crystal Matrix)
+Sector progression: Sectors 1-5, geographic gates
+Asteroid cores: Laser-gated deeper material in existing fields
+Crystal layer: TBD design session
+Power Core: Power Cells + Crystal Matrix (concept, not specced)
+Trader mechanic: First Tungsten Laser via trade (Autonomous Ship + Titanium Hull)
+Blueprint system: Discovered/purchased recipes
+Pause/Resume autonomous ships
+Ship ceiling review (3 ships?)
+Async background refinery
+Hex map / procedural system generation (long term)
 
 ## Recent Decisions
 - ADR-001: PresentMode::Fifo mandatory on Mali GPU
 - ADR-002: Mesh2d for world-space primitives
 - ADR-003: bevy_egui for all HUD and UI, EGUI_SCALE=3.0
 - ADR-004: Bevy 0.15 pinned for Android stability
-- AI_CORE_COST=50 locked — design session 2026-04-18
-- Two-of-everything ceiling locked for post-slice economy: two ores, two products, two modules
+- ADR-005: Autonomous agents use dedicated systems
+- ADR-006: Module structure — lib.rs split into systems/
+- MINING_RATE tuned to 20.0, SHIP_SPEED to 180.0 for mobile RTT
+- Five-ore economy design locked: Magnetite/Iron/Carbon/Tungsten/Titanite

@@ -115,23 +115,26 @@ A signing keystore is required for release builds. Generate one and update `buil
 ```
 VoidDrift/
 ├── src/
-│   └── lib.rs              # All game systems — ECS components, Bevy systems, egui UI
-├── android/                # Gradle wrapper project (seeded from Bevy official mobile example)
-│   └── app/
-│       ├── build.gradle
-│       ├── AndroidManifest.xml
-│       └── src/main/
-│           └── java/.../MainActivity.java   # GameActivity subclass
-├── assets/
-│   └── fonts/FiraSans-Bold.ttf             # Standard Bevy community font
+│   ├── lib.rs              # App setup and plugin registration only
+│   ├── constants.rs        # All game constants
+│   ├── components.rs       # All ECS components and resources
+│   └── systems/
+│       ├── mod.rs          # Module declarations
+│       ├── setup.rs        # World setup and entity spawning
+│       ├── autopilot.rs    # Ship movement and docking
+│       ├── mining.rs       # Ore extraction and mining beam
+│       ├── economy.rs      # Refinery, forge, power economy
+│       ├── autonomous.rs   # Autonomous ship state machine
+│       ├── visuals.rs      # Starfield, thruster glow, effects
+│       ├── ui.rs           # egui HUD and docking panel
+│       └── map.rs          # Input, camera, map view transitions
+├── android/                # Gradle wrapper for Android APK
+├── assets/fonts/           # FiraSans-Bold.ttf
 ├── docs/
-│   ├── adr/                # Architectural Decision Records
-│   ├── Voidrift_SDD_v0_1.docx              # Original design document
-│   └── phases/             # Phase directives — one per gate
-├── .cargo/
-│   └── config.toml         # NDK linker configuration
+│   ├── adr/                # 6 Architectural Decision Records
+│   ├── phases/             # Phase summaries (archival)
+│   └── state/current.md    # Always-current project state
 ├── build_android.ps1       # Full build + deploy pipeline
-├── capture_gate_evidence.ps1  # ADB screenshot capture (binary-safe)
 └── Cargo.toml
 ```
 
