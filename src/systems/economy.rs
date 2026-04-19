@@ -88,6 +88,7 @@ pub fn station_maintenance_system(
                 } else if station.power < 2.0 {
                     add_log_entry(&mut station, "[STATION AI] Base power critical. Suspending automation.".to_string());
                 }
+            }
         }
     }
 }

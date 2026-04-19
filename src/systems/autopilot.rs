@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use crate::systems::ui::add_log_entry;
 
 pub fn autopilot_system(
     time: Res<Time>,
@@ -9,7 +8,6 @@ pub fn autopilot_system(
     berth_query: Query<&Berth>,
     asteroid_query: Query<&AsteroidField>,
     mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
-    carbon_field_query: Query<Entity, (With<AsteroidField>, Without<MapMarker>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
 ) {

@@ -65,7 +65,7 @@ pub fn hud_ui_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut expanded: ResMut<SignalStripExpanded>,
     mut quest_log: ResMut<QuestLog>,
-    mut forge_settings: ResMut<ForgeSettings>,
+    _forge_settings: Res<ForgeSettings>,
     mut auto_dock_settings: ResMut<AutoDockSettings>,
 ) {
     let mut ship = ship_query.single_mut();
@@ -76,7 +76,7 @@ pub fn hud_ui_system(
     let strip_height = if expanded.0 { 180.0 } else { 60.0 };
 
     egui::TopBottomPanel::bottom("signal_strip")
-        .frame(egui::Frame::none()
+        .frame(egui::Frame::NONE
             .fill(egui::Color32::from_black_alpha(200))
             .inner_margin(4.0))
         .exact_height(strip_height)

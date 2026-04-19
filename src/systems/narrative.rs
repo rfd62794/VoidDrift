@@ -5,8 +5,9 @@ use crate::constants::*;
 pub fn opening_sequence_system(
     time: Res<Time>,
     mut opening: ResMut<OpeningSequence>,
-    mut ship_query: Query<(Entity, &mut Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
-    station_query: Query<(Entity, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<PlayerShip>, Without<AutonomousShipTag>)>,
+    station_query: Query<Entity, (With<Station>, Without<Ship>)>,
+    berth_query: Query<(Entity, &Transform), (With<Berth>, Without<Ship>)>,
     mut commands: Commands,
 ) {
     if opening.phase == OpeningPhase::Complete {
@@ -16,9 +17,10 @@ pub fn opening_sequence_system(
     let delta = time.delta_secs();
     opening.timer += delta;
 
-    let (ship_ent, mut ship, ship_transform) = ship_query.single_mut();
-    let (station_ent, station_transform) = station_query.single();
-    let dist_to_station = ship_transform.translation.truncate().distance(station_transform.translation.truncate());
+    let (ship_ent, mut ship, mut ship_transform) = ship_query.single_mut();
+    let station_ent = station_query.single();
+    let (berth_ent, berth_transform) = berth_query.single();
+    let dist_to_station = ship_transform.translation.truncate().distance(berth_transform.translation.truncate());
 
     match opening.phase {
         OpeningPhase::Adrift => {
@@ -35,8 +37,8 @@ pub fn opening_sequence_system(
                 ship.state = ShipState::Navigating;
                 commands.entity(ship_ent).remove::<DockedAt>();
                 commands.entity(ship_ent).insert(AutopilotTarget {
-                    destination: station_transform.translation.truncate(),
-                    target_entity: Some(station_ent),
+                    destination: berth_transform.translation.truncate(),
+                    target_entity: Some(berth_ent),
                 });
             }
         }
@@ -189,7 +191,7 @@ pub fn signal_system(
 
     // After opening completes, check world triggers
     if opening.phase == OpeningPhase::Complete {
-        if let Ok(st) = station {
+        if let Ok((st, _)) = station_res {
             // ID 7: Reserves unlocked
             fire_signal(&mut signal, 7, "> REPAIRS POSSIBLE. MATERIALS REQUIRED.");
 
@@ -250,7 +252,7 @@ pub fn signal_system(
         }
 
         // Periodic/Stateful Triggers
-        if let Ok(st) = station {
+        if let Ok((st, _)) = station_res {
             // ID 12: 2s after ID 11 (Online)
             if st.online && signal.fired.contains(&11) {
                 if let Some(t11) = signal.last_fired_at.get(&11) {
@@ -302,7 +304,7 @@ pub fn signal_system(
             );
         }
 
-        if let Ok((st, q)) = station_res {
+        if let Ok((_st, q)) = station_res {
             let processing_active = q.magnetite_refinery.is_some() || q.carbon_refinery.is_some() || q.hull_forge.is_some() || q.core_fabricator.is_some();
             
             fire_refirable(&mut signal, 32, "> INDUSTRIAL PROCESSING ACTIVE. PARALLEL QUEUES COMMENCED.",
