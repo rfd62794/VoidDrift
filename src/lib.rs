@@ -97,6 +97,7 @@ enum DroneState {
     Mining,
     Returning,
     Unloading,
+    Outbound,
 }
 
 #[derive(Component)]
@@ -497,10 +498,20 @@ fn drone_system(
             DroneState::Unloading => {
                 if let Ok(mut station) = station_query.get_single_mut() {
                     station.ore_reserves += drone.cargo;
-                    info!("[Voidrift Phase 6] Drone unloaded {:.1} ore. Returning to field.", drone.cargo);
+                    info!("[Voidrift Phase 6] Drone unloaded {:.1} ore. Departing for field.", drone.cargo);
                     drone.cargo = 0.0;
+                    drone.state = DroneState::Outbound;
+                }
+            }
+            DroneState::Outbound => {
+                let direction = FIELD_POS - transform.translation.truncate();
+                let distance = direction.length();
+                if distance < ARRIVAL_THRESHOLD {
                     drone.state = DroneState::Mining;
-                    transform.translation = FIELD_POS.extend(0.5);
+                    info!("[Voidrift Phase 6] Drone arrived at field. Beginning mining.");
+                } else {
+                    let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                    transform.translation += movement.extend(0.0);
                 }
             }
         }
