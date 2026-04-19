@@ -39,7 +39,7 @@ pub fn ship_self_preservation_system(
     mut station_query: Query<&mut Station>,
     mut commands: Commands,
 ) {
-    if let Ok(mut ship) = ship_query.get_single_mut() {
+    if let Ok((ship_entity, mut ship)) = ship_query.get_single_mut() {
         if ship.power < SHIP_POWER_FLOOR && ship.state != ShipState::Docked {
             // 1. Consume onboard cell
             if ship.power_cells > 0 {

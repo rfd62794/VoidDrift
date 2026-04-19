@@ -93,7 +93,6 @@ pub fn signal_system(
     station_query: Query<&Station>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
     ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
-    station_transform_query: Query<&Transform, (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
 ) {
     let now = time.elapsed_secs();
     let station = station_query.get_single();
