@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
+use crate::constants::*;
 
 pub fn opening_sequence_system(
     time: Res<Time>,
