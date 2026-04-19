@@ -63,9 +63,9 @@ pub fn hud_ui_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
     mut expanded: ResMut<SignalStripExpanded>,
     mut quest_log: ResMut<QuestLog>,
+    mut forge_settings: ResMut<ForgeSettings>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
@@ -150,22 +150,27 @@ pub fn hud_ui_system(
 
                 let tab_size = egui::vec2(80.0, 44.0); // 44px height for thumb-friendly touch targets
 
-                if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == ActiveStationTab::Reserves, "RESERVES")).clicked() {
-                    *active_tab = ActiveStationTab::Reserves;
+                let tabs = [
+                    (ActiveStationTab::Reserves, "RESERVES"),
+                    (ActiveStationTab::Power, "POWER"),
+                    (ActiveStationTab::Smelter, "REFINERY"),
+                    (ActiveStationTab::Forge, "FORGE"),
+                    (ActiveStationTab::ShipPort, "SHIP PORT"),
+                ];
+
+                for (tab, label) in tabs {
+                    if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == tab, label)).clicked() {
+                        *active_tab = tab;
+                    }
+                    ui.add_space(8.0);
                 }
-                ui.add_space(8.0);
                 
-                if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == ActiveStationTab::Forge, "FORGE")).clicked() {
-                    *active_tab = ActiveStationTab::Forge;
-                }
-                ui.add_space(8.0);
-                
-                // DEPARTMENTS - Disabled until late-game or specific triggers
-                ui.set_enabled(false);
-                let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "MARKET"));
-                ui.add_space(8.0);
-                let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "FLEET"));
-                ui.set_enabled(true);
+                // Future tabs - locked
+                ui.add_enabled_ui(false, |ui| {
+                    let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "MARKET"));
+                    ui.add_space(8.0);
+                    let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "FLEET"));
+                });
             }
         });
 
@@ -227,9 +232,27 @@ pub fn hud_ui_system(
 
     if ship.state == ShipState::Docked {
         egui::TopBottomPanel::bottom("tab_detail_panel")
-            .frame(egui::Frame::default())
+            .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
                 ui.add_space(8.0);
+                
+                // QUANTITY SELECTOR (Only for industrial tabs)
+                if matches!(*active_tab, ActiveStationTab::Smelter | ActiveStationTab::Forge) {
+                    ui.horizontal(|ui| {
+                        ui.label("BATCH SIZE:");
+                        if ui.selectable_label(forge_settings.quantity == ForgeQuantity::One, "[ 1 ]").clicked() {
+                            forge_settings.quantity = ForgeQuantity::One;
+                        }
+                        if ui.selectable_label(forge_settings.quantity == ForgeQuantity::Ten, "[ 10 ]").clicked() {
+                            forge_settings.quantity = ForgeQuantity::Ten;
+                        }
+                        if ui.selectable_label(forge_settings.quantity == ForgeQuantity::All, "[ MAX ]").clicked() {
+                            forge_settings.quantity = ForgeQuantity::All;
+                        }
+                    });
+                    ui.separator();
+                }
+
                 if let Ok((_station_ent, mut station)) = station_query.get_single_mut() {
                     ui.vertical_centered(|ui| {
                         match *active_tab {
@@ -295,23 +318,54 @@ pub fn hud_ui_system(
                                 ui.horizontal(|ui| {
                                     ui.vertical(|ui| {
                                         ui.label("MAGNETITE → CELLS (10:1)");
-                                        let can_refine = station.magnetite_reserves >= REFINERY_RATIO as f32 && station.power >= 1.0;
-                                        if ui.add(egui::Button::new("REFINE CELLS [1 PWR]").min_size(egui::vec2(140.0, 32.0)))
+                                        let cost_per = REFINERY_RATIO as f32;
+                                        let pwr_per = POWER_COST_REFINERY as f32;
+                                        
+                                        let mut iterations = match forge_settings.quantity {
+                                            ForgeQuantity::One => 1,
+                                            ForgeQuantity::Ten => 10,
+                                            ForgeQuantity::All => 9999,
+                                        };
+                                        
+                                        // Cap by resources/power
+                                        iterations = iterations
+                                            .min((station.magnetite_reserves / cost_per).floor() as u32)
+                                            .min((station.power / pwr_per).floor() as u32);
+
+                                        let can_refine = iterations > 0;
+                                        let btn_text = if iterations > 1 { format!("REFINE {} CELLS", iterations) } else { "REFINE CELLS [1 PWR]".to_string() };
+
+                                        if ui.add(egui::Button::new(btn_text).min_size(egui::vec2(140.0, 44.0)))
                                             .clicked() && can_refine {
-                                            station.magnetite_reserves -= REFINERY_RATIO as f32;
-                                            station.power -= 1.0;
-                                            station.power_cells += 1;
+                                            station.magnetite_reserves -= cost_per * iterations as f32;
+                                            station.power -= pwr_per * iterations as f32;
+                                            station.power_cells += iterations;
                                         }
                                     });
                                     ui.add_space(20.0);
                                     ui.vertical(|ui| {
                                         ui.label("CARBON → PLATES (5:1)");
-                                        let can_forge = station.carbon_reserves >= HULL_REFINERY_RATIO as f32 && station.power >= 2.0;
-                                        if ui.add(egui::Button::new("FORGE PLATES [2 PWR]").min_size(egui::vec2(140.0, 32.0)))
+                                        let cost_per = HULL_REFINERY_RATIO as f32;
+                                        let pwr_per = POWER_COST_HULL_FORGE as f32;
+                                        
+                                        let mut iterations = match forge_settings.quantity {
+                                            ForgeQuantity::One => 1,
+                                            ForgeQuantity::Ten => 10,
+                                            ForgeQuantity::All => 9999,
+                                        };
+                                        
+                                        iterations = iterations
+                                            .min((station.carbon_reserves / cost_per).floor() as u32)
+                                            .min((station.power / pwr_per).floor() as u32);
+
+                                        let can_forge = iterations > 0;
+                                        let btn_text = if iterations > 1 { format!("FORGE {} PLATES", iterations) } else { "FORGE PLATES [2 PWR]".to_string() };
+
+                                        if ui.add(egui::Button::new(btn_text).min_size(egui::vec2(140.0, 44.0)))
                                             .clicked() && can_forge {
-                                            station.carbon_reserves -= HULL_REFINERY_RATIO as f32;
-                                            station.power -= 2.0;
-                                            station.hull_plate_reserves += 1;
+                                            station.carbon_reserves -= cost_per * iterations as f32;
+                                            station.power -= pwr_per * iterations as f32;
+                                            station.hull_plate_reserves += iterations;
                                         }
                                     });
                                 });
@@ -320,23 +374,53 @@ pub fn hud_ui_system(
                                 ui.horizontal(|ui| {
                                     ui.vertical(|ui| {
                                         ui.label("PLATES → HULL (3:1)");
-                                        let can_hull = station.hull_plate_reserves >= SHIP_HULL_COST_PLATES && station.power >= 3.0;
-                                        if ui.add(egui::Button::new("FORGE HULL [3 PWR]").min_size(egui::vec2(140.0, 32.0)))
+                                        let cost_per = SHIP_HULL_COST_PLATES as f32;
+                                        let pwr_per = POWER_COST_SHIP_FORGE as f32;
+
+                                        let mut iterations = match forge_settings.quantity {
+                                            ForgeQuantity::One => 1,
+                                            ForgeQuantity::Ten => 10,
+                                            ForgeQuantity::All => 9999,
+                                        };
+                                        
+                                        iterations = iterations
+                                            .min((station.hull_plate_reserves as f32 / cost_per).floor() as u32)
+                                            .min((station.power / pwr_per).floor() as u32);
+
+                                        let can_hull = iterations > 0;
+                                        let btn_text = if iterations > 1 { format!("FORGE {} HULLS", iterations) } else { "FORGE HULL [3 PWR]".to_string() };
+
+                                        if ui.add(egui::Button::new(btn_text).min_size(egui::vec2(140.0, 44.0)))
                                             .clicked() && can_hull {
-                                            station.hull_plate_reserves -= SHIP_HULL_COST_PLATES;
-                                            station.power -= 3.0;
-                                            station.ship_hulls += 1;
+                                            station.hull_plate_reserves -= (cost_per * iterations as f32) as u32;
+                                            station.power -= pwr_per * iterations as f32;
+                                            station.ship_hulls += iterations;
                                         }
                                     });
                                     ui.add_space(20.0);
                                     ui.vertical(|ui| {
                                         ui.label("CELLS → CORE (50 total)");
-                                        let can_core = station.power_cells >= AI_CORE_COST_CELLS && station.power >= 5.0;
-                                        if ui.add(egui::Button::new("FABRICATE CORE [5 PWR]").min_size(egui::vec2(140.0, 32.0)))
+                                        let cost_per = AI_CORE_COST_CELLS as f32;
+                                        let pwr_per = POWER_COST_AI_FABRICATE as f32;
+
+                                        let mut iterations = match forge_settings.quantity {
+                                            ForgeQuantity::One => 1,
+                                            ForgeQuantity::Ten => 10,
+                                            ForgeQuantity::All => 9999,
+                                        };
+                                        
+                                        iterations = iterations
+                                            .min((station.power_cells as f32 / cost_per).floor() as u32)
+                                            .min((station.power / pwr_per).floor() as u32);
+
+                                        let can_core = iterations > 0;
+                                        let btn_text = if iterations > 1 { format!("FABRICATE {} CORES", iterations) } else { "FABRICATE CORE [5 PWR]".to_string() };
+
+                                        if ui.add(egui::Button::new(btn_text).min_size(egui::vec2(140.0, 44.0)))
                                             .clicked() && can_core {
-                                            station.power_cells -= AI_CORE_COST_CELLS;
-                                            station.power -= 5.0;
-                                            station.ai_cores += 1;
+                                            station.power_cells -= (cost_per * iterations as f32) as u32;
+                                            station.power -= pwr_per * iterations as f32;
+                                            station.ai_cores += iterations;
                                         }
                                     });
                                 });
@@ -415,6 +499,9 @@ pub fn hud_ui_system(
                                 });
                                 ui.add_space(4.0);
                                 ui.label(egui::RichText::new("FLEET STATUS: Management coming soon").size(9.0).italics().color(egui::Color32::GRAY));
+                            }
+                            ActiveStationTab::Market | ActiveStationTab::Fleet => {
+                                ui.label("Information currently unavailable.");
                             }
                         }
                     });

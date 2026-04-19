@@ -246,4 +246,19 @@ pub enum ActiveStationTab {
     Smelter,
     Forge,
     ShipPort,
+    Market, // Added back for future parity
+    Fleet,  // Added back for future parity
+}
+
+#[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
+pub enum ForgeQuantity {
+    #[default]
+    One,
+    Ten,
+    All,
+}
+
+#[derive(Resource, Default)]
+pub struct ForgeSettings {
+    pub quantity: ForgeQuantity,
 }

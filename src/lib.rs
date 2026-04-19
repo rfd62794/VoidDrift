@@ -38,6 +38,7 @@ fn main() {
         .insert_resource(SignalStripExpanded(false))
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
         .insert_resource(ActiveStationTab::default())
+        .insert_resource(ForgeSettings::default())
         .insert_resource(QuestLog::default())
         .add_systems(Startup, systems::setup::setup_world)
         .add_systems(Update, (
