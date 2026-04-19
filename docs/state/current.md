@@ -17,8 +17,10 @@ into 8 system files + dedicated constants/components. Ship does not yet stop
 short of asteroid — known issue, deferred.
 
 ## What Is Next
-Step 6: Map Polish — circle markers, connection lines, sector labels.
-Step 7: Narrative Signal — implement the locked Signal voice and opening sequence.
+- [x] Step 7: Narrative Signal (Opening Sequence, Scripted Telemetry)
+- [/] Step 8: Station Architecture (Rotation, Berths, Dual-Station model)
+- [ ] Step 9: NPC Visitors (Traders, Wanderers, Berth 3 logic)
+- [ ] Step 10: Drone Depot Construction (Infrastructure expansion)
 After map polish: module-aware ADR documentation, then post-slice economy 
 expansion (five-ore mineral map, laser tiers, sector progression).
 

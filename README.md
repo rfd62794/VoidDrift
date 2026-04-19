@@ -145,7 +145,8 @@ VoidDrift/
 
 Voidrift is driven by **The Signal** — a persistent, character-driven narrative voice that reports in telemetry. Every narrative event and opening sequence is governed by strict voice rules and trigger conditions.
 
-See the [Signal: Narrative Design Document](docs/Voidrift_Signal_Narrative_Design.md) for the locked voice specification and opening sequence machine.
+- [Signal Narrative Design](file:///c:/Github/VoidDrift/docs/Voidrift_Signal_Narrative_Design.md) — Voice rules, trigger table, and opening sequence scripting.
+- [Station Architecture Design](file:///c:/Github/VoidDrift/docs/Voidrift_Station_Architecture.md) — Visuals, physics-based rotation, and Berth occupancy systems.
 
 ---
 
@@ -163,6 +164,8 @@ The phase structure:
 | 3 | Mining system | Cargo fills, stops at capacity |
 | 4 | Station UI + refinery | Ore converts to power cells via egui |
 | 5 | Repair + slice complete | Station comes online, overlay confirms |
+
+The station system manages the structural health, inventory, and departmental logic of the player's base. It uses a **Berth-based Docking** model (Main Station) and a **Static Depot** model (Drone Depot) to manage ship capacity. See [Station Architecture](file:///c:/Github/VoidDrift/docs/Voidrift_Station_Architecture.md) for details on rotation and occupancy.
 
 Agent summaries are not accepted as gate evidence. Physical device screenshots and raw logcat output are required at every gate.
 

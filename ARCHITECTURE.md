@@ -72,7 +72,11 @@ Holding → Outbound → Mining → Returning → Unloading → Holding
 - **The Signal**: A unified narrative voice governed by strict telemetry-style rules.
 - **SignalLog**: A central resource for persistent, character-driven reports.
 - **OpeningSequence**: A dedicated state machine for the game's scripted introduction.
-- Design Spec: [Signal: Narrative Design Document](docs/Voidrift_Signal_Narrative_Design.md)
+- Design Spec: [Signal: Narrative Design Document](file:///c:/Github/VoidDrift/docs/Voidrift_Signal_Narrative_Design.md)
+
+## Station Systems
+The station system manages the structural health, inventory, and departmental logic of the player's base. It uses a **Berth-based Docking** model (Main Station) and a **Static Depot** model (Drone Depot) to manage ship capacity.
+- See [Station Architecture](file:///c:/Github/VoidDrift/docs/Voidrift_Station_Architecture.md) for details on rotation and dynamic berths.
 
 ## Hardware Constraints (ADRs)
 
