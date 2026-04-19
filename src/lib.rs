@@ -214,7 +214,7 @@ fn setup_world(
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     // ── STARFIELD ────────────────────────────────────────────────────────────
-    // 150 far stars (Z=-50, opacity 40%, 1.5×1.5) + 50 near stars (Z=-49, 70%, 2.5×2.5).
+    // 150 far stars (Z=0.1, opacity 40%, 1.5×1.5) + 50 near stars (Z=0.2, 70%, 2.5×2.5).
     // Stars are semi-attached to camera: they track camera movement at (1-parallax)
     // speed, so they appear to drift backward at (parallax) speed — classic parallax.
     // Wrap at ±700×±500 from camera to ensure seamless coverage.
@@ -232,7 +232,7 @@ fn setup_world(
                 StarLayer(0.05),
                 Mesh2d(star_sm.clone()),
                 MeshMaterial2d(far_mat.clone()),
-                Transform::from_xyz(x, y, -50.0),
+                Transform::from_xyz(x, y, 0.1),
             ));
         }
         for _ in 0..50 {
@@ -242,7 +242,7 @@ fn setup_world(
                 StarLayer(0.15),
                 Mesh2d(star_lg.clone()),
                 MeshMaterial2d(near_mat.clone()),
-                Transform::from_xyz(x, y, -49.0),
+                Transform::from_xyz(x, y, 0.2),
             ));
         }
     }
