@@ -13,17 +13,22 @@ pub fn setup_world(
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     // ── STARFIELD ────────────────────────────────────────────────────────────
-    // 150 far stars (Z=0.1, opacity 40%, 1.5×1.5) + 50 near stars (Z=0.2, 70%, 2.5×2.5).
-    // Stars are semi-attached to camera: they track camera movement at (1-parallax)
-    // speed, so they appear to drift backward at (parallax) speed — classic parallax.
-    // Wrap at ±700×±500 from camera to ensure seamless coverage.
     {
+        use bevy::sprite::AlphaMode2d;
         let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
-        let far_mat  = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.4));
-        let near_mat = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.7));
+        let far_mat  = materials.add(ColorMaterial {
+            color: Color::srgba(1.0, 1.0, 1.0, 1.0),
+            alpha_mode: AlphaMode2d::Opaque,
+            ..default()
+        });
+        let near_mat = materials.add(ColorMaterial {
+            color: Color::srgba(1.0, 1.0, 1.0, 1.0),
+            alpha_mode: AlphaMode2d::Opaque,
+            ..default()
+        });
         
-        // Use whole integer sizes (2.0 and 3.0) instead of fractional (1.5 and 2.5).
-        // Fractional sizes on high-DPI mobile screens cause subpixel aliasing (shimmer/flickering).
+        // Stars are fully opaque and pushed far back to ensure Opaque2d phase
+        // and avoid Z-fighting/shimmering on mobile hardware.
         let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
         let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
 
@@ -34,7 +39,7 @@ pub fn setup_world(
                 StarLayer(0.05),
                 Mesh2d(star_sm.clone()),
                 MeshMaterial2d(far_mat.clone()),
-                Transform::from_xyz(x, y, 0.1),
+                Transform::from_xyz(x, y, -100.0), // Far back
             ));
         }
         for _ in 0..50 {
@@ -44,7 +49,7 @@ pub fn setup_world(
                 StarLayer(0.15),
                 Mesh2d(star_lg.clone()),
                 MeshMaterial2d(near_mat.clone()),
-                Transform::from_xyz(x, y, 0.2),
+                Transform::from_xyz(x, y, -50.0), // Moderate back
             ));
         }
     }
@@ -54,7 +59,7 @@ pub fn setup_world(
     commands.spawn((
         Camera2d::default(),
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 999.0),
+        Transform::from_xyz(0.0, 0.0, 900.0), // Standard depth
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
             ..default()
@@ -76,35 +81,35 @@ pub fn setup_world(
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-        Transform::from_xyz(0.0, 0.0, 1.0),
+        Transform::from_xyz(STATION_POS.x, STATION_POS.y, 1.0), // Start at station
     ))
     .with_children(|parent| {
         // [POLISH] Thruster Glow
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), // Orange for player
-            Transform::from_xyz(0.0, -18.0, -0.1),
+            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), 
+            Transform::from_xyz(0.0, -18.0, 0.1), // Slightly in front of ship mesh
             Visibility::Hidden,
         ));
         // [POLISH] Mining Beam
         parent.spawn((
             MiningBeam,
-            Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))), // 1.0 initial height
-            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))), // Cyan for player
-            Transform::from_xyz(0.0, 0.0, -0.2),
+            Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
+            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))), 
+            Transform::from_xyz(0.0, 0.0, 0.2), // In front of glow
             Visibility::Hidden,
         ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
-            Transform::from_xyz(0.0, 24.0, 1.1),
+            Transform::from_xyz(0.0, 24.0, 0.3), // HUD layers on ship
         ));
         parent.spawn((
             ShipCargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 24.0, 1.2),
+            Transform::from_xyz(0.0, 24.0, 0.4),
         ));
 
         // [STEP 6] SHIP MAP MARKER
@@ -112,7 +117,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 0.0, 2.0).with_scale(Vec3::splat(2.0)), // Scale up for map
+            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(2.0)), // High Z for map overlay
             Visibility::Hidden,
         ));
     });
@@ -146,7 +151,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(16.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_STATION)),
-            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         // [STEP 6] MAP LABEL
@@ -155,7 +160,7 @@ pub fn setup_world(
             Text2d::new("BASE"),
             TextFont { font_size: 24.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -40.0, 2.0),
+            Transform::from_xyz(0.0, -40.0, 11.0),
             Visibility::Hidden,
         ));
     });
@@ -173,7 +178,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S1)),
-            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -181,7 +186,7 @@ pub fn setup_world(
             Text2d::new("S1"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -36.0, 2.0),
+            Transform::from_xyz(0.0, -36.0, 11.0),
             Visibility::Hidden,
         ));
     });
@@ -199,7 +204,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S7)),
-            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -207,7 +212,7 @@ pub fn setup_world(
             Text2d::new("S7"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -36.0, 2.0),
+            Transform::from_xyz(0.0, -36.0, 11.0),
             Visibility::Hidden,
         ));
     });
@@ -222,7 +227,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S3)),
-            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -230,7 +235,7 @@ pub fn setup_world(
             Text2d::new("???"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(COLOR_MAP_S3), // Dimmed text
-            Transform::from_xyz(0.0, -36.0, 2.0),
+            Transform::from_xyz(0.0, -36.0, 11.0),
             Visibility::Hidden,
         ));
     });
@@ -246,7 +251,7 @@ pub fn setup_world(
         DestinationHighlight,
         Mesh2d(meshes.add(Circle::new(40.0))), // Large ring
         MeshMaterial2d(materials.add(Color::srgba(1.0, 1.0, 1.0, 0.1))), // Static dim white
-        Transform::from_xyz(0.0, 0.0, 0.4),
+        Transform::from_xyz(0.0, 0.0, 9.9), // Slightly behind markers
         Visibility::Hidden,
     ));
 }
@@ -258,6 +263,7 @@ fn spawn_map_connector(
     start: Vec2,
     end: Vec2,
 ) {
+    use bevy::sprite::AlphaMode2d;
     let mid = (start + end) / 2.0;
     let diff = end - start;
     let length = diff.length();
@@ -267,8 +273,12 @@ fn spawn_map_connector(
         MapElement,
         MapConnector,
         Mesh2d(meshes.add(Rectangle::new(length, 2.0))),
-        MeshMaterial2d(materials.add(COLOR_MAP_LINE)),
-        Transform::from_xyz(mid.x, mid.y, 0.3)
+        MeshMaterial2d(materials.add(ColorMaterial {
+            color: COLOR_MAP_LINE,
+            alpha_mode: AlphaMode2d::Opaque,
+            ..default()
+        })),
+        Transform::from_xyz(mid.x, mid.y, -5.0) // Pushed back to background layer
             .with_rotation(Quat::from_rotation_z(angle)),
         Visibility::Hidden,
     ));

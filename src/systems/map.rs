@@ -15,8 +15,8 @@ pub fn camera_follow_system(
         ct.translation.x = st.translation.x;
         ct.translation.y = st.translation.y;
     } else {
-        ct.translation.x = 0.0;
-        ct.translation.y = 0.0;
+        ct.translation.x = STATION_POS.x;
+        ct.translation.y = STATION_POS.y;
     }
     // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
     cam_delta.0 = ct.translation.truncate() - old_pos;
@@ -41,7 +41,7 @@ pub fn map_highlight_system(
     if let Ok((target, ship)) = auto_target.get_single() {
         if let Ok((mut h_transform, mut h_vis)) = highlight.get_single_mut() {
             if ship.state == ShipState::Navigating {
-                *h_vis = Visibility::Inherited; // Let map_visibility_system control it via MapElement parent if applicable, but here it's global
+                *h_vis = Visibility::Inherited; 
                 h_transform.translation.x = target.destination.x;
                 h_transform.translation.y = target.destination.y;
             } else {
@@ -52,7 +52,7 @@ pub fn map_highlight_system(
 }
 
 pub fn enter_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
-    cam.single_mut().scale = MAP_OVERVIEW_SCALE; 
+    cam.single_mut().scale = MAP_STRATEGIC_SCALE; 
 }
 
 pub fn exit_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
