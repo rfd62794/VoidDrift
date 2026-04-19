@@ -5,33 +5,50 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autopilot_system(
     time: Res<Time>,
-    mut query: Query<(&mut Ship, &mut Transform, Entity)>,
-    target_query: Query<&AutopilotTarget>,
+    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity)>,
+    berth_query: Query<&Berth>,
     asteroid_query: Query<&AsteroidField>,
-    mut station_query: Query<(Entity, &mut Station)>,
+    mut station_query: Query<(Entity, &mut Station, &Transform)>,
     carbon_field_query: Query<Entity, (With<AsteroidField>, Without<MapMarker>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
 ) {
-    for (mut ship, mut transform, entity) in query.iter_mut() {
+    for (mut ship, mut transform, mut target, entity) in query.iter_mut() {
         if ship.state == ShipState::Navigating {
-            if let Ok(target) = target_query.get(entity) {
-                let current_pos = transform.translation.truncate();
-                let direction = target.destination - current_pos;
-                let distance = direction.length();
-                let threshold = if let Some(target_ent) = target.target_entity {
-                    if asteroid_query.get(target_ent).is_ok() { ARRIVAL_THRESHOLD_MINING } else { ARRIVAL_THRESHOLD }
-                } else { ARRIVAL_THRESHOLD };
+            // [PHASE B] Dynamic destination recalculation for Berths
+            if let Some(target_ent) = target.target_entity {
+                if let Ok(berth) = berth_query.get(target_ent) {
+                    if let Ok((_s_ent, station, s_transform)) = station_query.get_single() {
+                        target.destination = berth_world_pos(
+                            s_transform.translation.truncate(),
+                            station.rotation,
+                            berth.arm_index,
+                        );
+                    }
+                }
+            }
 
-                if distance < threshold {
-                    if let Some(target_ent) = target.target_entity {
-                        if asteroid_query.get(target_ent).is_ok() { 
-                            ship.state = ShipState::Mining; 
-                        }
-                        else if let Ok((_station_ent, mut station)) = station_query.get_mut(target_ent) { 
+            let current_pos = transform.translation.truncate();
+            let direction = target.destination - current_pos;
+            let distance = direction.length();
+            let threshold = if let Some(target_ent) = target.target_entity {
+                if asteroid_query.get(target_ent).is_ok() { ARRIVAL_THRESHOLD_MINING } else { ARRIVAL_THRESHOLD }
+            } else { ARRIVAL_THRESHOLD };
+
+            if distance < threshold {
+                if let Some(target_ent) = target.target_entity {
+                    if asteroid_query.get(target_ent).is_ok() { 
+                        ship.state = ShipState::Mining; 
+                    }
+                    else if let Ok(berth) = berth_query.get(target_ent) {
+                        if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
                             ship.state = ShipState::Docked; 
                             *active_tab = ActiveStationTab::Reserves;
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
+                            
+                            // [PHASE B] Docking Sequence Trigger
+                            station.dock_state = StationDockState::Resuming;
+                            station.resume_timer = STATION_RESUME_DELAY;
                             
                             // [PHASE 8b] Reset player power for free if station has power
                             if station.power >= STATION_POWER_FLOOR {
@@ -76,13 +93,40 @@ pub fn autopilot_system(
                                 }
                             }
                             
-                            info!("[Voidrift Phase 4] Gate Certification: Docked.");
+                            info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
                         }
-                    } else { ship.state = ShipState::Idle; }
-                    commands.entity(entity).remove::<AutopilotTarget>();
-                } else {
-                    let movement = direction.normalize() * ship.speed * time.delta_secs();
-                    transform.translation += movement.extend(0.0);
+                    }
+                } else { ship.state = ShipState::Idle; }
+                commands.entity(entity).remove::<AutopilotTarget>();
+            } else {
+                let movement = direction.normalize() * ship.speed * time.delta_secs();
+                transform.translation += movement.extend(0.0);
+            }
+        }
+    }
+}
+
+/// [PHASE B] Locks docked ship to berth position throughout rotation
+pub fn docked_ship_system(
+    mut ship_query: Query<(&Ship, &mut Transform, &AutopilotTarget)>,
+    berth_query: Query<&Berth>,
+    station_query: Query<(&Station, &Transform), Without<Ship>>,
+) {
+    for (ship, mut transform, target) in ship_query.iter_mut() {
+        if ship.state == ShipState::Docked {
+            if let Some(target_ent) = target.target_entity {
+                if let Ok(berth) = berth_query.get(target_ent) {
+                    if let Ok((station, s_transform)) = station_query.get_single() {
+                        let pos = berth_world_pos(
+                            s_transform.translation.truncate(),
+                            station.rotation,
+                            berth.arm_index,
+                        );
+                        transform.translation = pos.extend(Z_SHIP);
+                        // Optional: Rotate ship to match arm? Direct alignment with arm direction:
+                        let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
+                        transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
+                    }
                 }
             }
         }

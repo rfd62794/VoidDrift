@@ -212,6 +212,25 @@ pub fn signal_system(
                 st.power_cells < 5, 
                 st.power_cells >= 8
             );
+
+            // [PHASE B] Docking Sequence Signals
+            fire_refirable(&mut signal, 28, "> INCOMING VESSEL DETECTED. DOCKING SEQUENCE INITIATED.",
+                now,
+                st.dock_state == StationDockState::Slowing,
+                st.dock_state == StationDockState::Rotating
+            );
+            fire_refirable(&mut signal, 29, "> ROTATION SUSPENDED. BERTH ALIGNED.",
+                now,
+                st.dock_state == StationDockState::Paused,
+                st.dock_state == StationDockState::Slowing
+            );
+            fire_refirable(&mut signal, 30, "> DOCKING COMPLETE. ROTATION RESUMING.",
+                now,
+                st.dock_state == StationDockState::Resuming,
+                st.dock_state == StationDockState::Rotating
+            );
+            // S-031 (Vessel Departed) will be triggered when ShipState transitions away from Docked.
+            // For now, we'll implement it as a signal fire on state check.
         }
 
         // ID 17, 18: Fleet expansion

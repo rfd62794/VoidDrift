@@ -62,6 +62,18 @@ pub struct Station {
     pub last_power_warning_time: f32,
     pub log: VecDeque<String>,
     pub rotation: f32,
+    pub rotation_speed: f32,
+    pub dock_state: StationDockState,
+    pub resume_timer: f32,
+}
+
+#[derive(PartialEq, Debug, Default, Copy, Clone)]
+pub enum StationDockState {
+    #[default]
+    Rotating,      // Normal rotation at STATION_ROTATION_SPEED
+    Slowing,       // Incoming ship detected — decelerating
+    Paused,        // Ship arrived — fully stopped
+    Resuming,      // Ship docked — accelerating back to full speed
 }
 
 #[derive(Component)]
@@ -125,6 +137,23 @@ pub struct StationVisualsContainer;
 pub struct StationHub;
 
 #[derive(Component)]
+pub struct Berth {
+    pub arm_index: u8,
+    pub occupied_by: Option<Entity>,
+    pub berth_type: BerthType,
+}
+
+#[derive(PartialEq, Debug, Copy, Clone)]
+pub enum BerthType {
+    Player,   // Berth 1 — always player
+    Drone,    // Berth 2 — autonomous ship
+    Open,     // Berth 3 — NPC/visitor
+}
+
+#[derive(Component)]
+pub struct BerthVisual(pub u8); // arm_index
+
+#[derive(Component)]
 pub struct MapElement; // Marker for visibility toggling
 
 #[derive(Component)]
@@ -153,6 +182,20 @@ pub struct SignalLog {
 
 #[derive(Resource, Default)]
 pub struct SignalStripExpanded(pub bool);
+
+// ── UTILITIES ────────────────────────────────────────────────────────────────
+
+pub fn berth_world_pos(
+    station_pos: Vec2,
+    station_rotation: f32,
+    arm_index: u8,
+) -> Vec2 {
+    let arm_angle = station_rotation + (arm_index as f32 * std::f32::consts::TAU / 6.0);
+    station_pos + Vec2::new(
+        arm_angle.cos() * crate::constants::STATION_ARM_LENGTH,
+        arm_angle.sin() * crate::constants::STATION_ARM_LENGTH,
+    )
+}
 
 #[derive(Resource)]
 pub struct OpeningSequence {

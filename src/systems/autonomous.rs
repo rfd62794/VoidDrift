@@ -6,10 +6,10 @@ use crate::systems::ui::add_log_entry;
 pub fn autonomous_ship_system(
     time: Res<Time>,
     mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>)>,
-    mut station_query: Query<&mut Station>,
+    mut station_query: Query<(&mut Station, &Transform)>,
     mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AsteroidField>, Without<AutonomousShip>)>,
 ) {
-    if let Ok(mut station) = station_query.get_single_mut() {
+    if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
         for (mut ship, mut transform, mut assignment, children_opt) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
@@ -38,15 +38,31 @@ pub fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Returning => {
-                    // Update assignment target to station so autopilot tracking works correctly for visual orientation
-                    // while traversing back to base.
-                    assignment.target_pos = STATION_POS;
+                    // [PHASE B] Dynamic destination tracking for Berth 2
+                    let mut berth_pos = STATION_POS;
+                    if let Ok((station, s_transform)) = station_query.get_single() {
+                         // Find Berth 2 (Drone) entity/pos
+                         // Since we don't have commanded access to logical entities here easily without a query,
+                         // we calculate it directly using STATION_POS/rotation.
+                         berth_pos = berth_world_pos(
+                            s_transform.translation.truncate(),
+                            station.rotation,
+                            BERTH_2_ARM_INDEX,
+                         );
+                    }
+                    assignment.target_pos = berth_pos;
                     
-                    let direction = STATION_POS - transform.translation.truncate();
+                    let direction = berth_pos - transform.translation.truncate();
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD {
                         ship.state = AutonomousShipState::Unloading;
                         ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
+                        
+                        // [PHASE B] Trigger station resume if not already resuming
+                        if let Ok(mut station) = station_query.get_single_mut() {
+                            station.dock_state = StationDockState::Resuming;
+                            station.resume_timer = STATION_RESUME_DELAY;
+                        }
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);

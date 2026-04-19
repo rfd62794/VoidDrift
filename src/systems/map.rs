@@ -59,13 +59,14 @@ pub fn exit_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera
     cam.single_mut().scale = 1.0; 
 }
 
-pub fn handle_input(
+pub fn map_input_system(
     touches: Res<Touches>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
+    berth_query: Query<(Entity, &Berth)>,
     opening: Res<OpeningSequence>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
@@ -87,12 +88,23 @@ pub fn handle_input(
                         continue; 
                     }
 
+                    // If it's a station marker, target Berth 1
+                    let mut target_ent = me;
+                    let mut destination = mp;
+
+                    if mp.distance(STATION_POS) < 10.0 {
+                        if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Player) {
+                            target_ent = b_ent;
+                            destination = STATION_POS; 
+                        }
+                    }
+
                     ship.state = ShipState::Navigating;
                     *active_tab = ActiveStationTab::Reserves;
                     ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     commands.entity(ship_entity).insert(AutopilotTarget { 
-                        destination: mp, 
-                        target_entity: Some(me) 
+                        destination, 
+                        target_entity: Some(target_ent) 
                     });
 
                     if *state.get() == GameState::MapView {

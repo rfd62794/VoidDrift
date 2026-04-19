@@ -148,6 +148,9 @@ pub fn setup_world(
                 "SYSTEMS INITIALIZED.".to_string(),
             ]),
             rotation: 0.0,
+            rotation_speed: STATION_ROTATION_SPEED,
+            dock_state: StationDockState::Rotating,
+            resume_timer: 0.0,
         },
         Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
         Visibility::Visible,
@@ -200,6 +203,7 @@ pub fn setup_world(
                         // Berth circle at end of active arm
                         // Local offset: 0 along width, length/2 along the rotated height axis
                         arm.spawn((
+                            BerthVisual(i as u8),
                             Mesh2d(meshes.add(Circle::new(STATION_BERTH_RADIUS))),
                             MeshMaterial2d(materials.add(ColorMaterial {
                                 color: Color::srgb(0.4, 0.4, 0.4),
@@ -251,6 +255,32 @@ pub fn setup_world(
             Visibility::Hidden,
         ));
     }).id();
+
+    // LOGICAL BERTH ENTITIES (Phase B)
+    commands.spawn((
+        Berth {
+            arm_index: BERTH_1_ARM_INDEX,
+            occupied_by: None,
+            berth_type: BerthType::Player,
+        },
+        Name::new("Berth1"),
+    ));
+    commands.spawn((
+        Berth {
+            arm_index: BERTH_2_ARM_INDEX,
+            occupied_by: None,
+            berth_type: BerthType::Drone,
+        },
+        Name::new("Berth2"),
+    ));
+    commands.spawn((
+        Berth {
+            arm_index: BERTH_3_ARM_INDEX,
+            occupied_by: None,
+            berth_type: BerthType::Open,
+        },
+        Name::new("Berth3"),
+    ));
 
     // Sector 1: Magnetite (Initial)
     commands.spawn((

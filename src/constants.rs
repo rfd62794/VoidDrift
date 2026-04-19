@@ -58,6 +58,16 @@ pub const STATION_STUB_LENGTH: f32    = 60.0;
 pub const STATION_STUB_ALPHA: f32     = 0.3;
 pub const STATION_ROTATION_SPEED: f32 = std::f32::consts::TAU / 90.0;
 pub const STATION_BERTHS_INITIAL: u8  = 3;
+
+// STATION DOCKING (Phase B)
+pub const STATION_DOCK_SLOWDOWN_DISTANCE: f32 = 200.0; // Distance at which station begins slowing
+pub const STATION_SLOWDOWN_RATE: f32 = STATION_ROTATION_SPEED * 3.0; // Deceleration rate per second
+pub const STATION_RESUME_DELAY: f32 = 1.5;  // Seconds after dock before rotation resumes
+pub const STATION_RESUME_RATE: f32 = STATION_ROTATION_SPEED * 2.0; // Acceleration rate on resume
+pub const BERTH_1_ARM_INDEX: u8 = 0;  // Player berth — arm 0
+pub const BERTH_2_ARM_INDEX: u8 = 1;  // Drone/NPC berth — arm 1
+pub const BERTH_3_ARM_INDEX: u8 = 2;  // Open berth — arm 2
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 // [STEP 6] MAP COLORS
