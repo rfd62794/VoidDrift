@@ -13,7 +13,7 @@ use bevy_egui::{egui, EguiPlugin, EguiContextSettings, EguiContexts};
 // ----------------------------------------------------------------------------
 // CONSTANTS
 // ----------------------------------------------------------------------------
-const SHIP_SPEED: f32 = 120.0;
+const SHIP_SPEED: f32 = 180.0;
 const ARRIVAL_THRESHOLD: f32 = 8.0;
 const MAP_OVERVIEW_SCALE: f32 = 1.5;
 
@@ -21,7 +21,7 @@ const MAP_OVERVIEW_SCALE: f32 = 1.5;
 const EGUI_SCALE: f32 = 3.0;
 
 const CARGO_CAPACITY: u32 = 100;
-const MINING_RATE: f32 = 8.0;
+const MINING_RATE: f32 = 20.0;
 
 const REFINERY_RATIO: u32 = 10;
 const HULL_REFINERY_RATIO: u32 = 5;
