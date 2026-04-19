@@ -130,7 +130,7 @@ pub fn setup_world(
     });
 
     // STATION / SECTORS setup
-    let station_ent = commands.spawn((
+    let _station_ent = commands.spawn((
         MapMarker,
         Station { 
             repair_progress: 0.0, 

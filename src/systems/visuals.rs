@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
+use crate::constants::*;
 
 pub fn thruster_glow_system(
     mut query: Query<(&Parent, &mut Visibility), With<ThrusterGlow>>,
@@ -106,7 +107,7 @@ pub fn station_rotation_system(
     mut visual_query: Query<&mut Transform, With<StationVisualsContainer>>,
 ) {
     if let Ok(mut station) = station_query.get_single_mut() {
-        station.rotation += STATION_ROTATION_SPEED * time.delta_seconds();
+        station.rotation += STATION_ROTATION_SPEED * time.delta_secs();
         if let Ok(mut transform) = visual_query.get_single_mut() {
             transform.rotation = Quat::from_rotation_z(station.rotation);
         }
