@@ -39,6 +39,17 @@ const POWER_COST_REFINERY: u32 = 1;
 const POWER_COST_HULL_FORGE: u32 = 2;
 const POWER_WARNING_INTERVAL: f32 = 30.0;
 
+// [PHASE 8b] POWER vs POWER CELLS
+const POWER_CELL_RESTORE_VALUE: f32 = 3.0;
+const SHIP_POWER_MAX: f32 = 10.0;
+const SHIP_POWER_FLOOR: f32 = 3.0;
+const SHIP_POWER_COST_TRANSIT: f32 = 1.0;
+const SHIP_POWER_COST_MINING: f32 = 2.0;
+const STATION_POWER_MAX: f32 = 50.0;
+const STATION_POWER_FLOOR: f32 = 10.0;
+const STATION_POWER_RESTORE_VALUE: f32 = 5.0;
+const EMERGENCY_REFINE_COST: f32 = 10.0;
+
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
 // ----------------------------------------------------------------------------
@@ -57,6 +68,8 @@ struct Ship {
     cargo: f32,
     cargo_type: OreType,
     cargo_capacity: u32,
+    power: f32,
+    power_cells: u32,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
@@ -94,6 +107,8 @@ struct Station {
     carbon_reserves: f32,
     hull_plate_reserves: u32,
     power_cells: u32,
+    power: f32,
+    maintenance_timer: Timer,
     last_power_warning_time: f32, // Track reminder timing
     log: std::collections::VecDeque<String>,
 }
@@ -115,6 +130,7 @@ struct AutonomousShip {
     state: AutonomousShipState,
     cargo: f32,
     cargo_type: OreType,
+    power: f32,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -169,6 +185,8 @@ fn main() {
             ship_cargo_display_system,
             autonomous_ship_cargo_display_system,
             station_status_system,
+            ship_self_preservation_system,
+            station_maintenance_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -201,6 +219,8 @@ fn setup_world(
             cargo: 0.0,
             cargo_type: OreType::Empty,
             cargo_capacity: CARGO_CAPACITY,
+            power: SHIP_POWER_MAX,
+            power_cells: 0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
@@ -230,6 +250,8 @@ fn setup_world(
             carbon_reserves: 0.0,
             hull_plate_reserves: 0,
             power_cells: 0,
+            power: STATION_POWER_MAX,
+            maintenance_timer: Timer::from_seconds(1.0, TimerMode::Repeating),
             last_power_warning_time: 0.0,
             log: std::collections::VecDeque::from([
                 "SYSTEMS INITIALIZED.".to_string(),
@@ -285,8 +307,24 @@ fn autopilot_system(
                         if asteroid_query.get(target_ent).is_ok() { 
                             ship.state = ShipState::Mining; 
                         }
-                        else if let Ok((station_ent, mut station)) = station_query.get_mut(target_ent) { 
+                        else if let Ok((_station_ent, mut station)) = station_query.get_mut(target_ent) { 
                             ship.state = ShipState::Docked; 
+                            ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
+                            
+                            // [PHASE 8b] Reset player power for free if station has power
+                            if station.power >= STATION_POWER_FLOOR {
+                                ship.power = SHIP_POWER_MAX;
+                            }
+
+                            // [PHASE 8b] Automatic deposit of cells to ship (up to 3, cap 5)
+                            if station.power_cells > 10 && ship.power_cells < 5 {
+                                let transfer = (3 as u32).min(5 - ship.power_cells);
+                                if station.power_cells >= transfer {
+                                    station.power_cells -= transfer;
+                                    ship.power_cells += transfer;
+                                }
+                            }
+
                             if ship.cargo > 0.0 {
                                 match ship.cargo_type {
                                     OreType::Magnetite => {
@@ -340,7 +378,10 @@ fn mining_system(time: Res<Time>, mut ship_query: Query<(&mut Ship, &Transform)>
                     }
                     let ore = MINING_RATE * time.delta_secs();
                     ship.cargo = (ship.cargo + ore).min(ship.cargo_capacity as f32);
-                    if ship.cargo >= ship.cargo_capacity as f32 { ship.state = ShipState::Idle; }
+                    if ship.cargo >= ship.cargo_capacity as f32 { 
+                        ship.state = ShipState::Idle; 
+                        ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
+                    }
                     break;
                 }
             }
@@ -603,6 +644,7 @@ fn handle_input(
                     }
 
                     ship.state = ShipState::Navigating;
+                    ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     commands.entity(ship_entity).insert(AutopilotTarget { 
                         destination: mp, 
                         target_entity: Some(me) 
@@ -638,6 +680,7 @@ fn autonomous_ship_system(
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD {
                         ship.state = AutonomousShipState::Mining;
+                        ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);
@@ -647,6 +690,7 @@ fn autonomous_ship_system(
                     ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
                     if ship.cargo >= CARGO_CAPACITY as f32 {
                         ship.state = AutonomousShipState::Returning;
+                        ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
                     }
                 }
                 AutonomousShipState::Returning => {
@@ -654,6 +698,7 @@ fn autonomous_ship_system(
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD {
                         ship.state = AutonomousShipState::Unloading;
+                        ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);
@@ -666,9 +711,20 @@ fn autonomous_ship_system(
                         OreType::Carbon => station.carbon_reserves += ship.cargo,
                         _ => {}
                     }
+                    // [PHASE 8b] Recharge autonomous ship using station cells
+                    if station.power_cells > 0 {
+                        station.power_cells -= 1;
+                        ship.power = SHIP_POWER_MAX;
+                    }
+
                     let msg = format!("[STATION AI] Cargo deposited: {}. {} recovered.", assignment.sector_name, ore_name);
                     add_log_entry(&mut station, msg);
                     ship.cargo = 0.0;
+                    
+                    // Return to holding or critical return
+                    if ship.power < 2.0 {
+                         add_log_entry(&mut station, "[STATION AI] Autonomous unit returned. Low power. Recharging.".to_string());
+                    }
                     ship.state = AutonomousShipState::Holding;
                 }
             }
@@ -698,6 +754,11 @@ fn station_status_system(
         if any_holding && power < POWER_COST_CYCLE_TOTAL && should_warn {
              add_log_entry(&mut station, "[STATION AI] Insufficient power. Autonomous unit holding.".to_string());
              station.last_power_warning_time = now;
+        }
+
+        // 3. Automation Suspension Notice (Log once on state change)
+        if station.power < STATION_POWER_FLOOR && station.online {
+             // Already handled by maintenance for now, but good to have a dedicated check if needed
         }
     }
 }
