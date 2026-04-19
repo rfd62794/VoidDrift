@@ -95,6 +95,18 @@ pub fn autopilot_system(
                             
                             info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
                         }
+                    } else if let Ok((_ent, mut station, _)) = station_query.get_mut(target_ent) {
+                        // NO BERTH? Dock at center (Initial / Opening Sequence)
+                        ship.state = ShipState::Docked; 
+                        station.dock_state = StationDockState::Resuming;
+                        station.resume_timer = STATION_RESUME_DELAY;
+                        
+                        // [PHASE 8b] Reset player power for free if station has power
+                        if station.power >= STATION_POWER_FLOOR {
+                            ship.power = SHIP_POWER_MAX;
+                        }
+                        
+                        info!("[Voidrift] Docking Complete: Station Hub.");
                     }
                 } else { ship.state = ShipState::Idle; }
                 commands.entity(entity).remove::<AutopilotTarget>();
