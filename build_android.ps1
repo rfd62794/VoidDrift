@@ -179,7 +179,7 @@ if ($BuildOnly) {
 Write-Host ""
 Write-Host "[4/5] Installing APK on device..." -ForegroundColor Cyan
 
-$devices = & $AdbExe devices 2>&1
+$devices = & $AdbExe devices
 Write-Host "  Connected devices:" -ForegroundColor DarkGray
 $devices | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
@@ -199,7 +199,7 @@ Write-Host "[5/5] Launching app and tailing logcat..." -ForegroundColor Cyan
 Write-Host "  Press Ctrl+C to stop." -ForegroundColor DarkGray
 Write-Host ""
 
-& $AdbExe shell am start -n "com.rfditservices.voidrift/.MainActivity" 2>&1
+& $AdbExe shell am start -n "com.rfditservices.voidrift/.MainActivity"
 
 Write-Host ""
 Write-Host "  === LOGCAT (filtered) ===" -ForegroundColor Cyan
