@@ -103,6 +103,7 @@ struct AutopilotTarget {
 #[derive(Component)]
 struct AsteroidField {
     ore_type: OreType,
+    depleted: bool,
 }
 
 #[derive(Component)]
@@ -187,7 +188,7 @@ fn main() {
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
         .add_systems(Startup, setup_world)
-        .add_systems(Update, (autopilot_system, (camera_follow_system, starfield_scroll_system).chain()))
+        .add_systems(Update, (autopilot_system, camera_follow_system, starfield_scroll_system).chain())
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
         .add_systems(Update, (
@@ -315,8 +316,8 @@ fn setup_world(
     // Sector 1: Magnetite (Initial)
     commands.spawn((
         MapMarker,
-        AsteroidField { ore_type: OreType::Magnetite },
-        Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
+        AsteroidField { ore_type: OreType::Magnetite, depleted: false },
+        Mesh2d(meshes.add(generate_asteroid_mesh(1234))),
         MeshMaterial2d(materials.add(Color::srgb(0.8, 0.3, 0.3))), // Reddish
         Transform::from_xyz(SECTOR_1_POS.x, SECTOR_1_POS.y, 0.5),
     ));
@@ -324,13 +325,63 @@ fn setup_world(
     // Sector 7: Carbon (Hidden)
     // We spawn it without MapMarker initially
     commands.spawn((
-        AsteroidField { ore_type: OreType::Carbon },
-        Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
+        AsteroidField { ore_type: OreType::Carbon, depleted: false },
+        Mesh2d(meshes.add(generate_asteroid_mesh(5678))),
         MeshMaterial2d(materials.add(Color::srgb(0.3, 0.8, 0.3))), // Greenish
         Transform::from_xyz(SECTOR_7_POS.x, SECTOR_7_POS.y, 0.5),
         Visibility::Hidden,
     ));
 }
+
+// ── VISUAL HELPERS ───────────────────────────────────────────────────────────
+fn generate_asteroid_mesh(seed: u64) -> Mesh {
+    use bevy::render::mesh::{Indices, PrimitiveTopology};
+    use bevy::math::Vec3;
+    use std::f32::consts::TAU;
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let base_radius = 24.0;
+    
+    // Generate 8 vertices around a circle
+    let mut vertices: Vec<[f32; 3]> = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    
+    // Center vertex for triangle fan conversion
+    vertices.push([0.0, 0.0, 0.0]);
+    normals.push([0.0, 0.0, 1.0]);
+    uvs.push([0.5, 0.5]);
+
+    for i in 0..8 {
+        let angle = (i as f32 / 8.0) * TAU;
+        let radius = base_radius + rng.gen_range(-6.0..6.0);
+        
+        let x = angle.cos() * radius;
+        let y = angle.sin() * radius;
+        vertices.push([x, y, 0.0]);
+        normals.push([0.0, 0.0, 1.0]);
+        uvs.push([(x / 48.0) + 0.5, (y / 48.0) + 0.5]); // crude mapping
+    }
+
+    // Triangle list indices (fan behavior)
+    let mut indices = vec![
+        0, 1, 2,
+        0, 2, 3,
+        0, 3, 4,
+        0, 4, 5,
+        0, 5, 6,
+        0, 6, 7,
+        0, 7, 8,
+        0, 8, 1,
+    ];
+
+    Mesh::new(PrimitiveTopology::TriangleList, Default::default())
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+        .with_inserted_indices(Indices::U32(indices))
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ----------------------------------------------------------------------------
 // SYSTEMS
@@ -416,11 +467,16 @@ fn autopilot_system(
     }
 }
 
-fn mining_system(time: Res<Time>, mut ship_query: Query<(&mut Ship, &Transform)>, field_query: Query<(&AsteroidField, &Transform)>) {
+fn mining_system(
+    time: Res<Time>, 
+    mut ship_query: Query<(&mut Ship, &Transform)>, 
+    mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>)>,
+    mut materials: ResMut<Assets<ColorMaterial>>
+) {
     for (mut ship, ship_transform) in ship_query.iter_mut() {
         if ship.state == ShipState::Mining {
             // Find nearby field to determine ore type
-            for (field, field_transform) in field_query.iter() {
+            for (mut field, field_transform, mat_handle) in field_query.iter_mut() {
                 if ship_transform.translation.distance(field_transform.translation) < 50.0 {
                     if ship.cargo_type == OreType::Empty {
                         ship.cargo_type = field.ore_type;
@@ -433,6 +489,26 @@ fn mining_system(time: Res<Time>, mut ship_query: Query<(&mut Ship, &Transform)>
                     if ship.cargo >= ship.cargo_capacity as f32 { 
                         ship.state = ShipState::Idle; 
                         ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
+                        
+                        // [POLISH] Visual depletion
+                        if !field.depleted {
+                            field.depleted = true;
+                            if let Some(mat) = materials.get_mut(&mat_handle.0) {
+                                mat.color = Color::srgb(0.2, 0.2, 0.2); // Dark grey #333333
+                            }
+                        }
+                    } else {
+                        // Restore color if mining resumes
+                        if field.depleted {
+                            field.depleted = false;
+                            if let Some(mat) = materials.get_mut(&mat_handle.0) {
+                                mat.color = match field.ore_type {
+                                    OreType::Magnetite => Color::srgb(0.8, 0.3, 0.3),
+                                    OreType::Carbon => Color::srgb(0.3, 0.8, 0.3),
+                                    OreType::Empty => Color::srgb(0.5, 0.5, 0.5),
+                                };
+                            }
+                        }
                     }
                     break;
                 }
