@@ -39,17 +39,12 @@ pub fn autonomous_ship_system(
                 }
                 AutonomousShipState::Returning => {
                     // [PHASE B] Dynamic destination tracking for Berth 2
-                    let mut berth_pos = STATION_POS;
-                    if let Ok((station, s_transform)) = station_query.get_single() {
-                         // Find Berth 2 (Drone) entity/pos
-                         // Since we don't have commanded access to logical entities here easily without a query,
-                         // we calculate it directly using STATION_POS/rotation.
-                         berth_pos = berth_world_pos(
-                            s_transform.translation.truncate(),
-                            station.rotation,
-                            BERTH_2_ARM_INDEX,
-                         );
-                    }
+                    // We use the station and transform already matched at the top of the system
+                    let berth_pos = berth_world_pos(
+                        s_transform.translation.truncate(),
+                        station.rotation,
+                        BERTH_2_ARM_INDEX,
+                    );
                     assignment.target_pos = berth_pos;
                     
                     let direction = berth_pos - transform.translation.truncate();
@@ -59,10 +54,8 @@ pub fn autonomous_ship_system(
                         ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                         
                         // [PHASE B] Trigger station resume if not already resuming
-                        if let Ok(mut station) = station_query.get_single_mut() {
-                            station.dock_state = StationDockState::Resuming;
-                            station.resume_timer = STATION_RESUME_DELAY;
-                        }
+                        station.dock_state = StationDockState::Resuming;
+                        station.resume_timer = STATION_RESUME_DELAY;
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);
