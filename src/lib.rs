@@ -25,6 +25,10 @@ const MINING_RATE: f32 = 8.0;
 
 const REFINERY_RATIO: u32 = 10;
 const REPAIR_COST: u32 = 25;
+const AI_CORE_COST: u32 = 50;
+
+const STATION_POS: Vec2 = Vec2::new(-150.0, -200.0);
+const FIELD_POS: Vec2 = Vec2::new(150.0, 100.0);
 
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
@@ -79,6 +83,25 @@ struct MainCamera;
 #[derive(Component)]
 struct CargoBarFill;
 
+#[derive(Component)]
+struct AiCore;
+
+#[derive(Component)]
+struct Drone {
+    state: DroneState,
+    cargo: f32,
+}
+
+#[derive(PartialEq)]
+enum DroneState {
+    Mining,
+    Returning,
+    Unloading,
+}
+
+#[derive(Component)]
+struct DroneCargoBarFill;
+
 // ----------------------------------------------------------------------------
 // APP SETUP
 // ----------------------------------------------------------------------------
@@ -110,6 +133,8 @@ fn main() {
             hud_ui_system,
             station_visual_system,
             slice_completion_system,
+            drone_system,
+            drone_cargo_display_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -171,7 +196,7 @@ fn setup_world(
         },
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
-        Transform::from_xyz(-150.0, -200.0, 0.5),
+        Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
     ));
 
     commands.spawn((
@@ -179,7 +204,7 @@ fn setup_world(
         AsteroidField,
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.5, 0.5, 0.5))),
-        Transform::from_xyz(150.0, 100.0, 0.5),
+        Transform::from_xyz(FIELD_POS.x, FIELD_POS.y, 0.5),
     ));
 }
 
@@ -249,9 +274,13 @@ fn cargo_display_system(ship: Query<&Ship>, mut fill: Query<(&mut Transform, &Pa
 fn hud_ui_system(
     mut contexts: EguiContexts,
     mut ship_query: Query<&mut Ship>,
-    mut station_query: Query<&mut Station>,
+    mut station_query: Query<(Entity, &mut Station)>,
+    ai_core_query: Query<&AiCore>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
@@ -280,11 +309,14 @@ fn hud_ui_system(
                 ui.horizontal(|ui| {
                     ui.add_space(16.0);
                     
+                    let mut station_reserves = 0.0;
+                    if let Ok((_, station)) = station_query.get_single() {
+                        station_reserves = station.ore_reserves;
+                    }
+
                     // DATA COLUMN
                     ui.vertical(|ui| {
-                        if let Ok(station) = station_query.get_single() {
-                            ui.label(format!("ORE RESERVES: {:.1}", station.ore_reserves));
-                        }
+                        ui.label(format!("ORE RESERVES: {:.1}", station_reserves));
                         ui.label(format!("POWER CELLS: {}", ship.power_cells));
                     });
 
@@ -292,7 +324,7 @@ fn hud_ui_system(
                         ui.add_space(16.0);
                         
                         // REFINE BUTTON
-                        if let Ok(mut station) = station_query.get_single_mut() {
+                        if let Ok((_, mut station)) = station_query.get_single_mut() {
                             let can_refine = station.ore_reserves >= REFINERY_RATIO as f32;
                             ui.add_enabled_ui(can_refine, |ui| {
                                 if ui.button("REFINE").clicked() {
@@ -320,6 +352,45 @@ fn hud_ui_system(
                                         station.repair_progress = 1.0;
                                         station.online = true;
                                         info!("[Voidrift Phase 5] Station repair complete. Slice done.");
+                                    }
+                                });
+                            }
+                        }
+
+                        // BUILD AI CORE BUTTON
+                        if let Ok((station_ent, _)) = station_query.get_single() {
+                            if ai_core_query.get(station_ent).is_err() {
+                                ui.add_space(8.0);
+                                let can_build = ship.power_cells >= AI_CORE_COST;
+                                let build_label = if can_build { "BUILD AI CORE".to_string() } else { format!("AI CORE ({} cells)", AI_CORE_COST) };
+
+                                ui.add_enabled_ui(can_build, |ui| {
+                                    if ui.button(build_label).clicked() {
+                                        ship.power_cells -= AI_CORE_COST;
+                                        commands.entity(station_ent).insert(AiCore);
+                                        
+                                        // Spawn Drone
+                                        commands.spawn((
+                                            Drone { state: DroneState::Mining, cargo: 0.0 },
+                                            Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
+                                            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                                            Transform::from_xyz(FIELD_POS.x, FIELD_POS.y, 0.5),
+                                        ))
+                                        .with_children(|parent| {
+                                            parent.spawn((
+                                                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                                                MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                                                Transform::from_xyz(0.0, 24.0, 1.1),
+                                            ));
+                                            parent.spawn((
+                                                DroneCargoBarFill,
+                                                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                                                MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                                                Transform::from_xyz(0.0, 24.0, 1.2),
+                                            ));
+                                        });
+
+                                        info!("[Voidrift Phase 6] AI Core built. Drone deployed.");
                                     }
                                 });
                             }
@@ -416,6 +487,52 @@ fn handle_input(
                     }
                 }
             }
+        }
+    }
+}
+fn drone_system(
+    time: Res<Time>,
+    mut drone_query: Query<(&mut Drone, &mut Transform)>,
+    mut station_query: Query<&mut Station>,
+) {
+    for (mut drone, mut transform) in drone_query.iter_mut() {
+        match drone.state {
+            DroneState::Mining => {
+                drone.cargo = (drone.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
+                if drone.cargo >= CARGO_CAPACITY as f32 {
+                    drone.state = DroneState::Returning;
+                    info!("[Voidrift Phase 6] Drone cargo full. Returning to station.");
+                }
+            }
+            DroneState::Returning => {
+                let direction = STATION_POS - transform.translation.truncate();
+                let distance = direction.length();
+                if distance < ARRIVAL_THRESHOLD {
+                    drone.state = DroneState::Unloading;
+                } else {
+                    let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                    transform.translation += movement.extend(0.0);
+                }
+            }
+            DroneState::Unloading => {
+                if let Ok(mut station) = station_query.get_single_mut() {
+                    station.ore_reserves += drone.cargo;
+                    info!("[Voidrift Phase 6] Drone unloaded {:.1} ore. Returning to field.", drone.cargo);
+                    drone.cargo = 0.0;
+                    drone.state = DroneState::Mining;
+                    transform.translation = FIELD_POS.extend(0.5);
+                }
+            }
+        }
+    }
+}
+
+fn drone_cargo_display_system(drone: Query<&Drone>, mut fill: Query<(&mut Transform, &Parent), With<DroneCargoBarFill>>) {
+    for (mut tr, parent) in fill.iter_mut() {
+        if let Ok(drone) = drone.get(**parent) {
+            let r = drone.cargo / CARGO_CAPACITY as f32;
+            tr.scale.x = r.max(0.001);
+            tr.translation.x = -15.0 + (15.0 * r);
         }
     }
 }
