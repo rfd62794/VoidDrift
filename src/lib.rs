@@ -33,6 +33,12 @@ const SECTOR_1_POS: Vec2 = Vec2::new(150.0, 100.0);
 const SECTOR_7_POS: Vec2 = Vec2::new(350.0, 250.0);
 const LOG_MAX_LINES: usize = 10;
 
+// [PHASE 8] POWER COSTS & TIMING
+const POWER_COST_CYCLE_TOTAL: u32 = 4;
+const POWER_COST_REFINERY: u32 = 1;
+const POWER_COST_HULL_FORGE: u32 = 2;
+const POWER_WARNING_INTERVAL: f32 = 30.0;
+
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
 // ----------------------------------------------------------------------------
@@ -106,17 +112,25 @@ struct AiCore;
 
 #[derive(Component)]
 struct AutonomousShip {
-    state: DroneState,
+    state: AutonomousShipState,
     cargo: f32,
     cargo_type: OreType,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-enum DroneState {
-    Mining,
-    Returning,
-    Unloading,
-    Outbound,
+enum AutonomousShipState {
+    Holding,    // At station, awaiting sufficient power
+    Outbound,   // Traveling to field
+    Mining,     // Actively extracting
+    Returning,  // Returning to station
+    Unloading,  // Depositing cargo
+}
+
+#[derive(Component)]
+struct AutonomousAssignment {
+    target_pos: Vec2,
+    ore_type: OreType,
+    sector_name: String,
 }
 
 #[derive(Component)]
