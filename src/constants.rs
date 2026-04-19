@@ -26,9 +26,11 @@ pub const AI_CORE_COST: u32 = 50;
 use bevy::math::Vec2;
 use bevy::prelude::Color;
 pub const STATION_POS: Vec2 = Vec2::new(-150.0, -200.0);
-pub const SECTOR_1_POS: Vec2 = Vec2::new(150.0, 100.0);
-pub const SECTOR_7_POS: Vec2 = Vec2::new(350.0, 250.0);
-pub const SECTOR_3_POS: Vec2 = Vec2::new(-200.0, 300.0);
+pub const SECTOR_1_POS: Vec2 = Vec2::new(180.0, 80.0);
+pub const SECTOR_7_POS: Vec2 = Vec2::new(-280.0, -180.0);
+pub const SECTOR_3_POS: Vec2 = Vec2::new(-500.0, 400.0);
+
+pub const MAP_STRATEGIC_SCALE: f32 = 4.0;
 
 // [STEP 6] MAP COLORS
 pub const COLOR_MAP_STATION: Color    = Color::srgb(1.0, 1.0, 0.0);       // Yellow
