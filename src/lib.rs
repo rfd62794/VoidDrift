@@ -132,7 +132,6 @@ fn main() {
             cargo_display_system, 
             hud_ui_system,
             station_visual_system,
-            slice_completion_system,
             drone_system,
             drone_cargo_display_system,
         ))
@@ -340,7 +339,7 @@ fn hud_ui_system(
                         }
 
                         // REPAIR BUTTON
-                        if let Ok(mut station) = station_query.get_single_mut() {
+                        if let Ok((_, mut station)) = station_query.get_single_mut() {
                             if !station.online {
                                 ui.add_space(8.0);
                                 let can_repair = ship.power_cells >= REPAIR_COST;
@@ -418,25 +417,6 @@ fn station_visual_system(
     }
 }
 
-fn slice_completion_system(
-    mut contexts: EguiContexts,
-    station_query: Query<&Station>,
-) {
-    for station in &station_query {
-        if station.online {
-            egui::Window::new("slice_complete")
-                .title_bar(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .show(contexts.ctx_mut(), |ui| {
-                    ui.vertical_centered(|ui| {
-                        ui.heading("STATION ONLINE");
-                        ui.label("Slice Complete.");
-                    });
-                });
-        }
-    }
-}
 
 fn camera_follow_system(state: Res<State<GameState>>, ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>, mut cam: Query<&mut Transform, With<MainCamera>>) {
     let st = ship.single();
