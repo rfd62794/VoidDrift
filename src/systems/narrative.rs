@@ -6,8 +6,8 @@ pub fn opening_sequence_system(
     time: Res<Time>,
     mut opening: ResMut<OpeningSequence>,
     mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<PlayerShip>, Without<AutonomousShipTag>)>,
-    station_query: Query<Entity, (With<Station>, Without<Ship>)>,
-    berth_query: Query<(Entity, &Berth, &Transform), Without<Ship>>,
+    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>)>,
+    berth_query: Query<(Entity, &Berth), Without<Ship>>,
     mut commands: Commands,
 ) {
     if opening.phase == OpeningPhase::Complete {
@@ -18,12 +18,19 @@ pub fn opening_sequence_system(
     opening.timer += delta;
 
     let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { return; };
-    let Ok(_station_ent) = station_query.get_single() else { return; };
+    let Ok((st, station_transform)) = station_query.get_single() else { return; };
     
     // Find the player berth specifically (there are multiple berths now)
-    let Some((berth_ent, berth_transform)) = berth_query.iter().find(|(_, b, _)| b.berth_type == BerthType::Player).map(|(e, _, t)| (e, t)) else { return; };
+    let Some((berth_ent, berth)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Player) else { return; };
 
-    let dist_to_station = ship_transform.translation.truncate().distance(berth_transform.translation.truncate());
+    // Calculate world pos from station rotation
+    let berth_pos = berth_world_pos(
+        station_transform.translation.truncate(),
+        st.rotation,
+        berth.arm_index
+    );
+
+    let dist_to_station = ship_transform.translation.truncate().distance(berth_pos);
 
     match opening.phase {
         OpeningPhase::Adrift => {
@@ -40,7 +47,7 @@ pub fn opening_sequence_system(
                 ship.state = ShipState::Navigating;
                 commands.entity(ship_ent).remove::<DockedAt>();
                 commands.entity(ship_ent).insert(AutopilotTarget {
-                    destination: berth_transform.translation.truncate(),
+                    destination: berth_pos,
                     target_entity: Some(berth_ent),
                 });
             }
