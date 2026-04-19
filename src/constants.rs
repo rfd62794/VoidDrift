@@ -42,7 +42,12 @@ pub const Z_MAP_MARKERS: f32   = 0.6;  // Opaque border/marker overlay
 pub const Z_SHIP: f32          = 1.0;
 pub const Z_BEAM: f32          = 0.8;
 pub const Z_CARGO_BAR: f32     = 1.1;
-pub const Z_HUD: f32           = 10.0;
+pub const Z_HUD: f32           = 2.0;
+
+// NARRATIVE TIMING
+pub const SIGNAL_PAUSE_S2: f32          = 2.0; // Between S-001 and S-002
+pub const SIGNAL_PAUSE_DOCK_REPORT: f32 = 1.0; // Between S-005 and S-006
+pub const SIGNAL_PAUSE_COMPLETE: f32    = 1.5; // Between S-006 and S-007/UI Unlock
 // ─────────────────────────────────────────────────────────────────────────────
 
 // [STEP 6] MAP COLORS
