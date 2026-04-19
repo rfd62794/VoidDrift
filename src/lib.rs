@@ -566,6 +566,12 @@ fn hud_ui_system(
                                     station.power_cells -= AI_CORE_COST;
                                     commands.entity(station_ent).insert(AiCore);
                                     add_log_entry(&mut station, "[STATION AI] AI Core nominal. Awaiting directive.".to_string());
+                                    
+                                    // [PHASE 8b] Immediate discovery upon build
+                                    if let Ok(s7_ent) = carbon_field_query.get_single() {
+                                        commands.entity(s7_ent).insert((MapMarker, Visibility::Visible));
+                                        add_log_entry(&mut station, "[STATION AI] Carbon signature detected. Designation: Sector 7.".to_string());
+                                    }
                                 }
                             } else if auto_ship_query.iter().count() < 2 {
                                 let can_assemble = station.hull_plate_reserves >= 1;
