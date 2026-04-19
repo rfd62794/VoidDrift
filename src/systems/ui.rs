@@ -65,6 +65,7 @@ pub fn hud_ui_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
     mut expanded: ResMut<SignalStripExpanded>,
+    mut quest_log: ResMut<QuestLog>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
@@ -137,6 +138,20 @@ pub fn hud_ui_system(
                 if *state.get() == GameState::SpaceView {
                     next_state.set(GameState::MapView);
                 } else {
+                    next_state.set(GameState::SpaceView);
+                }
+                // Opening MAP closes QUEST
+                quest_log.panel_open = false;
+            }
+
+            ui.add_space(8.0);
+
+            // Quest Toggle
+            let quest_label = if quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
+            if ui.add(egui::Button::new(quest_label).min_size(egui::vec2(80.0, 40.0))).clicked() {
+                quest_log.panel_open = !quest_log.panel_open;
+                // Opening QUEST closes MAP
+                if quest_log.panel_open {
                     next_state.set(GameState::SpaceView);
                 }
             }

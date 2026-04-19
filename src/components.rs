@@ -186,6 +186,28 @@ pub struct SignalLog {
 #[derive(Resource, Default)]
 pub struct SignalStripExpanded(pub bool);
 
+#[derive(PartialEq, Clone, Debug)]
+pub enum ObjectiveState {
+    Locked,    // not yet revealed — shown as dim placeholder
+    Active,    // current objective — highlighted
+    Complete,  // done — greyed with checkmark
+}
+
+#[derive(Clone, Debug)]
+pub struct QuestObjective {
+    pub id: u32,
+    pub description: String,
+    pub progress_current: Option<u32>,  // None if no progress bar
+    pub progress_target: Option<u32>,
+    pub state: ObjectiveState,
+}
+
+#[derive(Resource, Default, Clone, Debug)]
+pub struct QuestLog {
+    pub objectives: Vec<QuestObjective>,
+    pub panel_open: bool,
+}
+
 // ── UTILITIES ────────────────────────────────────────────────────────────────
 
 pub fn berth_world_pos(
