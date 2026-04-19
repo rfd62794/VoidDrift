@@ -5,10 +5,10 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autopilot_system(
     time: Res<Time>,
-    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity)>,
+    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), Without<Station>>,
     berth_query: Query<&Berth>,
     asteroid_query: Query<&AsteroidField>,
-    mut station_query: Query<(Entity, &mut Station, &Transform)>,
+    mut station_query: Query<(Entity, &mut Station, &Transform), Without<Ship>>,
     carbon_field_query: Query<Entity, (With<AsteroidField>, Without<MapMarker>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
