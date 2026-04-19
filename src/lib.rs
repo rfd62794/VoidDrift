@@ -169,6 +169,9 @@ struct LastHeading(f32); // tracks visual rotation when not moving
 struct PlayerShip;
 
 #[derive(Component)]
+struct ThrusterGlow;
+
+#[derive(Component)]
 struct AutonomousShipTag;
 
 #[derive(Resource, Default)]
@@ -202,6 +205,7 @@ fn main() {
             camera_follow_system, 
             starfield_scroll_system,
             ship_rotation_system,
+            thruster_glow_system,
         ).chain())
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
@@ -295,6 +299,14 @@ fn setup_world(
         Transform::from_xyz(0.0, 0.0, 1.0),
     ))
     .with_children(|parent| {
+        // [POLISH] Thruster Glow
+        parent.spawn((
+            ThrusterGlow,
+            Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
+            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), // Orange for player
+            Transform::from_xyz(0.0, -18.0, -0.1),
+            Visibility::Hidden,
+        ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
@@ -501,6 +513,30 @@ fn autopilot_system(
                     transform.translation += movement.extend(0.0);
                 }
             }
+        }
+    }
+}
+
+fn thruster_glow_system(
+    mut query: Query<(&Parent, &mut Visibility), With<ThrusterGlow>>,
+    ship_query: Query<&Ship>,
+    auto_ship_query: Query<&AutonomousShip>,
+) {
+    for (parent, mut visibility) in query.iter_mut() {
+        let is_moving = if let Ok(ship) = ship_query.get(**parent) {
+            ship.state == ShipState::Navigating || ship.state == ShipState::Mining
+        } else if let Ok(auto_ship) = auto_ship_query.get(**parent) {
+            auto_ship.state == AutonomousShipState::Outbound 
+                || auto_ship.state == AutonomousShipState::Returning 
+                || auto_ship.state == AutonomousShipState::Mining
+        } else {
+            false
+        };
+
+        if is_moving && *visibility == Visibility::Hidden {
+            *visibility = Visibility::Visible;
+        } else if !is_moving && *visibility == Visibility::Visible {
+            *visibility = Visibility::Hidden;
         }
     }
 }
@@ -819,6 +855,14 @@ fn hud_ui_system(
                                         Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
                                     ))
                                     .with_children(|parent| {
+                                        // [POLISH] Thruster Glow
+                                        parent.spawn((
+                                            ThrusterGlow,
+                                            Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
+                                            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), // Cyan for autonomous
+                                            Transform::from_xyz(0.0, -18.0, -0.1),
+                                            Visibility::Hidden,
+                                        ));
                                         parent.spawn((
                                             Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
                                             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
