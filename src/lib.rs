@@ -393,6 +393,7 @@ fn hud_ui_system(
     mut ship_query: Query<&mut Ship>,
     mut station_query: Query<(Entity, &mut Station)>,
     ai_core_query: Query<&AiCore>,
+    auto_ship_query: Query<&AutonomousShip>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
