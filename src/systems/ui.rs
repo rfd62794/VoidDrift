@@ -121,9 +121,9 @@ pub fn hud_ui_system(
                     let departments = [
                         (ActiveStationTab::Reserves, "RESERVES", true),
                         (ActiveStationTab::Power, "POWER", station.online),
-                        (ActiveStationTab::Smelter, "SMELTER", station.online),
-                        (ActiveStationTab::Forge, "FORGE", station.ai_cores > 0 || station.ship_hulls > 0),
-                        (ActiveStationTab::ShipPort, "SHIP PORT", true), // Visible, but content may be locked
+                        (ActiveStationTab::Smelter, "SMELTER", true),
+                        (ActiveStationTab::Forge, "FORGE", true),
+                        (ActiveStationTab::ShipPort, "SHIP PORT", auto_ships.iter().count() > 0),
                     ];
 
                     for (tab, name, unlocked) in departments {
