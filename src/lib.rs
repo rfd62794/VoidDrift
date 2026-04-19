@@ -172,6 +172,9 @@ struct PlayerShip;
 struct ThrusterGlow;
 
 #[derive(Component)]
+struct MiningBeam;
+
+#[derive(Component)]
 struct AutonomousShipTag;
 
 #[derive(Resource, Default)]
@@ -305,6 +308,14 @@ fn setup_world(
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
             MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), // Orange for player
             Transform::from_xyz(0.0, -18.0, -0.1),
+            Visibility::Hidden,
+        ));
+        // [POLISH] Mining Beam
+        parent.spawn((
+            MiningBeam,
+            Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))), // 1.0 initial height
+            MeshMaterial2d(materials.add(Color::srgba(1.0, 0.0, 1.0, 0.6))), // Magenta
+            Transform::from_xyz(0.0, 0.0, -0.2),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -586,15 +597,21 @@ fn ship_rotation_system(
 
 fn mining_system(
     time: Res<Time>, 
-    mut ship_query: Query<(&mut Ship, &Transform)>, 
+    mut ship_query: Query<(&mut Ship, &Transform, &Children)>, 
     mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>)>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>)>,
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {
-    for (mut ship, ship_transform) in ship_query.iter_mut() {
-        if ship.state == ShipState::Mining {
+    for (mut ship, ship_transform, children) in ship_query.iter_mut() {
+        let is_mining = ship.state == ShipState::Mining;
+        let mut target_dist = None;
+
+        if is_mining {
             // Find nearby field to determine ore type
             for (mut field, field_transform, mat_handle) in field_query.iter_mut() {
-                if ship_transform.translation.distance(field_transform.translation) < 50.0 {
+                let dist = ship_transform.translation.distance(field_transform.translation);
+                if dist < 50.0 {
+                    target_dist = Some(dist);
                     if ship.cargo_type == OreType::Empty {
                         ship.cargo_type = field.ore_type;
                     } else if ship.cargo_type != field.ore_type {
@@ -606,6 +623,7 @@ fn mining_system(
                     if ship.cargo >= ship.cargo_capacity as f32 { 
                         ship.state = ShipState::Idle; 
                         ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
+                        target_dist = None; // Disable beam upon finish
                         
                         // [POLISH] Visual depletion
                         if !field.depleted {
@@ -628,6 +646,19 @@ fn mining_system(
                         }
                     }
                     break;
+                }
+            }
+        }
+        
+        // Handle beam visibility and scaling for player ship
+        for &child in children.iter() {
+            if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
+                if let Some(dist) = target_dist {
+                    *b_vis = Visibility::Visible;
+                    b_transform.scale.y = dist;
+                    b_transform.translation.y = dist / 2.0; // Extend forward from ship center
+                } else {
+                    *b_vis = Visibility::Hidden;
                 }
             }
         }
@@ -863,6 +894,14 @@ fn hud_ui_system(
                                             Transform::from_xyz(0.0, -18.0, -0.1),
                                             Visibility::Hidden,
                                         ));
+                                        // [POLISH] Mining Beam
+                                        parent.spawn((
+                                            MiningBeam,
+                                            Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
+                                            MeshMaterial2d(materials.add(Color::srgba(1.0, 0.0, 1.0, 0.6))), // Magenta
+                                            Transform::from_xyz(0.0, 0.0, -0.2),
+                                            Visibility::Hidden,
+                                        ));
                                         parent.spawn((
                                             Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
                                             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
@@ -1017,11 +1056,12 @@ fn handle_input(
 
 fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment)>,
+    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>)>,
     mut station_query: Query<&mut Station>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AsteroidField>, Without<AutonomousShip>)>,
 ) {
     if let Ok(mut station) = station_query.get_single_mut() {
-        for (mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
+        for (entity, mut ship, mut transform, mut assignment, children_opt) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     if station.power_cells >= POWER_COST_CYCLE_TOTAL {
@@ -1042,10 +1082,27 @@ fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Mining => {
+                    let mut is_still_mining = true;
                     ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
                     if ship.cargo >= CARGO_CAPACITY as f32 {
                         ship.state = AutonomousShipState::Returning;
                         ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
+                        is_still_mining = false;
+                    }
+
+                    if let Some(children) = children_opt {
+                        for &child in children.iter() {
+                            if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
+                                if is_still_mining {
+                                    let dist = transform.translation.truncate().distance(assignment.target_pos);
+                                    *b_vis = Visibility::Visible;
+                                    b_transform.scale.y = dist;
+                                    b_transform.translation.y = dist / 2.0;
+                                } else {
+                                    *b_vis = Visibility::Hidden;
+                                }
+                            }
+                        }
                     }
                 }
                 AutonomousShipState::Returning => {
