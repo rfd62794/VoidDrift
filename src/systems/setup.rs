@@ -208,7 +208,7 @@ pub fn setup_world(
         // [STEP 6] MAP ICON (North-aligned, sibling to VisualsContainer)
         parent.spawn((
             MapElement,
-            Mesh2d(meshes.add(Circle::new(16.0))),
+            Mesh2d(meshes.add(Circle::new(12.0))),
             MeshMaterial2d(materials.add(ColorMaterial {
                 color: COLOR_MAP_STATION,
                 alpha_mode: AlphaMode2d::Opaque,
@@ -216,7 +216,23 @@ pub fn setup_world(
             })),
             Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
-        ));
+        )).with_children(|map_icon| {
+            // 3 Small static spokes for map identity
+            for i in 0..3 {
+                let angle = (i as f32) * (std::f32::consts::TAU / 3.0);
+                map_icon.spawn((
+                    MapElement,
+                    Mesh2d(meshes.add(Rectangle::new(4.0, 20.0))),
+                    MeshMaterial2d(materials.add(ColorMaterial {
+                        color: COLOR_MAP_STATION,
+                        ..default()
+                    })),
+                    Transform::from_rotation(Quat::from_rotation_z(angle))
+                        .with_translation(Vec3::new(angle.cos() * 10.0, angle.sin() * 10.0, -0.1)),
+                    Visibility::Inherited,
+                ));
+            }
+        });
         // [STEP 6] MAP LABEL
         parent.spawn((
             MapElement,
