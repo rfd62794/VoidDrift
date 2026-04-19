@@ -63,6 +63,7 @@ pub fn hud_ui_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();

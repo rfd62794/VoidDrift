@@ -150,6 +150,7 @@ pub fn signal_system(
                 if fire_signal(&mut signal, 11, "> POWER RESTORED. STATION ONLINE.") {
                     signal.last_fired_at.insert(11, now);
                 }
+                fire_signal(&mut signal, 27, "> AUTOMATED SYSTEMS ONLINE.");
             }
 
             // ID 13: AI Core
@@ -167,6 +168,21 @@ pub fn signal_system(
             // ID 16: Ship Hull
             if st.ship_hulls > 0 {
                 fire_signal(&mut signal, 16, "> SHIP HULL COMPLETE. ASSEMBLY POSSIBLE.");
+            }
+
+            // ID 25, 26: First dock pre-online
+            if !st.online {
+                if fire_signal(&mut signal, 25, "> SMELTER OPERATIONAL. MANUAL MODE.") {
+                    signal.last_fired_at.insert(25, now);
+                }
+                
+                if signal.fired.contains(&25) {
+                    if let Some(t25) = signal.last_fired_at.get(&25) {
+                        if now - *t25 >= 1.0 {
+                            fire_signal(&mut signal, 26, "> FORGE OPERATIONAL. MANUAL MODE.");
+                        }
+                    }
+                }
             }
         }
 
