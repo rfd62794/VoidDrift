@@ -242,6 +242,14 @@ pub fn hud_ui_system(
                                         MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
                                         Transform::from_xyz(0.0, 24.0, 1.2),
                                     ));
+                                    // [STEP 6] SHIP MAP MARKER
+                                    parent.spawn((
+                                        MapElement,
+                                        Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))),
+                                        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), // Orange for autonomous
+                                        Transform::from_xyz(0.0, 0.0, 2.0).with_scale(Vec3::splat(2.0)),
+                                        Visibility::Hidden,
+                                    ));
                                 });
                                 add_log_entry(&mut station, format!("[STATION AI] Ship assembly complete. {}. {} extraction.", name, if ore == OreType::Magnetite { "Magnetite" } else { "Carbon" }));
                             }

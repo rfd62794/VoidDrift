@@ -24,9 +24,20 @@ pub const POWER_COST_AI_FABRICATE: u32 = 5;
 pub const AI_CORE_COST: u32 = 50; 
 
 use bevy::math::Vec2;
+use bevy::prelude::Color;
 pub const STATION_POS: Vec2 = Vec2::new(-150.0, -200.0);
 pub const SECTOR_1_POS: Vec2 = Vec2::new(150.0, 100.0);
 pub const SECTOR_7_POS: Vec2 = Vec2::new(350.0, 250.0);
+pub const SECTOR_3_POS: Vec2 = Vec2::new(-200.0, 300.0);
+
+// [STEP 6] MAP COLORS
+pub const COLOR_MAP_STATION: Color    = Color::srgb(1.0, 1.0, 0.0);       // Yellow
+pub const COLOR_MAP_S1: Color         = Color::srgb(0.0, 1.0, 1.0);       // Cyan (Magnetite)
+pub const COLOR_MAP_S7: Color         = Color::srgb(0.3, 0.8, 0.3);       // Green (Carbon)
+pub const COLOR_MAP_S3: Color         = Color::srgb(0.2, 0.2, 0.2);       // Dark Grey
+pub const COLOR_MAP_LINE: Color       = Color::srgba(1.0, 1.0, 1.0, 0.2); // Dim White
+pub const COLOR_MAP_HIGHLIGHT: Color  = Color::srgb(1.0, 1.0, 1.0);       // White
+
 pub const LOG_MAX_LINES: usize = 10;
 
 // [PHASE 8] POWER COSTS & TIMING

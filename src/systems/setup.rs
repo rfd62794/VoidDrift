@@ -106,6 +106,15 @@ pub fn setup_world(
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
             Transform::from_xyz(0.0, 24.0, 1.2),
         ));
+
+        // [STEP 6] SHIP MAP MARKER
+        parent.spawn((
+            MapElement,
+            Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+            Transform::from_xyz(0.0, 0.0, 2.0).with_scale(Vec3::splat(2.0)), // Scale up for map
+            Visibility::Hidden,
+        ));
     });
 
     // STATION / SECTORS setup
@@ -130,7 +139,27 @@ pub fn setup_world(
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
-    ));
+    ))
+    .with_children(|parent| {
+        // [STEP 6] MAP ICON
+        parent.spawn((
+            MapElement,
+            Mesh2d(meshes.add(Circle::new(16.0))),
+            MeshMaterial2d(materials.add(COLOR_MAP_STATION)),
+            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Visibility::Hidden,
+        ));
+        // [STEP 6] MAP LABEL
+        parent.spawn((
+            MapElement,
+            Text2d::new("BASE"),
+            TextFont { font_size: 24.0, ..default() },
+            TextColor(Color::WHITE),
+            Transform::from_xyz(0.0, -40.0, 2.0),
+            Visibility::Hidden,
+        ));
+    })
+    .id();
 
     // Sector 1: Magnetite (Initial)
     commands.spawn((
@@ -139,15 +168,109 @@ pub fn setup_world(
         Mesh2d(meshes.add(generate_asteroid_mesh(1234))),
         MeshMaterial2d(materials.add(Color::srgb(0.8, 0.3, 0.3))), // Reddish
         Transform::from_xyz(SECTOR_1_POS.x, SECTOR_1_POS.y, 0.5),
-    ));
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            MapElement,
+            Mesh2d(meshes.add(Circle::new(14.0))),
+            MeshMaterial2d(materials.add(COLOR_MAP_S1)),
+            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Visibility::Hidden,
+        ));
+        parent.spawn((
+            MapElement,
+            Text2d::new("S1"),
+            TextFont { font_size: 20.0, ..default() },
+            TextColor(Color::WHITE),
+            Transform::from_xyz(0.0, -36.0, 2.0),
+            Visibility::Hidden,
+        ));
+    });
 
     // Sector 7: Carbon (Hidden)
-    // We spawn it without MapMarker initially
     commands.spawn((
         AsteroidField { ore_type: OreType::Carbon, depleted: false },
         Mesh2d(meshes.add(generate_asteroid_mesh(5678))),
         MeshMaterial2d(materials.add(Color::srgb(0.3, 0.8, 0.3))), // Greenish
         Transform::from_xyz(SECTOR_7_POS.x, SECTOR_7_POS.y, 0.5),
+        Visibility::Hidden,
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            MapElement,
+            Mesh2d(meshes.add(Circle::new(14.0))),
+            MeshMaterial2d(materials.add(COLOR_MAP_S7)),
+            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Visibility::Hidden,
+        ));
+        parent.spawn((
+            MapElement,
+            Text2d::new("S7"),
+            TextFont { font_size: 20.0, ..default() },
+            TextColor(Color::WHITE),
+            Transform::from_xyz(0.0, -36.0, 2.0),
+            Visibility::Hidden,
+        ));
+    });
+
+    // [STEP 6] SECTOR 3: Unexplored
+    commands.spawn((
+        Transform::from_xyz(SECTOR_3_POS.x, SECTOR_3_POS.y, 0.5),
+        Visibility::Hidden, // World hidden
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            MapElement,
+            Mesh2d(meshes.add(Circle::new(14.0))),
+            MeshMaterial2d(materials.add(COLOR_MAP_S3)),
+            Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(1.5)),
+            Visibility::Hidden,
+        ));
+        parent.spawn((
+            MapElement,
+            Text2d::new("???"),
+            TextFont { font_size: 20.0, ..default() },
+            TextColor(COLOR_MAP_S3), // Dimmed text
+            Transform::from_xyz(0.0, -36.0, 2.0),
+            Visibility::Hidden,
+        ));
+    });
+
+    // [STEP 6] MAP CONNECTORS (Hub Topology)
+    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_1_POS);
+    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_7_POS);
+    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_3_POS);
+
+    // [STEP 6] DESTINATION HIGHLIGHT
+    commands.spawn((
+        MapElement,
+        DestinationHighlight,
+        Mesh2d(meshes.add(Circle::new(40.0))), // Large ring
+        MeshMaterial2d(materials.add(Color::srgba(1.0, 1.0, 1.0, 0.1))), // Static dim white
+        Transform::from_xyz(0.0, 0.0, 0.4),
+        Visibility::Hidden,
+    ));
+}
+
+fn spawn_map_connector(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    start: Vec2,
+    end: Vec2,
+) {
+    let mid = (start + end) / 2.0;
+    let diff = end - start;
+    let length = diff.length();
+    let angle = diff.y.atan2(diff.x);
+
+    commands.spawn((
+        MapElement,
+        MapConnector,
+        Mesh2d(meshes.add(Rectangle::new(length, 2.0))),
+        MeshMaterial2d(materials.add(COLOR_MAP_LINE)),
+        Transform::from_xyz(mid.x, mid.y, 0.3)
+            .with_rotation(Quat::from_rotation_z(angle)),
         Visibility::Hidden,
     ));
 }

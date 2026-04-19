@@ -116,5 +116,20 @@ pub struct MiningBeam;
 #[derive(Component)]
 pub struct AutonomousShipTag;
 
+#[derive(Component)]
+pub struct MapElement; // Marker for visibility toggling
+
+#[derive(Component)]
+pub struct MapIcon;
+
+#[derive(Component)]
+pub struct MapLabel;
+
+#[derive(Component)]
+pub struct MapConnector;
+
+#[derive(Component)]
+pub struct DestinationHighlight;
+
 #[derive(Resource, Default)]
 pub struct CameraDelta(pub Vec2);

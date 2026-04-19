@@ -22,6 +22,37 @@ pub fn camera_follow_system(
     cam_delta.0 = ct.translation.truncate() - old_pos;
 }
 
+pub fn map_visibility_system(
+    state: Res<State<GameState>>,
+    mut query: Query<&mut Visibility, With<MapElement>>,
+) {
+    let is_map = *state.get() == GameState::MapView;
+    for mut vis in query.iter_mut() {
+        if is_map && *vis == Visibility::Hidden {
+            *vis = Visibility::Visible;
+        } else if !is_map && *vis != Visibility::Hidden {
+            *vis = Visibility::Hidden;
+        }
+    }
+}
+
+pub fn map_highlight_system(
+    auto_target: Query<(&AutopilotTarget, &Ship)>,
+    mut highlight: Query<(&mut Transform, &mut Visibility), With<DestinationHighlight>>,
+) {
+    if let Ok((target, ship)) = auto_target.get_single() {
+        if let Ok((mut h_transform, mut h_vis)) = highlight.get_single_mut() {
+            if ship.state == ShipState::Navigating {
+                *h_vis = Visibility::Inherited; // Let map_visibility_system control it via MapElement parent if applicable, but here it's global
+                h_transform.translation.x = target.destination.x;
+                h_transform.translation.y = target.destination.y;
+            } else {
+                *h_vis = Visibility::Hidden;
+            }
+        }
+    }
+}
+
 pub fn enter_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
     cam.single_mut().scale = MAP_OVERVIEW_SCALE; 
 }

@@ -54,6 +54,8 @@ fn main() {
             systems::economy::station_status_system,
             systems::economy::ship_self_preservation_system,
             systems::economy::station_maintenance_system,
+            systems::map::map_visibility_system,
+            systems::map::map_highlight_system,
         ))
         .add_systems(Update, systems::map::handle_input)
         .run();
