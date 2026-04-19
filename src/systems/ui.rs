@@ -147,38 +147,25 @@ pub fn hud_ui_system(
                 ui.add_space(8.0);
                 ui.separator();
                 ui.add_space(8.0);
-                
-                if let Ok((_, station)) = station_query.get_single() {
-                    let departments = [
-                        (ActiveStationTab::Reserves, "RESERVES", true),
-                        (ActiveStationTab::Power, "POWER", station.online),
-                        (ActiveStationTab::Smelter, "SMELTER", true),
-                        (ActiveStationTab::Forge, "FORGE", true),
-                        (ActiveStationTab::ShipPort, "SHIP PORT", auto_ships.iter().count() > 0),
-                    ];
 
-                    for (tab, name, unlocked) in departments {
-                        ui.add_enabled_ui(unlocked, |ui| {
-                            let is_active = *active_tab == tab;
-                            let color = if is_active {
-                                egui::Color32::WHITE
-                            } else if unlocked {
-                                egui::Color32::from_gray(180)
-                            } else {
-                                egui::Color32::from_gray(100)
-                            };
+                let tab_size = egui::vec2(80.0, 44.0); // 44px height for thumb-friendly touch targets
 
-                            let btn = egui::Button::new(egui::RichText::new(name).color(color))
-                                .min_size(egui::vec2(80.0, 32.0))
-                                .frame(is_active);
-
-                            if ui.add(btn).clicked() {
-                                *active_tab = tab;
-                            }
-                        });
-                        ui.add_space(4.0);
-                    }
+                if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == ActiveStationTab::Reserves, "RESERVES")).clicked() {
+                    *active_tab = ActiveStationTab::Reserves;
                 }
+                ui.add_space(8.0);
+                
+                if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == ActiveStationTab::Forge, "FORGE")).clicked() {
+                    *active_tab = ActiveStationTab::Forge;
+                }
+                ui.add_space(8.0);
+                
+                // DEPARTMENTS - Disabled until late-game or specific triggers
+                ui.set_enabled(false);
+                let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "MARKET"));
+                ui.add_space(8.0);
+                let _ = ui.add_sized(tab_size, egui::SelectableLabel::new(false, "FLEET"));
+                ui.set_enabled(true);
             }
         });
 
@@ -240,25 +227,46 @@ pub fn hud_ui_system(
 
     if ship.state == ShipState::Docked {
         egui::TopBottomPanel::bottom("tab_detail_panel")
-            .frame(egui::Frame::NONE)
+            .frame(egui::Frame::default())
             .show(ctx, |ui| {
                 ui.add_space(8.0);
                 if let Ok((_station_ent, mut station)) = station_query.get_single_mut() {
                     ui.vertical_centered(|ui| {
                         match *active_tab {
                             ActiveStationTab::Reserves => {
-                                ui.horizontal(|ui| {
-                                    ui.label(format!("MAG: {:.0}", station.magnetite_reserves));
-                                    ui.separator();
-                                    ui.label(format!("CAR: {:.0}", station.carbon_reserves));
-                                    ui.separator();
-                                    ui.label(egui::RichText::new(format!("CELLS: {}", station.power_cells)).color(egui::Color32::LIGHT_BLUE));
-                                    ui.separator();
-                                    ui.label(format!("PLATES: {}", station.hull_plate_reserves));
-                                    ui.separator();
-                                    ui.label(format!("HULLS: {}", station.ship_hulls));
-                                    ui.separator();
-                                    ui.label(format!("CORES: {}", station.ai_cores));
+                                ui.vertical(|ui| {
+                                    ui.heading("STATION RESOURCES");
+                                    ui.add_space(8.0);
+
+                                    egui::Grid::new("station_resource_grid")
+                                        .num_columns(2)
+                                        .spacing([20.0, 8.0])
+                                        .striped(true)
+                                        .show(ui, |ui| {
+                                            ui.label("MAGNETITE:");
+                                            ui.label(egui::RichText::new(format!("{:.1}", station.magnetite_reserves)).color(egui::Color32::WHITE));
+                                            ui.end_row();
+
+                                            ui.label("CARBON:");
+                                            ui.label(egui::RichText::new(format!("{:.1}", station.carbon_reserves)).color(egui::Color32::WHITE));
+                                            ui.end_row();
+
+                                            ui.label("HULL PLATES:");
+                                            ui.label(egui::RichText::new(format!("{}", station.hull_plate_reserves)).color(egui::Color32::WHITE));
+                                            ui.end_row();
+
+                                            ui.label("POWER CELLS:");
+                                            ui.label(egui::RichText::new(format!("{}", station.power_cells)).color(egui::Color32::GREEN));
+                                            ui.end_row();
+
+                                            ui.label("AI CORES:");
+                                            ui.label(egui::RichText::new(format!("{}", station.ai_cores)).color(egui::Color32::CYAN));
+                                            ui.end_row();
+
+                                            ui.label("SHIP HULLS:");
+                                            ui.label(egui::RichText::new(format!("{}", station.ship_hulls)).color(egui::Color32::GOLD));
+                                            ui.end_row();
+                                        });
                                 });
                                 
                                 if !station.online {
