@@ -558,26 +558,26 @@ fn handle_input(
     let (camera, camera_transform) = camera_query.single();
     for touch in touches.iter_just_pressed() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
-            // Map interaction logic (only in MapView)
-            if *state.get() == GameState::MapView {
-                for (mt, me) in marker_query.iter() {
-                    let mp = mt.translation.truncate();
-                    if world_pos.distance(mp) < 80.0 {
-                        let (ship_entity, mut ship) = ship_query.single_mut();
-                        
-                        // Avoid docking redundancy
-                        if ship.state == ShipState::Docked && mp.distance(Vec2::new(-150.0, -200.0)) < 10.0 { 
-                            continue; 
-                        }
-
-                        ship.state = ShipState::Navigating;
-                        commands.entity(ship_entity).insert(AutopilotTarget { 
-                            destination: mp, 
-                            target_entity: Some(me) 
-                        });
-                        next_state.set(GameState::SpaceView);
-                        break;
+            for (mt, me) in marker_query.iter() {
+                let mp = mt.translation.truncate();
+                if world_pos.distance(mp) < 80.0 {
+                    let (ship_entity, mut ship) = ship_query.single_mut();
+                    
+                    // Avoid docking redundancy
+                    if ship.state == ShipState::Docked && mp.distance(STATION_POS) < 10.0 { 
+                        continue; 
                     }
+
+                    ship.state = ShipState::Navigating;
+                    commands.entity(ship_entity).insert(AutopilotTarget { 
+                        destination: mp, 
+                        target_entity: Some(me) 
+                    });
+
+                    if *state.get() == GameState::MapView {
+                        next_state.set(GameState::SpaceView);
+                    }
+                    break;
                 }
             }
         }
