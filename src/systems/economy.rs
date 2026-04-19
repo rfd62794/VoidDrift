@@ -35,7 +35,7 @@ pub fn station_status_system(
 }
 
 pub fn ship_self_preservation_system(
-    mut ship_query: Query<&mut Ship>,
+    mut ship_query: Query<(Entity, &mut Ship)>,
     mut station_query: Query<&mut Station>,
     mut commands: Commands,
 ) {

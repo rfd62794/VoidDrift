@@ -141,7 +141,7 @@ pub fn docked_ship_system(
                     let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
                     transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
                 }
-            } else if let Ok((station, s_transform)) = station_query.get(target_ent) {
+            } else if let Ok((_, s_transform)) = station_query.get(target_ent) {
                 // Docked at Hub (Station itself) - Intro sequence
                 transform.translation = s_transform.translation.truncate().extend(Z_SHIP);
             }
