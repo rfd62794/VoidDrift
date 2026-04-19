@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
+use crate::add_log_entry;
 
 pub fn autopilot_system(
     time: Res<Time>,
@@ -44,16 +45,15 @@ pub fn autopilot_system(
                                 match ship.cargo_type {
                                     OreType::Magnetite => {
                                         station.magnetite_reserves += ship.cargo;
-                                        // To log, we defer to the economy/station log system
                                         let msg = format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, station.power_cells);
-                                        // add_log_entry(&mut station, msg);
+                                        add_log_entry(&mut station, msg);
                                     }
                                     OreType::Carbon => {
                                         station.carbon_reserves += ship.cargo;
                                         let msg = format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves);
-                                        // add_log_entry(&mut station, msg);
+                                        add_log_entry(&mut station, msg);
                                         if station.hull_plate_reserves == 0 && station.carbon_reserves >= HULL_REFINERY_RATIO as f32 {
-                                            // add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Fabricate AI Cores to expand autonomous fleet.".to_string());
+                                            add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Fabricate AI Cores to expand autonomous fleet.".to_string());
                                         }
                                     }
                                     OreType::Empty => {}
