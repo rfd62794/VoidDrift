@@ -144,6 +144,9 @@ pub struct SignalLog {
     pub last_fired_at: std::collections::HashMap<u32, f32>, // For refirable IDs
 }
 
+#[derive(Resource, Default)]
+pub struct SignalStripExpanded(pub bool);
+
 #[derive(Resource)]
 pub struct OpeningSequence {
     pub phase: OpeningPhase,

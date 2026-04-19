@@ -35,6 +35,7 @@ fn main() {
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
         .insert_resource(SignalLog::default())
+        .insert_resource(SignalStripExpanded(false))
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
         .insert_resource(ActiveStationTab::default())
         .add_systems(Startup, systems::setup::setup_world)
