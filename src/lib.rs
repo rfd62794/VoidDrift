@@ -375,6 +375,9 @@ fn mining_system(time: Res<Time>, mut ship_query: Query<(&mut Ship, &Transform)>
                 if ship_transform.translation.distance(field_transform.translation) < 50.0 {
                     if ship.cargo_type == OreType::Empty {
                         ship.cargo_type = field.ore_type;
+                    } else if ship.cargo_type != field.ore_type {
+                        // Mismatched field - ship cannot mine this ore type into existing cargo
+                        continue;
                     }
                     let ore = MINING_RATE * time.delta_secs();
                     ship.cargo = (ship.cargo + ore).min(ship.cargo_capacity as f32);
