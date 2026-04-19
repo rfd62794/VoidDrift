@@ -71,6 +71,7 @@ fn main() {
             systems::economy::station_status_system,
             systems::economy::ship_self_preservation_system,
             systems::economy::station_maintenance_system,
+            systems::quest::quest_update_system,
             systems::map::map_highlight_system,
             systems::narrative::opening_sequence_system,
             systems::narrative::signal_system,

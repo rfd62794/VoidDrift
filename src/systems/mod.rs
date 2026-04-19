@@ -1,4 +1,5 @@
 pub mod setup;
+pub mod quest;
 pub mod visuals;
 pub mod autopilot;
 pub mod mining;

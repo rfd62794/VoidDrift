@@ -70,53 +70,39 @@ pub fn hud_ui_system(
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
 
-    // ── 1. SIGNAL STRIP (Always visible) ────────────────────────────────────────
+    // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
     
-    let strip_height = if expanded.0 { 180.0 } else { 48.0 };
+    // Set min_height to 60.0 to fit ~3 lines of text comfortably at 11.0pt font + padding
+    let strip_height = if expanded.0 { 180.0 } else { 60.0 };
 
     egui::TopBottomPanel::bottom("signal_strip")
-        .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_rgba_premultiplied(13, 13, 13, 217))) // 0.05, 0.05, 0.05, 0.85 approx
-        .min_height(strip_height)
+        .frame(egui::Frame::none()
+            .fill(egui::Color32::from_black_alpha(200))
+            .inner_margin(4.0)) // Added 4px internal padding for better breathing room
+        .exact_height(strip_height)
         .show(ctx, |ui| {
-            ui.add_space(6.0);
-            
-            let display_count = if expanded.0 { 20 } else if ship.state == ShipState::Docked { 3 } else { 2 };
+            let display_count = if expanded.0 { 20 } else { 3 };
             let entries: Vec<&String> = signal_log.entries.iter().rev().take(display_count).collect();
             
-            // Interaction area for the whole strip
+            // Interaction area for the whole strip to toggle expansion
             let rect = ui.available_rect_before_wrap();
             let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
             if response.clicked() {
                 expanded.0 = !expanded.0;
             }
 
-            if expanded.0 {
-                egui::ScrollArea::vertical()
-                    .stick_to_bottom(true)
-                    .max_height(160.0)
-                    .show(ui, |ui| {
-                        ui.vertical(|ui| {
-                            for line in entries.iter().rev() {
-                                ui.label(egui::RichText::new(*line)
-                                    .monospace()
-                                    .size(10.0)
-                                    .color(egui::Color32::from_rgb(0, 204, 102))); // #00CC66
-                            }
-                        });
+            egui::ScrollArea::vertical()
+                .stick_to_bottom(true)
+                .show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        for line in entries.iter().rev() {
+                            ui.label(egui::RichText::new(*line)
+                                .monospace()
+                                .size(11.0)
+                                .color(egui::Color32::from_rgb(0, 255, 128)));
+                        }
                     });
-            } else {
-                ui.vertical(|ui| {
-                    for line in entries.iter().rev() {
-                        ui.label(egui::RichText::new(*line)
-                            .monospace()
-                            .size(10.0)
-                            .color(egui::Color32::from_rgb(0, 204, 102))); // #00CC66
-                    }
                 });
-            }
-            
-            ui.add_space(6.0);
         });
 
     // If opening sequence not complete, suppress main UI

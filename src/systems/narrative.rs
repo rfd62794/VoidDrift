@@ -93,12 +93,74 @@ pub fn signal_system(
     station_query: Query<&Station>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
     ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut quest_log: ResMut<QuestLog>,
 ) {
     let now = time.elapsed_secs();
     let station = station_query.get_single();
 
     // ID 1: Game Start
     fire_signal(&mut signal, 1, "> SIGNAL RECEIVED.");
+
+    // [Step 4] Quest Sync Logic (Side-effects of signals)
+    // We update quest objectives whenever the corresponding signal ID has been fired.
+    for obj in quest_log.objectives.iter_mut() {
+        match obj.id {
+            1 => { // Locate signal source
+                if signal.fired.contains(&4) { // STRUCTURE DETECTED
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            2 => { // Dock at derelict station
+                if signal.fired.contains(&4) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&5) { // DOCKING COMPLETE
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            3 => { // Repair station
+                if signal.fired.contains(&5) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&11) { // STATION ONLINE
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            4 => { // Build AI Core
+                if signal.fired.contains(&11) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&13) { // AI CORE NOMINAL
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            5 => { // Discover Sector 7
+                if signal.fired.contains(&13) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&14) { // CARBON SIGNATURE / S7 DETECTED
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            6 => { // Mine Carbon
+                if signal.fired.contains(&14) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&16) { // SHIP HULL COMPLETE (implies Carbon found/refined)
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            7 => { // Assemble autonomous ship
+                if signal.fired.contains(&16) && obj.state == ObjectiveState::Locked {
+                    obj.state = ObjectiveState::Active;
+                }
+                if signal.fired.contains(&17) { // AUTONOMOUS UNIT LAUNCHED
+                    obj.state = ObjectiveState::Complete;
+                }
+            }
+            _ => {}
+        }
+    }
 
     // ID 2: 2s after start
     if opening.timer >= SIGNAL_PAUSE_S2 && opening.phase == OpeningPhase::SignalIdentified {
