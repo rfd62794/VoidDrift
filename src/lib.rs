@@ -506,8 +506,8 @@ fn hud_ui_system(
                         // SECTION 3: ACTION BUTTONS (Split into 2 rows for touch safety)
                         ui.horizontal(|ui| {
                             // Row 1: Production
-                            let bootstrap_mode = station.power_cells == 0 && station.power < STATION_POWER_FLOOR;
-                            let automation_suspended = station.power < STATION_POWER_FLOOR && !bootstrap_mode;
+                            let bootstrap_mode = station.power_cells == 0;
+                            let automation_suspended = station.power < STATION_POWER_FLOOR;
                             
                             let can_refine_mag = station.magnetite_reserves >= REFINERY_RATIO as f32;
                             let has_power_mag = station.power_cells >= POWER_COST_REFINERY;
