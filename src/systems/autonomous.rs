@@ -5,8 +5,8 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>)>,
-    mut station_query: Query<(&mut Station, &Transform)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>), Without<Station>>,
+    mut station_query: Query<(&mut Station, &Transform), Without<AutonomousShip>>,
     mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AsteroidField>, Without<AutonomousShip>)>,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
