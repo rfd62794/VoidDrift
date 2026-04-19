@@ -24,11 +24,14 @@ const CARGO_CAPACITY: u32 = 100;
 const MINING_RATE: f32 = 8.0;
 
 const REFINERY_RATIO: u32 = 10;
+const HULL_REFINERY_RATIO: u32 = 5;
 const REPAIR_COST: u32 = 25;
 const AI_CORE_COST: u32 = 50;
 
 const STATION_POS: Vec2 = Vec2::new(-150.0, -200.0);
-const FIELD_POS: Vec2 = Vec2::new(150.0, 100.0);
+const SECTOR_1_POS: Vec2 = Vec2::new(150.0, 100.0);
+const SECTOR_7_POS: Vec2 = Vec2::new(350.0, 250.0);
+const LOG_MAX_LINES: usize = 10;
 
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
@@ -46,8 +49,17 @@ struct Ship {
     state: ShipState,
     speed: f32,
     cargo: f32,
+    cargo_type: OreType,
     cargo_capacity: u32,
     power_cells: u32,
+}
+
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
+enum OreType {
+    #[default]
+    Empty,
+    Magnetite,
+    Carbon,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -65,13 +77,18 @@ struct AutopilotTarget {
 }
 
 #[derive(Component)]
-struct AsteroidField;
+struct AsteroidField {
+    ore_type: OreType,
+}
 
 #[derive(Component)]
 struct Station {
-    repair_progress: f32, // 0.0 = derelict, 1.0 = online
+    repair_progress: f32,
     online: bool,
-    ore_reserves: f32,
+    magnetite_reserves: f32,
+    carbon_reserves: f32,
+    hull_plate_reserves: u32,
+    log: std::collections::VecDeque<String>,
 }
 
 #[derive(Component)]
@@ -87,12 +104,13 @@ struct CargoBarFill;
 struct AiCore;
 
 #[derive(Component)]
-struct Drone {
+struct AutonomousShip {
     state: DroneState,
     cargo: f32,
+    cargo_type: OreType,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 enum DroneState {
     Mining,
     Returning,
@@ -101,7 +119,7 @@ enum DroneState {
 }
 
 #[derive(Component)]
-struct DroneCargoBarFill;
+struct ShipCargoBarFill;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
