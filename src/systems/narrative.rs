@@ -229,8 +229,13 @@ pub fn signal_system(
                 st.dock_state == StationDockState::Resuming,
                 st.dock_state == StationDockState::Rotating
             );
-            // S-031 (Vessel Departed) will be triggered when ShipState transitions away from Docked.
-            // For now, we'll implement it as a signal fire on state check.
+
+            let any_docked = ship_query.iter().any(|(s, _)| s.state == ShipState::Docked);
+            fire_refirable(&mut signal, 31, "> VESSEL DEPARTED. BERTH CLEAR.",
+                now,
+                st.dock_state == StationDockState::Rotating && !any_docked && signal.fired.contains(&30),
+                st.dock_state == StationDockState::Resuming
+            );
         }
 
         // ID 17, 18: Fleet expansion
