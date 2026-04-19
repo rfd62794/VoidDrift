@@ -9,6 +9,7 @@ use bevy::{
     sprite::MeshMaterial2d,
 };
 use bevy_egui::{egui, EguiPlugin, EguiContextSettings, EguiContexts};
+use rand::{Rng, SeedableRng};
 
 // ----------------------------------------------------------------------------
 // CONSTANTS
@@ -156,6 +157,13 @@ struct AutonomousAssignment {
 #[derive(Component)]
 struct ShipCargoBarFill;
 
+// [POLISH] Visual-only components — zero gameplay impact
+#[derive(Component)]
+struct StarLayer(f32); // parallax scroll factor: 0.05 = far, 0.15 = near
+
+#[derive(Resource, Default)]
+struct CameraDelta(Vec2); // world-space camera displacement this tick
+
 // ----------------------------------------------------------------------------
 // APP SETUP
 // ----------------------------------------------------------------------------
@@ -177,8 +185,9 @@ fn main() {
         .add_plugins(EguiPlugin)
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
+        .insert_resource(CameraDelta::default())
         .add_systems(Startup, setup_world)
-        .add_systems(Update, (autopilot_system, camera_follow_system))
+        .add_systems(Update, (autopilot_system, (camera_follow_system, starfield_scroll_system).chain()))
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
         .add_systems(Update, (
@@ -203,6 +212,41 @@ fn setup_world(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
+
+    // ── STARFIELD ────────────────────────────────────────────────────────────
+    // 150 far stars (Z=-50, opacity 40%, 1.5×1.5) + 50 near stars (Z=-49, 70%, 2.5×2.5).
+    // Stars are semi-attached to camera: they track camera movement at (1-parallax)
+    // speed, so they appear to drift backward at (parallax) speed — classic parallax.
+    // Wrap at ±700×±500 from camera to ensure seamless coverage.
+    {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
+        let far_mat  = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.4));
+        let near_mat = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.7));
+        let star_sm  = meshes.add(Rectangle::new(1.5, 1.5));
+        let star_lg  = meshes.add(Rectangle::new(2.5, 2.5));
+
+        for _ in 0..150 {
+            let x: f32 = rng.gen_range(-700.0..700.0);
+            let y: f32 = rng.gen_range(-500.0..500.0);
+            commands.spawn((
+                StarLayer(0.05),
+                Mesh2d(star_sm.clone()),
+                MeshMaterial2d(far_mat.clone()),
+                Transform::from_xyz(x, y, -50.0),
+            ));
+        }
+        for _ in 0..50 {
+            let x: f32 = rng.gen_range(-700.0..700.0);
+            let y: f32 = rng.gen_range(-500.0..500.0);
+            commands.spawn((
+                StarLayer(0.15),
+                Mesh2d(star_lg.clone()),
+                MeshMaterial2d(near_mat.clone()),
+                Transform::from_xyz(x, y, -49.0),
+            ));
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // 1. CAMERA
     commands.spawn((
@@ -674,15 +718,51 @@ fn station_visual_system(
 }
 
 
-fn camera_follow_system(state: Res<State<GameState>>, ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>, mut cam: Query<&mut Transform, With<MainCamera>>) {
+fn camera_follow_system(
+    state: Res<State<GameState>>,
+    ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+    mut cam_delta: ResMut<CameraDelta>,
+) {
     let st = ship.single();
     let mut ct = cam.single_mut();
+    let old_pos = ct.translation.truncate();
     if *state.get() == GameState::SpaceView {
         ct.translation.x = st.translation.x;
         ct.translation.y = st.translation.y;
     } else {
         ct.translation.x = 0.0;
         ct.translation.y = 0.0;
+    }
+    // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
+    cam_delta.0 = ct.translation.truncate() - old_pos;
+}
+
+/// Scrolls all star entities at their layer's parallax speed and wraps them at screen edges.
+/// Stars track camera movement at (1 - parallax_factor) speed, creating the illusion
+/// that far stars (factor=0.05) barely drift while near stars (0.15) move slightly more.
+fn starfield_scroll_system(
+    cam_query: Query<&Transform, With<MainCamera>>,
+    mut star_query: Query<(&StarLayer, &mut Transform), Without<MainCamera>>,
+    cam_delta: Res<CameraDelta>,
+) {
+    const WRAP_X: f32 = 700.0;
+    const WRAP_Y: f32 = 500.0;
+    let cam_pos = cam_query.single().translation.truncate();
+
+    for (layer, mut transform) in star_query.iter_mut() {
+        // Stars advance by (1 - parallax) of camera delta → they appear to drift
+        // backward at parallax-factor speed relative to camera.
+        transform.translation.x += cam_delta.0.x * (1.0 - layer.0);
+        transform.translation.y += cam_delta.0.y * (1.0 - layer.0);
+
+        // Wrap when the star exits the ±WRAP window around camera.
+        let rel_x = transform.translation.x - cam_pos.x;
+        let rel_y = transform.translation.y - cam_pos.y;
+        if      rel_x >  WRAP_X { transform.translation.x -= WRAP_X * 2.0; }
+        else if rel_x < -WRAP_X { transform.translation.x += WRAP_X * 2.0; }
+        if      rel_y >  WRAP_Y { transform.translation.y -= WRAP_Y * 2.0; }
+        else if rel_y < -WRAP_Y { transform.translation.y += WRAP_Y * 2.0; }
     }
 }
 
