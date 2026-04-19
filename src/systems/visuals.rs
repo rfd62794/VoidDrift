@@ -103,10 +103,10 @@ pub fn starfield_scroll_system(
 
 pub fn station_rotation_system(
     time: Res<Time>,
-    mut station_query: Query<(&mut Station, &Transform)>,
-    mut visual_query: Query<&mut Transform, (With<StationVisualsContainer>, Without<Station>)>,
-    ship_query: Query<(&Ship, &Transform), Without<Station>>,
-    autonomous_query: Query<(&AutonomousShip, &Transform), Without<Station>>,
+    mut station_query: Query<(&mut Station, &Transform), (Without<Ship>, Without<AutonomousShip>, Without<StationVisualsContainer>)>,
+    mut visual_query: Query<&mut Transform, (With<StationVisualsContainer>, Without<Station>, Without<Ship>, Without<AutonomousShip>)>,
+    ship_query: Query<(&Ship, &Transform), (Without<Station>, Without<StationVisualsContainer>, Without<AutonomousShip>)>,
+    autonomous_query: Query<(&AutonomousShip, &Transform), (Without<Station>, Without<StationVisualsContainer>, Without<Ship>)>,
 ) {
     if let Ok((mut station, station_transform)) = station_query.get_single_mut() {
         let station_pos = station_transform.translation.truncate();
