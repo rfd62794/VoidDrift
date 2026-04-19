@@ -476,7 +476,8 @@ fn hud_ui_system(
                 ui.add_space(8.0);
                 
                 if let Ok((station_ent, mut station)) = station_query.get_single_mut() {
-                    ui.vertical_centered(|ui|                         // SECTION 1: SYSTEM LOG (Fixed 5-line height)
+                    ui.vertical_centered(|ui| {
+                        // SECTION 1: SYSTEM LOG (Fixed 5-line height)
                         ui.group(|ui| {
                             ui.set_height(60.0); 
                             egui::ScrollArea::vertical()
