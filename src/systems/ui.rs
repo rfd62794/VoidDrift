@@ -196,7 +196,61 @@ pub fn hud_ui_system(
             }
         });
 
-    // ── 3. TAB DETAIL PANEL (Docked Context) ────────────────────────────────────
+    // ── 3. QUEST PANEL (Right overlay) ──────────────────────────────────────────
+    
+    if quest_log.panel_open {
+        egui::Window::new("OBJECTIVES")
+            .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10.0, 10.0))
+            .resizable(false)
+            .collapsible(false)
+            .default_width(200.0)
+            .show(ctx, |ui| {
+                ui.set_min_height(300.0);
+                
+                // ACTIVE SECTION
+                ui.heading(egui::RichText::new("ACTIVE").color(egui::Color32::WHITE));
+                ui.separator();
+                for obj in quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Active) {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("▶").color(egui::Color32::CYAN));
+                        ui.label(egui::RichText::new(&obj.description).strong());
+                    });
+                    
+                    if let (Some(curr), Some(target)) = (obj.progress_current, obj.progress_target) {
+                        ui.add(egui::ProgressBar::new(curr as f32 / target as f32)
+                            .text(format!("{}/{}", curr, target))
+                            .desired_width(180.0));
+                    }
+                    ui.add_space(8.0);
+                }
+                
+                ui.add_space(12.0);
+
+                // COMPLETED SECTION
+                ui.heading(egui::RichText::new("COMPLETED").color(egui::Color32::GRAY));
+                ui.separator();
+                for obj in quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Complete) {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("✓").color(egui::Color32::from_gray(140)));
+                        ui.label(egui::RichText::new(&obj.description).color(egui::Color32::from_gray(140)));
+                    });
+                }
+
+                ui.add_space(12.0);
+
+                // UPCOMING SECTION
+                ui.heading(egui::RichText::new("UPCOMING").color(egui::Color32::from_gray(80)));
+                ui.separator();
+                for obj in quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Locked) {
+                    ui.horizontal(|ui| {
+                        ui.label(egui::RichText::new("◦").color(egui::Color32::from_gray(80)));
+                        ui.label(egui::RichText::new(&obj.description).color(egui::Color32::from_gray(80)));
+                    });
+                }
+            });
+    }
+
+    // ── 4. TAB DETAIL PANEL (Docked Context) ────────────────────────────────────
 
     if ship.state == ShipState::Docked {
         egui::TopBottomPanel::bottom("tab_detail_panel")
