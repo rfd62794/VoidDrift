@@ -506,18 +506,26 @@ fn hud_ui_system(
                         // SECTION 3: ACTION BUTTONS (Split into 2 rows for touch safety)
                         ui.horizontal(|ui| {
                             // Row 1: Production
-                            let automation_suspended = station.power < STATION_POWER_FLOOR;
+                            let bootstrap_mode = station.power_cells == 0 && station.power < STATION_POWER_FLOOR;
+                            let automation_suspended = station.power < STATION_POWER_FLOOR && !bootstrap_mode;
                             
                             let can_refine_mag = station.magnetite_reserves >= REFINERY_RATIO as f32;
                             let has_power_mag = station.power_cells >= POWER_COST_REFINERY;
-                            let label_mag = if automation_suspended { "SUSPENDED" } else if has_power_mag { "REFINE CELLS" } else { "REFINERY OFFLINE" };
+                            let label_mag = if bootstrap_mode { "BOOTSTRAP MODE".to_string() } else if automation_suspended { "SUSPENDED".to_string() } else if has_power_mag { "REFINE CELLS".to_string() } else { "REFINERY OFFLINE".to_string() };
                             
-                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_mag)).clicked() && can_refine_mag && has_power_mag && !automation_suspended {
-                                let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
-                                station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
-                                station.power_cells += cells;
-                                station.power_cells -= POWER_COST_REFINERY;
-                                add_log_entry(&mut station, format!("[STATION AI] Magnetite refined -> {} cells.", cells));
+                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_mag)).clicked() && can_refine_mag {
+                                if bootstrap_mode || (has_power_mag && !automation_suspended) {
+                                    let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
+                                    station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
+                                    station.power_cells += cells;
+                                    
+                                    if !bootstrap_mode {
+                                        station.power_cells -= POWER_COST_REFINERY;
+                                        add_log_entry(&mut station, format!("[STATION AI] Magnetite refined -> {} cells.", cells));
+                                    } else {
+                                        add_log_entry(&mut station, "[STATION AI] Emergency bootstrap. Refinery running on reserve.".to_string());
+                                    }
+                                }
                             }
 
                             let can_refine_carb = station.carbon_reserves >= HULL_REFINERY_RATIO as f32;
