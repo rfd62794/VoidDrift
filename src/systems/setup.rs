@@ -173,20 +173,23 @@ pub fn setup_world(
                 let angle = (i as f32) * (std::f32::consts::TAU / 6.0);
                 let is_active = i < STATION_BERTHS_INITIAL;
                 let length = if is_active { STATION_ARM_LENGTH } else { STATION_STUB_LENGTH };
-                let alpha = if is_active { 1.0 } else { STATION_STUB_ALPHA };
-                let color = if is_active { Color::srgb(0.6, 0.6, 0.6) } else { Color::srgba(0.2, 0.2, 0.2, alpha) };
+                let color = if is_active { Color::srgb(0.6, 0.6, 0.6) } else { Color::srgb(0.12, 0.12, 0.12) };
 
                 // Arm spoke
+                // We use height as the length, so at 0 rotation it points North.
+                // We want 'angle' to correspond to the direction of the arm.
+                // We use width=thick, height=length.
                 vis.spawn((
                     Mesh2d(meshes.add(Rectangle::new(STATION_ARM_THICKNESS, length))),
                     MeshMaterial2d(materials.add(ColorMaterial {
                         color,
-                        alpha_mode: AlphaMode2d::Blend,
+                        alpha_mode: AlphaMode2d::Opaque,
                         ..default()
                     })),
-                    // Pivot rectangle so it starts at hub center. 
-                    // Rotate then translate by half length in the rotated direction.
-                    Transform::from_rotation(Quat::from_rotation_z(angle))
+                    // Pivot rectangle: translate by half length in the direction of the angle
+                    // Rotation must be adjusted because Bevy Rectangle 0deg = North (+Y).
+                    // We want 0 rad = East (+X). So we rotate by (angle - PI/2).
+                    Transform::from_rotation(Quat::from_rotation_z(angle - std::f32::consts::FRAC_PI_2))
                         .with_translation(Vec3::new(
                             angle.cos() * (length / 2.0),
                             angle.sin() * (length / 2.0),
@@ -195,10 +198,15 @@ pub fn setup_world(
                 )).with_children(|arm| {
                     if is_active {
                         // Berth circle at end of active arm
+                        // Local offset: 0 along width, length/2 along the rotated height axis
                         arm.spawn((
                             Mesh2d(meshes.add(Circle::new(STATION_BERTH_RADIUS))),
-                            MeshMaterial2d(materials.add(Color::srgb(0.4, 0.4, 0.4))),
-                            Transform::from_xyz(0.0, length / 2.0, 0.1), // Offset by half length relative to arm center
+                            MeshMaterial2d(materials.add(ColorMaterial {
+                                color: Color::srgb(0.4, 0.4, 0.4),
+                                alpha_mode: AlphaMode2d::Opaque,
+                                ..default()
+                            })),
+                            Transform::from_xyz(0.0, length / 2.0, 0.1),
                         ));
                     }
                 });
