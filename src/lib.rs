@@ -484,14 +484,22 @@ fn hud_ui_system(
                                     commands.entity(station_ent).insert(AiCore);
                                     add_log_entry(&mut station, "[STATION AI] AI Core nominal. Awaiting directive.".to_string());
                                 }
-                            } else {
+                            } else if auto_ship_query.iter().count() < 2 {
                                 let can_assemble = station.hull_plate_reserves >= 1;
                                 if ui.add_sized([120.0, 30.0], egui::Button::new("ASSEMBLE SHIP")).clicked() && can_assemble {
                                     station.hull_plate_reserves -= 1;
                                     commands.entity(station_ent).remove::<AiCore>();
                                     
+                                    let ship_count = auto_ship_query.iter().count();
+                                    let (target_pos, ore, name) = if ship_count == 0 {
+                                        (SECTOR_1_POS, OreType::Magnetite, "Sector 1".to_string())
+                                    } else {
+                                        (SECTOR_7_POS, OreType::Carbon, "Sector 7".to_string())
+                                    };
+
                                     commands.spawn((
-                                        AutonomousShip { state: DroneState::Outbound, cargo: 0.0, cargo_type: OreType::Empty },
+                                        AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore },
+                                        AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.clone() },
                                         Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
                                         MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
                                         Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
@@ -509,7 +517,7 @@ fn hud_ui_system(
                                             Transform::from_xyz(0.0, 24.0, 1.2),
                                         ));
                                     });
-                                    add_log_entry(&mut station, "[STATION AI] Ship assembly complete. Autonomous unit launched.".to_string());
+                                    add_log_entry(&mut station, format!("[STATION AI] Autonomous unit assigned. {}. {} extraction.", name, if ore == OreType::Magnetite { "Magnetite" } else { "Carbon" }));
                                 }
                             }
 
@@ -602,45 +610,55 @@ fn handle_input(
 
 fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &AutonomousAssignment)>,
     mut station_query: Query<&mut Station>,
 ) {
-    for (mut ship, mut transform) in ship_query.iter_mut() {
-        match ship.state {
-            DroneState::Mining => {
-                ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
-                if ship.cargo >= CARGO_CAPACITY as f32 {
-                    ship.state = DroneState::Returning;
+    if let Ok(mut station) = station_query.get_single_mut() {
+        for (mut ship, mut transform, assignment) in ship_query.iter_mut() {
+            match ship.state {
+                AutonomousShipState::Holding => {
+                    if station.power_cells >= POWER_COST_CYCLE_TOTAL {
+                        station.power_cells -= POWER_COST_CYCLE_TOTAL;
+                        ship.state = AutonomousShipState::Outbound;
+                        add_log_entry(&mut station, "[STATION AI] Power confirmed. Dispatching autonomous unit.".to_string());
+                    }
                 }
-            }
-            DroneState::Returning => {
-                let direction = STATION_POS - transform.translation.truncate();
-                let distance = direction.length();
-                if distance < ARRIVAL_THRESHOLD {
-                    ship.state = DroneState::Unloading;
-                } else {
-                    let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
-                    transform.translation += movement.extend(0.0);
+                AutonomousShipState::Outbound => {
+                    let direction = assignment.target_pos - transform.translation.truncate();
+                    let distance = direction.length();
+                    if distance < ARRIVAL_THRESHOLD {
+                        ship.state = AutonomousShipState::Mining;
+                    } else {
+                        let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                        transform.translation += movement.extend(0.0);
+                    }
                 }
-            }
-            DroneState::Unloading => {
-                if let Ok(mut station) = station_query.get_single_mut() {
-                    // Autonomous ships currently mine Magnetite (Sector 1) only
-                    station.magnetite_reserves += ship.cargo;
-                    let msg = format!("[STATION AI] Magnetite reserves: {}.", station.magnetite_reserves as u32);
+                AutonomousShipState::Mining => {
+                    ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
+                    if ship.cargo >= CARGO_CAPACITY as f32 {
+                        ship.state = AutonomousShipState::Returning;
+                    }
+                }
+                AutonomousShipState::Returning => {
+                    let direction = STATION_POS - transform.translation.truncate();
+                    let distance = direction.length();
+                    if distance < ARRIVAL_THRESHOLD {
+                        ship.state = AutonomousShipState::Unloading;
+                    } else {
+                        let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                        transform.translation += movement.extend(0.0);
+                    }
+                }
+                AutonomousShipState::Unloading => {
+                    match assignment.ore_type {
+                        OreType::Magnetite => station.magnetite_reserves += ship.cargo,
+                        OreType::Carbon => station.carbon_reserves += ship.cargo,
+                        _ => {}
+                    }
+                    let msg = format!("[STATION AI] Cargo deposited: {}. Reserve updated.", assignment.sector_name);
                     add_log_entry(&mut station, msg);
                     ship.cargo = 0.0;
-                    ship.state = DroneState::Outbound;
-                }
-            }
-            DroneState::Outbound => {
-                let direction = SECTOR_1_POS - transform.translation.truncate();
-                let distance = direction.length();
-                if distance < ARRIVAL_THRESHOLD {
-                    ship.state = DroneState::Mining;
-                } else {
-                    let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
-                    transform.translation += movement.extend(0.0);
+                    ship.state = AutonomousShipState::Holding;
                 }
             }
         }
