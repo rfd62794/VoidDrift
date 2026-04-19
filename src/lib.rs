@@ -746,6 +746,10 @@ fn starfield_scroll_system(
     mut star_query: Query<(&StarLayer, &mut Transform), Without<MainCamera>>,
     cam_delta: Res<CameraDelta>,
 ) {
+    // DEVICE-CALIBRATED: These bounds are tuned for the Moto G 2025 screen
+    // (≈393×851 logical px at scale 1.0). If the game targets other screen sizes,
+    // revisit these values — too small causes star pop-in at screen edges,
+    // too large wastes update budget on off-screen entities.
     const WRAP_X: f32 = 700.0;
     const WRAP_Y: f32 = 500.0;
     let cam_pos = cam_query.single().translation.truncate();
