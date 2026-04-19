@@ -67,6 +67,7 @@ struct AsteroidField;
 struct Station {
     repair_progress: f32, // 0.0 = derelict, 1.0 = online
     online: bool,
+    ore_reserves: f32,
 }
 
 #[derive(Component)]
@@ -163,7 +164,11 @@ fn setup_world(
     // STATION / ASTEROIDS setup
     commands.spawn((
         MapMarker,
-        Station { repair_progress: 0.0, online: false },
+        Station { 
+            repair_progress: 0.0, 
+            online: false,
+            ore_reserves: 0.0,
+        },
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(-150.0, -200.0, 0.5),
@@ -198,9 +203,16 @@ fn autopilot_system(
                 let distance = direction.length();
                 if distance < ARRIVAL_THRESHOLD {
                     if let Some(target_ent) = target.target_entity {
-                        if asteroid_query.get(target_ent).is_ok() { ship.state = ShipState::Mining; }
-                        else if station_query.get(target_ent).is_ok() { 
+                        if asteroid_query.get(target_ent).is_ok() { 
+                            ship.state = ShipState::Mining; 
+                        }
+                        else if let Ok(mut station) = station_query.get_mut(target_ent) { 
                             ship.state = ShipState::Docked; 
+                            if ship.cargo > 0.0 {
+                                station.ore_reserves += ship.cargo;
+                                info!("[Voidrift Phase 6] Unloaded {:.1} ore into reserves. Total: {:.1}", ship.cargo, station.ore_reserves);
+                                ship.cargo = 0.0;
+                            }
                             info!("[Voidrift Phase 4] Gate Certification: Docked.");
                         }
                     } else { ship.state = ShipState::Idle; }
@@ -270,7 +282,9 @@ fn hud_ui_system(
                     
                     // DATA COLUMN
                     ui.vertical(|ui| {
-                        ui.label(format!("ORE: {:.1} / {}", ship.cargo, ship.cargo_capacity));
+                        if let Ok(station) = station_query.get_single() {
+                            ui.label(format!("ORE RESERVES: {:.1}", station.ore_reserves));
+                        }
                         ui.label(format!("POWER CELLS: {}", ship.power_cells));
                     });
 
@@ -278,14 +292,19 @@ fn hud_ui_system(
                         ui.add_space(16.0);
                         
                         // REFINE BUTTON
-                        if ui.button("REFINE").clicked() {
-                            let cells = (ship.cargo as u32) / REFINERY_RATIO;
-                            if cells > 0 {
-                                ship.cargo -= (cells * REFINERY_RATIO) as f32;
-                                ship.power_cells += cells;
-                                info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", 
-                                    (cells * REFINERY_RATIO), cells, ship.power_cells);
-                            }
+                        if let Ok(mut station) = station_query.get_single_mut() {
+                            let can_refine = station.ore_reserves >= REFINERY_RATIO as f32;
+                            ui.add_enabled_ui(can_refine, |ui| {
+                                if ui.button("REFINE").clicked() {
+                                    let cells = (station.ore_reserves as u32) / REFINERY_RATIO;
+                                    if cells > 0 {
+                                        station.ore_reserves -= (cells * REFINERY_RATIO) as f32;
+                                        ship.power_cells += cells;
+                                        info!("[Voidrift Phase 4] Refined {} ore -> {} cells. Total: {}", 
+                                            (cells * REFINERY_RATIO), cells, ship.power_cells);
+                                    }
+                                }
+                            });
                         }
 
                         // REPAIR BUTTON
