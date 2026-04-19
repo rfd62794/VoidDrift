@@ -3,22 +3,21 @@ updated: 2026-04-19
 agent: Antigravity
 
 ## Status
-phase: Post-Phase 9 — Visual Polish Complete, Map Polish Next
+phase: Post-Phase 8 — Station Phase B Complete
 test_floor: Moto G 2025 (API 35) — Build verified clean.
-last_directive: Voidrift_Documentation_Update_Directive.md
+last_directive: Voidrift_Station_PhaseB_Directive.md
 
 ## What Is Built
-Full production chain economy running on Moto G 2025 (API 35). Two-track 
-resource system (Magnetite/Carbon), autonomous fleet with smart routing, 
-power economy with self-preservation, station AI telemetry. Visual polish 
-complete through Step 5: parallax starfield, asteroid polygons, ship 
-triangles with rotation, thruster glows, mining beams. Codebase modularized 
-into 8 system files + dedicated constants/components. Ship does not yet stop 
-short of asteroid — known issue, deferred.
+Full production chain economy running on Moto G 2025 (API 35). Station 
+Architecture (Phase B) stabilized with rotation-sync arm docking via 
+`DockedAt`. Opening sequence and narrative signals hardened for mobile 
+performance. Universal Disjointness pattern enforced for Mali GPU stability. 
+Modularized codebase (8+ system files). 
 
 ## What Is Next
 - [x] Step 7: Narrative Signal (Opening Sequence, Scripted Telemetry)
-- [/] Step 8: Station Architecture (Rotation, Berths, Dual-Station model)
+- [x] Step 8: Station Architecture (Rotation, Berths, Dual-Station model)
+- [ ] Step 8b: Quest Tracker & UI Alignment
 - [ ] Step 9: NPC Visitors (Traders, Wanderers, Berth 3 logic)
 - [ ] Step 10: Drone Depot Construction (Infrastructure expansion)
 After map polish: module-aware ADR documentation, then post-slice economy 

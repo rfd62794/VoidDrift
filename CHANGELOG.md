@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-station-phase-b] — 2026-04-19
+### Added
+- **DockedAt Architecture**: Persistent ship-to-berth synchronization using `DockedAt(Entity)` component; ensures ships correctly "ride the arm" during station rotation.
+- **Universal Disjointness standard**: Implementation of mandatory `Without<>` filters across all `&mut Transform` queries for Mali GPU hardware stability.
+- **Quest Tracker Framework**: Preliminary resource and objective definitions for upcoming feature.
+
+### Fixed
+- Station arm rotation bug: resolved issue where ships became static upon arrival.
+- B0001 "Query Conflict" panics: 100% compliance with ECS disjointness requirements.
+- Intro sequence hardening: improved phase transitions using direct state verification.
+
+---
+
 ## [0.3.0] — 2026-04-19 — Module Refactor
 
 ### Changed

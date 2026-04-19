@@ -58,6 +58,10 @@ src/
 - `MainCamera` / `PlayerShip` / `AutonomousShipTag`: Marker components.
 - `ThrusterGlow` / `MiningBeam` / `ShipCargoBarFill`: Visual marker components.
 - `MapMarker`: Marks entities visible/targetable on the map.
+- `DockedAt(Entity)`: Persistently links a ship to a specific station arm for rotation synchronization.
+
+## Universal Disjointness Pattern
+To prevent runtime panics on the target Mali GPU hardware, all systems querying `&mut Transform` MUST include strict `Without<>` filters for all other major entity types (Station, Ship, AutonomousShip, Berth, StarLayer, etc.). This ensures total query isolation in the Bevy ECS.
 
 ## ShipState Machine
 
