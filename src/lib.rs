@@ -237,8 +237,11 @@ fn setup_world(
         let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
         let far_mat  = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.4));
         let near_mat = materials.add(Color::srgba(1.0, 1.0, 1.0, 0.7));
-        let star_sm  = meshes.add(Rectangle::new(1.5, 1.5));
-        let star_lg  = meshes.add(Rectangle::new(2.5, 2.5));
+        
+        // Use whole integer sizes (2.0 and 3.0) instead of fractional (1.5 and 2.5).
+        // Fractional sizes on high-DPI mobile screens cause subpixel aliasing (shimmer/flickering).
+        let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
+        let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
 
         for _ in 0..150 {
             let x: f32 = rng.gen_range(-700.0..700.0);
