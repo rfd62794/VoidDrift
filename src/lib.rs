@@ -1082,27 +1082,10 @@ fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Mining => {
-                    let mut is_still_mining = true;
                     ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
                     if ship.cargo >= CARGO_CAPACITY as f32 {
                         ship.state = AutonomousShipState::Returning;
                         ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
-                        is_still_mining = false;
-                    }
-
-                    if let Some(children) = children_opt {
-                        for &child in children.iter() {
-                            if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
-                                if is_still_mining {
-                                    let dist = transform.translation.truncate().distance(assignment.target_pos);
-                                    *b_vis = Visibility::Visible;
-                                    b_transform.scale.y = dist;
-                                    b_transform.translation.y = dist / 2.0;
-                                } else {
-                                    *b_vis = Visibility::Hidden;
-                                }
-                            }
-                        }
                     }
                 }
                 AutonomousShipState::Returning => {
@@ -1142,6 +1125,21 @@ fn autonomous_ship_system(
                          add_log_entry(&mut station, "[STATION AI] Autonomous unit returned. Low power. Recharging.".to_string());
                     }
                     ship.state = AutonomousShipState::Holding;
+                }
+            }
+
+            if let Some(children) = children_opt {
+                for &child in children.iter() {
+                    if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
+                        if ship.state == AutonomousShipState::Mining {
+                            let dist = transform.translation.truncate().distance(assignment.target_pos);
+                            *b_vis = Visibility::Visible;
+                            b_transform.scale.y = dist;
+                            b_transform.translation.y = dist / 2.0;
+                        } else {
+                            *b_vis = Visibility::Hidden;
+                        }
+                    }
                 }
             }
         }
