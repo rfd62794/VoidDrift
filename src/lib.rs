@@ -24,6 +24,7 @@ const CARGO_CAPACITY: u32 = 100;
 const MINING_RATE: f32 = 8.0;
 
 const REFINERY_RATIO: u32 = 10;
+const REPAIR_COST: u32 = 25;
 
 // ----------------------------------------------------------------------------
 // STATES & COMPONENTS
@@ -63,7 +64,10 @@ struct AutopilotTarget {
 struct AsteroidField;
 
 #[derive(Component)]
-struct Station;
+struct Station {
+    repair_progress: f32, // 0.0 = derelict, 1.0 = online
+    online: bool,
+}
 
 #[derive(Component)]
 struct MapMarker;
@@ -103,6 +107,8 @@ fn main() {
             mining_system, 
             cargo_display_system, 
             hud_ui_system,
+            station_visual_system,
+            slice_completion_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -157,7 +163,7 @@ fn setup_world(
     // STATION / ASTEROIDS setup
     commands.spawn((
         MapMarker,
-        Station,
+        Station { repair_progress: 0.0, online: false },
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(-150.0, -200.0, 0.5),
@@ -231,6 +237,7 @@ fn cargo_display_system(ship: Query<&Ship>, mut fill: Query<(&mut Transform, &Pa
 fn hud_ui_system(
     mut contexts: EguiContexts,
     mut ship_query: Query<&mut Ship>,
+    mut station_query: Query<&mut Station>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
@@ -269,6 +276,8 @@ fn hud_ui_system(
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.add_space(16.0);
+                        
+                        // REFINE BUTTON
                         if ui.button("REFINE").clicked() {
                             let cells = (ship.cargo as u32) / REFINERY_RATIO;
                             if cells > 0 {
@@ -278,10 +287,64 @@ fn hud_ui_system(
                                     (cells * REFINERY_RATIO), cells, ship.power_cells);
                             }
                         }
+
+                        // REPAIR BUTTON
+                        if let Ok(mut station) = station_query.get_single_mut() {
+                            if !station.online {
+                                ui.add_space(8.0);
+                                let can_repair = ship.power_cells >= REPAIR_COST;
+                                let repair_label = if can_repair { "REPAIR".to_string() } else { format!("REPAIR ({} cells)", REPAIR_COST) };
+                                
+                                ui.add_enabled_ui(can_repair, |ui| {
+                                    if ui.button(repair_label).clicked() {
+                                        ship.power_cells -= REPAIR_COST;
+                                        station.repair_progress = 1.0;
+                                        station.online = true;
+                                        info!("[Voidrift Phase 5] Station repair complete. Slice done.");
+                                    }
+                                });
+                            }
+                        }
                     });
                 });
                 ui.add_space(8.0);
             });
+    }
+}
+
+fn station_visual_system(
+    station_query: Query<(&Station, &MeshMaterial2d<ColorMaterial>)>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    for (station, material_handle) in &station_query {
+        if station.online {
+            if let Some(material) = materials.get_mut(&material_handle.0) {
+                if material.color != Color::srgb(0.0, 0.8, 1.0) {
+                    material.color = Color::srgb(0.0, 0.8, 1.0);
+                    info!("[Voidrift Phase 5] Station visual: online state activated.");
+                }
+            }
+        }
+    }
+}
+
+fn slice_completion_system(
+    mut contexts: EguiContexts,
+    station_query: Query<&Station>,
+) {
+    for station in &station_query {
+        if station.online {
+            egui::Window::new("slice_complete")
+                .title_bar(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(contexts.ctx_mut(), |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.heading("STATION ONLINE");
+                        ui.label("Slice Complete.");
+                    });
+                });
+        }
     }
 }
 
