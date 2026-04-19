@@ -165,6 +165,12 @@ struct StarLayer(f32); // parallax scroll factor: 0.05 = far, 0.15 = near
 #[derive(Component)]
 struct LastHeading(f32); // tracks visual rotation when not moving
 
+#[derive(Component)]
+struct PlayerShip;
+
+#[derive(Component)]
+struct AutonomousShipTag;
+
 #[derive(Resource, Default)]
 struct CameraDelta(Vec2); // world-space camera displacement this tick
 
@@ -964,7 +970,7 @@ fn handle_input(
 
 fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &AutonomousAssignment)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment)>,
     mut station_query: Query<&mut Station>,
 ) {
     if let Ok(mut station) = station_query.get_single_mut() {
