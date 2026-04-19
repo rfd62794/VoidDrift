@@ -314,7 +314,7 @@ fn setup_world(
         parent.spawn((
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))), // 1.0 initial height
-            MeshMaterial2d(materials.add(Color::srgba(1.0, 0.0, 1.0, 0.6))), // Magenta
+            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))), // Cyan for player
             Transform::from_xyz(0.0, 0.0, -0.2),
             Visibility::Hidden,
         ));
@@ -898,7 +898,7 @@ fn hud_ui_system(
                                         parent.spawn((
                                             MiningBeam,
                                             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-                                            MeshMaterial2d(materials.add(Color::srgba(1.0, 0.0, 1.0, 0.6))), // Magenta
+                                            MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), // Orange for autonomous
                                             Transform::from_xyz(0.0, 0.0, -0.2),
                                             Visibility::Hidden,
                                         ));
@@ -1056,12 +1056,12 @@ fn handle_input(
 
 fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>)>,
     mut station_query: Query<&mut Station>,
     mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AsteroidField>, Without<AutonomousShip>)>,
 ) {
     if let Ok(mut station) = station_query.get_single_mut() {
-        for (entity, mut ship, mut transform, mut assignment, children_opt) in ship_query.iter_mut() {
+        for (mut ship, mut transform, mut assignment, children_opt) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     if station.power_cells >= POWER_COST_CYCLE_TOTAL {
