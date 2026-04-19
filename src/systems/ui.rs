@@ -53,8 +53,8 @@ pub fn autonomous_ship_cargo_display_system(
 
 pub fn hud_ui_system(
     mut contexts: EguiContexts,
-    mut ship_query: Query<&mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>)>,
-    mut station_query: Query<(Entity, &mut Station, &mut StationQueues)>,
+    mut ship_query: Query<&mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
+    mut station_query: Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     signal_log: Res<SignalLog>,

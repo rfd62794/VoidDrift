@@ -207,7 +207,7 @@ pub fn setup_world(
             resume_timer: 0.0,
         },
         StationQueues::default(),
-        SpatialBundle::from_transform(Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT)),
+        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
         Visibility::Visible,
     ))
     .with_children(|parent| {

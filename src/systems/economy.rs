@@ -161,8 +161,8 @@ fn process_job(job: &mut ProcessingJob, station: &mut Station, delta: f32, batch
 
 pub fn auto_dock_system(
     mut removed_autopilot: RemovedComponents<AutopilotTarget>,
-    mut ship_query: Query<&mut Ship, With<PlayerShip>>,
-    mut station_query: Query<(&mut Station, &mut StationQueues)>,
+    mut ship_query: Query<&mut Ship, (With<PlayerShip>, Without<Station>)>,
+    mut station_query: Query<(&mut Station, &mut StationQueues), (With<Station>, Without<Ship>)>,
     settings: Res<AutoDockSettings>,
 ) {
     for _ in removed_autopilot.read() {
