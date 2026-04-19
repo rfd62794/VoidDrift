@@ -18,6 +18,10 @@ The MVP slice is a fully playable, gated loop verified on a physical Moto G 2025
 - **Repair** — spend 25 power cells to bring the derelict station online
 - **Slice complete** — station changes state, overlay confirms
 
+![Map View](screenshots/gate2_screenshot.png)
+![Mining / Refinery](screenshots/gate4_map.png)
+![Slice Complete](screenshots/p5_active.png)
+
 Five development phases, each gated by physical device evidence before proceeding.
 
 ---
