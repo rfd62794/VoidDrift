@@ -162,6 +162,9 @@ struct ShipCargoBarFill;
 #[derive(Component)]
 struct StarLayer(f32); // parallax scroll factor: 0.05 = far, 0.15 = near
 
+#[derive(Component)]
+struct LastHeading(f32); // tracks visual rotation when not moving
+
 #[derive(Resource, Default)]
 struct CameraDelta(Vec2); // world-space camera displacement this tick
 
@@ -188,7 +191,12 @@ fn main() {
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
         .add_systems(Startup, setup_world)
-        .add_systems(Update, (autopilot_system, camera_follow_system, starfield_scroll_system).chain())
+        .add_systems(Update, (
+            autopilot_system, 
+            camera_follow_system, 
+            starfield_scroll_system,
+            ship_rotation_system,
+        ).chain())
         .add_systems(OnEnter(GameState::MapView), enter_map_view)
         .add_systems(OnExit(GameState::MapView), exit_map_view)
         .add_systems(Update, (
@@ -262,6 +270,8 @@ fn setup_world(
 
     // 2. SHIP
     commands.spawn((
+        PlayerShip,
+        LastHeading(0.0),
         Ship { 
             state: ShipState::Idle, 
             speed: SHIP_SPEED,
@@ -271,7 +281,7 @@ fn setup_world(
             power: SHIP_POWER_MAX,
             power_cells: 0,
         },
-        Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
+        Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
         Transform::from_xyz(0.0, 0.0, 1.0),
     ))
@@ -334,9 +344,28 @@ fn setup_world(
 }
 
 // ── VISUAL HELPERS ───────────────────────────────────────────────────────────
+fn triangle_mesh(w: f32, h: f32) -> Mesh {
+    use bevy::render::mesh::{Indices, PrimitiveTopology};
+    
+    // Pointing up (+Y is forward in 2D)
+    let vertices = vec![
+        [0.0, h / 2.0, 0.0],
+        [-w / 2.0, -h / 2.0, 0.0],
+        [w / 2.0, -h / 2.0, 0.0],
+    ];
+    let normals = vec![[0.0, 0.0, 1.0]; 3];
+    let uvs = vec![[0.5, 1.0], [0.0, 0.0], [1.0, 0.0]];
+    let indices = vec![0, 1, 2];
+
+    Mesh::new(PrimitiveTopology::TriangleList, Default::default())
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+        .with_inserted_indices(Indices::U32(indices))
+}
+
 fn generate_asteroid_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
-    use bevy::math::Vec3;
     use std::f32::consts::TAU;
 
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
@@ -364,7 +393,7 @@ fn generate_asteroid_mesh(seed: u64) -> Mesh {
     }
 
     // Triangle list indices (fan behavior)
-    let mut indices = vec![
+    let indices = vec![
         0, 1, 2,
         0, 2, 3,
         0, 3, 4,
@@ -464,6 +493,37 @@ fn autopilot_system(
                 }
             }
         }
+    }
+}
+
+fn ship_rotation_system(
+    mut query: Query<(&mut Transform, &mut LastHeading, Option<&AutopilotTarget>, Option<&Ship>, Option<&AutonomousShip>)>,
+) {
+    use std::f32::consts::PI;
+    for (mut transform, mut last_heading, target_opt, ship_opt, auto_ship_opt) in query.iter_mut() {
+        let is_navigating = if let Some(ship) = ship_opt {
+            ship.state == ShipState::Navigating
+        } else if let Some(auto_ship) = auto_ship_opt {
+            auto_ship.state == AutonomousShipState::Outbound || auto_ship.state == AutonomousShipState::Returning
+        } else {
+            false
+        };
+
+        if is_navigating {
+            if let Some(target) = target_opt {
+                let current_pos = transform.translation.truncate();
+                let dir = target.destination - current_pos;
+                if dir.length_squared() > 1.0 {
+                    // Triangle mesh points +Y. atan2 gives angle from +X to vector.
+                    // Subtract PI/2 so 0 radians is +Y.
+                    let heading = dir.y.atan2(dir.x) - PI / 2.0;
+                    last_heading.0 = heading;
+                }
+            }
+        }
+        
+        // Always apply LastHeading, so we hold rotation when stopped
+        transform.rotation = Quat::from_rotation_z(last_heading.0);
     }
 }
 
@@ -729,9 +789,11 @@ fn hud_ui_system(
                                     };
 
                                     commands.spawn((
+                                        AutonomousShipTag,
+                                        LastHeading(0.0),
                                         AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX },
                                         AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.clone() },
-                                        Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
+                                        Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
                                         MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
                                         Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
                                     ))
@@ -922,6 +984,10 @@ fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Returning => {
+                    // Update assignment target to station so autopilot tracking works correctly for visual orientation
+                    // while traversing back to base.
+                    assignment.target_pos = STATION_POS;
+                    
                     let direction = STATION_POS - transform.translation.truncate();
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD {
