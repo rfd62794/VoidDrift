@@ -10,6 +10,7 @@ pub fn autopilot_system(
     asteroid_query: Query<&AsteroidField>,
     mut station_query: Query<(Entity, &mut Station)>,
     carbon_field_query: Query<Entity, (With<AsteroidField>, Without<MapMarker>)>,
+    mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
 ) {
     for (mut ship, mut transform, entity) in query.iter_mut() {
@@ -29,6 +30,7 @@ pub fn autopilot_system(
                         }
                         else if let Ok((_station_ent, mut station)) = station_query.get_mut(target_ent) { 
                             ship.state = ShipState::Docked; 
+                            *active_tab = ActiveStationTab::Reserves;
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
                             // [PHASE 8b] Reset player power for free if station has power

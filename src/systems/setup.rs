@@ -85,7 +85,7 @@ pub fn setup_world(
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP),
+        Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
     ))
     .with_children(|parent| {
         // [Z SYSTEM] Parent Z_SHIP (1.0) + local offsets

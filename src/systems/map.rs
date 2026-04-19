@@ -66,8 +66,14 @@ pub fn handle_input(
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>)>,
     mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
+    opening: Res<OpeningSequence>,
+    mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
 ) {
+    if opening.phase != OpeningPhase::Complete {
+        return;
+    }
+
     let (camera, camera_transform) = camera_query.single();
     for touch in touches.iter_just_pressed() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
@@ -82,6 +88,7 @@ pub fn handle_input(
                     }
 
                     ship.state = ShipState::Navigating;
+                    *active_tab = ActiveStationTab::Reserves;
                     ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     commands.entity(ship_entity).insert(AutopilotTarget { 
                         destination: mp, 

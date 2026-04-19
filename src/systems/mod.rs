@@ -6,3 +6,4 @@ pub mod autonomous;
 pub mod economy;
 pub mod ui;
 pub mod map;
+pub mod narrative;

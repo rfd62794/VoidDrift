@@ -34,6 +34,9 @@ fn main() {
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
+        .insert_resource(SignalLog::default())
+        .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
+        .insert_resource(ActiveStationTab::default())
         .add_systems(Startup, systems::setup::setup_world)
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
@@ -61,6 +64,8 @@ fn main() {
             systems::economy::ship_self_preservation_system,
             systems::economy::station_maintenance_system,
             systems::map::map_highlight_system,
+            systems::narrative::opening_sequence_system,
+            systems::narrative::signal_system,
         ))
         .add_systems(Update, systems::map::handle_input)
         .run();

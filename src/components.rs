@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::collections::{VecDeque, HashSet};
 
 #[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum GameState {
@@ -59,7 +60,7 @@ pub struct Station {
     pub power: f32,
     pub maintenance_timer: Timer,
     pub last_power_warning_time: f32,
-    pub log: std::collections::VecDeque<String>,
+    pub log: VecDeque<String>,
 }
 
 #[derive(Component)]
@@ -133,3 +134,38 @@ pub struct DestinationHighlight;
 
 #[derive(Resource, Default)]
 pub struct CameraDelta(pub Vec2);
+
+// ── NARRATIVE & UI OVERHAUL SYSTEMS ──────────────────────────────────────────
+
+#[derive(Resource, Default)]
+pub struct SignalLog {
+    pub entries: VecDeque<String>,
+    pub fired: HashSet<u32>,
+    pub last_fired_at: std::collections::HashMap<u32, f32>, // For refirable IDs
+}
+
+#[derive(Resource)]
+pub struct OpeningSequence {
+    pub phase: OpeningPhase,
+    pub timer: f32,
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum OpeningPhase {
+    Adrift,           // Waiting — show S-001
+    SignalIdentified, // 2s timer — show S-002
+    AutoPiloting,     // Ship moving to station — show S-003
+    InRange,          // Station visible — show S-004
+    Docked,           // Auto-docked — show S-005, S-006
+    Complete,         // Player has control — show S-007, UI unlocks
+}
+
+#[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
+pub enum ActiveStationTab {
+    #[default]
+    Reserves,
+    Power,
+    Smelter,
+    Forge,
+    ShipPort,
+}
