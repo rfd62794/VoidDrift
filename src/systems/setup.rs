@@ -272,10 +272,10 @@ pub fn setup_world(
     commands.spawn((
         MapElement,
         DestinationHighlight,
-        Mesh2d(meshes.add(Circle::new(40.0))), // Large ring
+        Mesh2d(meshes.add(Annulus::new(38.0, 40.0))), // White ring border
         MeshMaterial2d(materials.add(ColorMaterial {
-            color: Color::srgba(1.0, 1.0, 1.0, 0.1),
-            alpha_mode: AlphaMode2d::Opaque, // Still dim due to 0.1 alpha color in opaque phase? Wait...
+            color: Color::srgba(1.0, 1.0, 1.0, 0.4), // Semi-transparent white
+            alpha_mode: AlphaMode2d::Opaque, // Use Opaque to maintain flicker-free depth sorting
             ..default()
         })),
         Transform::from_xyz(0.0, 0.0, Z_HUD - 0.1), // Slightly behind markers
