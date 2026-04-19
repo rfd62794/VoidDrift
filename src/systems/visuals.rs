@@ -73,7 +73,7 @@ pub fn ship_rotation_system(
 /// Stars track camera movement at (1 - parallax_factor) speed, creating the illusion
 /// that far stars (factor=0.05) barely drift while near stars (0.15) move slightly more.
 pub fn starfield_scroll_system(
-    cam_query: Query<&Transform, With<MainCamera>>,
+    cam_query: Query<&Transform, (With<MainCamera>, Without<StarLayer>)>,
     mut star_query: Query<(&StarLayer, &mut Transform), Without<MainCamera>>,
     cam_delta: Res<CameraDelta>,
 ) {

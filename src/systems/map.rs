@@ -5,7 +5,7 @@ use crate::constants::*;
 pub fn camera_follow_system(
     state: Res<State<GameState>>,
     ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
-    mut cam: Query<&mut Transform, With<MainCamera>>,
+    mut cam: Query<&mut Transform, (With<MainCamera>, Without<Ship>)>,
     mut cam_delta: ResMut<CameraDelta>,
 ) {
     let st = ship.single();

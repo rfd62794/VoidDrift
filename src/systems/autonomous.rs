@@ -5,12 +5,11 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, Option<&Children>), Without<Station>>,
-    mut station_query: Query<(&mut Station, &Transform), Without<AutonomousShip>>,
-    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AsteroidField>, Without<AutonomousShip>)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>)>,
+    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>)>,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
-        for (mut ship, mut transform, mut assignment, children_opt) in ship_query.iter_mut() {
+        for (mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     if station.power_cells >= POWER_COST_CYCLE_TOTAL {
@@ -85,19 +84,24 @@ pub fn autonomous_ship_system(
                     ship.state = AutonomousShipState::Holding;
                 }
             }
+        }
+    }
+}
 
-            if let Some(children) = children_opt {
-                for &child in children.iter() {
-                    if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
-                        if ship.state == AutonomousShipState::Mining {
-                            let dist = transform.translation.truncate().distance(assignment.target_pos);
-                            *b_vis = Visibility::Visible;
-                            b_transform.scale.y = dist;
-                            b_transform.translation.y = dist / 2.0;
-                        } else {
-                            *b_vis = Visibility::Hidden;
-                        }
-                    }
+pub fn autonomous_beam_system(
+    ship_query: Query<(&AutonomousShip, &Transform, &AutonomousAssignment, &Children), Without<MiningBeam>>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>)>,
+) {
+    for (ship, transform, assignment, children) in ship_query.iter() {
+        for &child in children.iter() {
+            if let Ok((mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
+                if ship.state == AutonomousShipState::Mining {
+                    let dist = transform.translation.truncate().distance(assignment.target_pos);
+                    *b_vis = Visibility::Visible;
+                    b_transform.scale.y = dist;
+                    b_transform.translation.y = dist / 2.0;
+                } else {
+                    *b_vis = Visibility::Hidden;
                 }
             }
         }

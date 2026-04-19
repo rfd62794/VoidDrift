@@ -4,8 +4,8 @@ use crate::constants::*;
 
 pub fn mining_system(
     time: Res<Time>, 
-    mut ship_query: Query<(&mut Ship, &Transform, &Children)>, 
-    mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>)>,
+    mut ship_query: Query<(&mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<AsteroidField>)>, 
+    mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>), (Without<Ship>, Without<MiningBeam>)>,
     mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>)>,
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {

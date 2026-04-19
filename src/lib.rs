@@ -63,6 +63,7 @@ fn main() {
             systems::ui::hud_ui_system,
             systems::ui::station_visual_system,
             systems::autonomous::autonomous_ship_system,
+            systems::autonomous::autonomous_beam_system.after(systems::autonomous::autonomous_ship_system),
             systems::ui::ship_cargo_display_system,
             systems::ui::autonomous_ship_cargo_display_system,
             systems::economy::station_status_system,

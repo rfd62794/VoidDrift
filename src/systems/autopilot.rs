@@ -5,10 +5,10 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autopilot_system(
     time: Res<Time>,
-    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), Without<Station>>,
+    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), (Without<Station>, Without<AsteroidField>, Without<Berth>)>,
     berth_query: Query<&Berth>,
     asteroid_query: Query<&AsteroidField>,
-    mut station_query: Query<(Entity, &mut Station, &Transform), Without<Ship>>,
+    mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<AsteroidField>, Without<Berth>)>,
     carbon_field_query: Query<Entity, (With<AsteroidField>, Without<MapMarker>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
@@ -108,9 +108,9 @@ pub fn autopilot_system(
 
 /// [PHASE B] Locks docked ship to berth position throughout rotation
 pub fn docked_ship_system(
-    mut ship_query: Query<(&Ship, &mut Transform, &AutopilotTarget)>,
+    mut ship_query: Query<(&Ship, &mut Transform, &AutopilotTarget), (Without<Station>, Without<Berth>)>,
     berth_query: Query<&Berth>,
-    station_query: Query<(&Station, &Transform), Without<Ship>>,
+    station_query: Query<(&Station, &Transform), (Without<Ship>, Without<Berth>)>,
 ) {
     for (ship, mut transform, target) in ship_query.iter_mut() {
         if ship.state == ShipState::Docked {
