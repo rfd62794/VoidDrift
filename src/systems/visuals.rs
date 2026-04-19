@@ -99,3 +99,16 @@ pub fn starfield_scroll_system(
         else if rel_y < -WRAP_Y { transform.translation.y += WRAP_Y * 2.0; }
     }
 }
+
+pub fn station_rotation_system(
+    time: Res<Time>,
+    mut station_query: Query<&mut Station>,
+    mut visual_query: Query<&mut Transform, With<StationVisualsContainer>>,
+) {
+    if let Ok(mut station) = station_query.get_single_mut() {
+        station.rotation += STATION_ROTATION_SPEED * time.delta_seconds();
+        if let Ok(mut transform) = visual_query.get_single_mut() {
+            transform.rotation = Quat::from_rotation_z(station.rotation);
+        }
+    }
+}

@@ -61,6 +61,7 @@ pub struct Station {
     pub maintenance_timer: Timer,
     pub last_power_warning_time: f32,
     pub log: VecDeque<String>,
+    pub rotation: f32,
 }
 
 #[derive(Component)]
@@ -116,6 +117,12 @@ pub struct MiningBeam;
 
 #[derive(Component)]
 pub struct AutonomousShipTag;
+
+#[derive(Component)]
+pub struct StationVisualsContainer;
+
+#[derive(Component)]
+pub struct StationHub;
 
 #[derive(Component)]
 pub struct MapElement; // Marker for visibility toggling

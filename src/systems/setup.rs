@@ -130,7 +130,7 @@ pub fn setup_world(
     });
 
     // STATION / SECTORS setup
-    commands.spawn((
+    let station_ent = commands.spawn((
         MapMarker,
         Station { 
             repair_progress: 0.0, 
@@ -147,13 +147,65 @@ pub fn setup_world(
             log: std::collections::VecDeque::from([
                 "SYSTEMS INITIALIZED.".to_string(),
             ]),
+            rotation: 0.0,
         },
-        Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
-        MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
         Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
+        Visibility::Visible,
     ))
     .with_children(|parent| {
-        // [STEP 6] MAP ICON
+        // [PHASE A] ROTATING VISUAL CONTAINER
+        parent.spawn((
+            StationVisualsContainer,
+            Transform::IDENTITY,
+            Visibility::Visible,
+        ))
+        .with_children(|vis| {
+            // CENTRAL HUB
+            vis.spawn((
+                StationHub,
+                Mesh2d(meshes.add(Circle::new(STATION_HUB_RADIUS))),
+                MeshMaterial2d(materials.add(Color::srgb(0.33, 0.27, 0.0))), // Initial dark amber
+                Transform::from_xyz(0.0, 0.0, 0.0),
+            ));
+
+            // ARMS & BERTHS
+            for i in 0..6 {
+                let angle = (i as f32) * (std::f32::consts::TAU / 6.0);
+                let is_active = i < STATION_BERTHS_INITIAL;
+                let length = if is_active { STATION_ARM_LENGTH } else { STATION_STUB_LENGTH };
+                let alpha = if is_active { 1.0 } else { STATION_STUB_ALPHA };
+                let color = if is_active { Color::srgb(0.6, 0.6, 0.6) } else { Color::srgba(0.2, 0.2, 0.2, alpha) };
+
+                // Arm spoke
+                vis.spawn((
+                    Mesh2d(meshes.add(Rectangle::new(STATION_ARM_THICKNESS, length))),
+                    MeshMaterial2d(materials.add(ColorMaterial {
+                        color,
+                        alpha_mode: AlphaMode2d::Blend,
+                        ..default()
+                    })),
+                    // Pivot rectangle so it starts at hub center. 
+                    // Rotate then translate by half length in the rotated direction.
+                    Transform::from_rotation(Quat::from_rotation_z(angle))
+                        .with_translation(Vec3::new(
+                            angle.cos() * (length / 2.0),
+                            angle.sin() * (length / 2.0),
+                            -0.1, // Slightly behind hub
+                        )),
+                )).with_children(|arm| {
+                    if is_active {
+                        // Berth circle at end of active arm
+                        arm.spawn((
+                            Mesh2d(meshes.add(Circle::new(STATION_BERTH_RADIUS))),
+                            MeshMaterial2d(materials.add(Color::srgb(0.4, 0.4, 0.4))),
+                            Transform::from_xyz(0.0, length / 2.0, 0.1), // Offset by half length relative to arm center
+                        ));
+                    }
+                });
+            }
+        });
+
+        // [STEP 6] MAP ICON (North-aligned, sibling to VisualsContainer)
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(16.0))),
@@ -174,7 +226,7 @@ pub fn setup_world(
             Transform::from_xyz(0.0, -40.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
-    });
+    }).id();
 
     // Sector 1: Magnetite (Initial)
     commands.spawn((

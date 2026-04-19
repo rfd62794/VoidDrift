@@ -362,14 +362,21 @@ pub fn hud_ui_system(
 }
 
 pub fn station_visual_system(
-    station_query: Query<(&Station, &MeshMaterial2d<ColorMaterial>)>,
+    station_query: Query<&Station>,
+    mut hub_query: Query<&MeshMaterial2d<ColorMaterial>, With<StationHub>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for (station, material_handle) in &station_query {
-        if station.online {
+    if let Ok(station) = station_query.get_single() {
+        if let Ok(material_handle) = hub_query.get_single_mut() {
             if let Some(material) = materials.get_mut(&material_handle.0) {
-                if material.color != Color::srgb(0.0, 0.8, 1.0) {
-                    material.color = Color::srgb(0.0, 0.8, 1.0);
+                let target_color = if station.online {
+                    Color::srgb(1.0, 0.84, 0.0) // #FFD700 — powered yellow
+                } else {
+                    Color::srgb(0.33, 0.27, 0.0) // #554400 — dark amber derelict
+                };
+
+                if material.color != target_color {
+                    material.color = target_color;
                 }
             }
         }

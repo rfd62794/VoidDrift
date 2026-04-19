@@ -48,6 +48,16 @@ pub const Z_HUD: f32           = 2.0;
 pub const SIGNAL_PAUSE_S2: f32          = 2.0; // Between S-001 and S-002
 pub const SIGNAL_PAUSE_DOCK_REPORT: f32 = 1.0; // Between S-005 and S-006
 pub const SIGNAL_PAUSE_COMPLETE: f32    = 1.5; // Between S-006 and S-007/UI Unlock
+
+// STATION VISUALS (Phase A)
+pub const STATION_HUB_RADIUS: f32     = 40.0;
+pub const STATION_ARM_LENGTH: f32     = 120.0;
+pub const STATION_ARM_THICKNESS: f32  = 6.0;
+pub const STATION_BERTH_RADIUS: f32   = 22.0;
+pub const STATION_STUB_LENGTH: f32    = 60.0;
+pub const STATION_STUB_ALPHA: f32     = 0.3;
+pub const STATION_ROTATION_SPEED: f32 = std::f32::consts::TAU / 90.0;
+pub const STATION_BERTHS_INITIAL: u8  = 3;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // [STEP 6] MAP COLORS

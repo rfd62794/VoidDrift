@@ -41,8 +41,10 @@ fn main() {
         .add_systems(Startup, systems::setup::setup_world)
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
-            systems::map::camera_follow_system, 
+            systems::map::camera_follow_system,                
             systems::visuals::starfield_scroll_system,
+            systems::visuals::station_rotation_system,
+            systems::ui::station_visual_system,
             systems::visuals::ship_rotation_system,
             systems::visuals::thruster_glow_system,
         ).chain())
