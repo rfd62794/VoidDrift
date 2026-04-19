@@ -1,0 +1,70 @@
+use bevy::prelude::*;
+use crate::components::*;
+use crate::constants::*;
+
+pub fn camera_follow_system(
+    state: Res<State<GameState>>,
+    ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+    mut cam_delta: ResMut<CameraDelta>,
+) {
+    let st = ship.single();
+    let mut ct = cam.single_mut();
+    let old_pos = ct.translation.truncate();
+    if *state.get() == GameState::SpaceView {
+        ct.translation.x = st.translation.x;
+        ct.translation.y = st.translation.y;
+    } else {
+        ct.translation.x = 0.0;
+        ct.translation.y = 0.0;
+    }
+    // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
+    cam_delta.0 = ct.translation.truncate() - old_pos;
+}
+
+pub fn enter_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
+    cam.single_mut().scale = MAP_OVERVIEW_SCALE; 
+}
+
+pub fn exit_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
+    cam.single_mut().scale = 1.0; 
+}
+
+pub fn handle_input(
+    touches: Res<Touches>,
+    state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>)>,
+    mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
+    mut commands: Commands,
+) {
+    let (camera, camera_transform) = camera_query.single();
+    for touch in touches.iter_just_pressed() {
+        if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
+            for (mt, me) in marker_query.iter() {
+                let mp = mt.translation.truncate();
+                if world_pos.distance(mp) < 80.0 {
+                    let (ship_entity, mut ship) = ship_query.single_mut();
+                    
+                    // Avoid docking redundancy
+                    if ship.state == ShipState::Docked && mp.distance(STATION_POS) < 10.0 { 
+                        continue; 
+                    }
+
+                    ship.state = ShipState::Navigating;
+                    ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
+                    commands.entity(ship_entity).insert(AutopilotTarget { 
+                        destination: mp, 
+                        target_entity: Some(me) 
+                    });
+
+                    if *state.get() == GameState::MapView {
+                        next_state.set(GameState::SpaceView);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
