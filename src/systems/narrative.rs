@@ -27,7 +27,7 @@ pub fn opening_sequence_system(
             }
         }
         OpeningPhase::SignalIdentified => {
-            if opening.timer >= 2.0 {
+            if opening.timer >= SIGNAL_PAUSE_S2 {
                 opening.phase = OpeningPhase::AutoPiloting;
                 opening.timer = 0.0;
                 
@@ -52,7 +52,7 @@ pub fn opening_sequence_system(
             }
         }
         OpeningPhase::Docked => {
-            if opening.timer >= 1.5 {
+            if opening.timer >= SIGNAL_PAUSE_COMPLETE {
                 opening.phase = OpeningPhase::Complete;
                 opening.timer = 0.0;
             }
@@ -99,7 +99,7 @@ pub fn signal_system(
     fire_signal(&mut signal, 1, "> SIGNAL RECEIVED.");
 
     // ID 2: 2s after start
-    if opening.timer >= 2.0 && opening.phase == OpeningPhase::SignalIdentified {
+    if opening.timer >= SIGNAL_PAUSE_S2 && opening.phase == OpeningPhase::SignalIdentified {
         fire_signal(&mut signal, 2, "> SOURCE IDENTIFIED. BEARING 047.");
     }
 
@@ -119,7 +119,7 @@ pub fn signal_system(
     }
 
     // ID 6: 1s after dock
-    if opening.phase == OpeningPhase::Docked && opening.timer >= 1.0 {
+    if opening.phase == OpeningPhase::Docked && opening.timer >= SIGNAL_PAUSE_DOCK_REPORT {
         fire_signal(&mut signal, 6, "> POWER OFFLINE. STRUCTURAL INTEGRITY: 73%.");
     }
 
