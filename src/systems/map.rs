@@ -22,17 +22,15 @@ pub fn camera_follow_system(
     cam_delta.0 = ct.translation.truncate() - old_pos;
 }
 
-pub fn map_visibility_system(
-    state: Res<State<GameState>>,
-    mut query: Query<&mut Visibility, With<MapElement>>,
-) {
-    let is_map = *state.get() == GameState::MapView;
+pub fn show_map_elements(mut query: Query<&mut Visibility, With<MapElement>>) {
     for mut vis in query.iter_mut() {
-        if is_map && *vis == Visibility::Hidden {
-            *vis = Visibility::Visible;
-        } else if !is_map && *vis != Visibility::Hidden {
-            *vis = Visibility::Hidden;
-        }
+        *vis = Visibility::Inherited;
+    }
+}
+
+pub fn hide_map_elements(mut query: Query<&mut Visibility, With<MapElement>>) {
+    for mut vis in query.iter_mut() {
+        *vis = Visibility::Hidden;
     }
 }
 

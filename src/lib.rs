@@ -42,8 +42,14 @@ fn main() {
             systems::visuals::ship_rotation_system,
             systems::visuals::thruster_glow_system,
         ).chain())
-        .add_systems(OnEnter(GameState::MapView), systems::map::enter_map_view)
-        .add_systems(OnExit(GameState::MapView), systems::map::exit_map_view)
+        .add_systems(OnEnter(GameState::MapView), (
+            systems::map::enter_map_view,
+            systems::map::show_map_elements,
+        ))
+        .add_systems(OnExit(GameState::MapView), (
+            systems::map::exit_map_view,
+            systems::map::hide_map_elements,
+        ))
         .add_systems(Update, (
             systems::mining::mining_system, 
             systems::ui::hud_ui_system,
@@ -54,7 +60,6 @@ fn main() {
             systems::economy::station_status_system,
             systems::economy::ship_self_preservation_system,
             systems::economy::station_maintenance_system,
-            systems::map::map_visibility_system,
             systems::map::map_highlight_system,
         ))
         .add_systems(Update, systems::map::handle_input)

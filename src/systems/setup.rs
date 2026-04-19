@@ -158,8 +158,7 @@ pub fn setup_world(
             Transform::from_xyz(0.0, -40.0, 2.0),
             Visibility::Hidden,
         ));
-    })
-    .id();
+    });
 
     // Sector 1: Magnetite (Initial)
     commands.spawn((
