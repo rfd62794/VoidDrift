@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::sprite::AlphaMode2d;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::constants::*;
@@ -14,7 +15,6 @@ pub fn setup_world(
 
     // ── STARFIELD ────────────────────────────────────────────────────────────
     {
-        use bevy::sprite::AlphaMode2d;
         let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
         let far_mat  = materials.add(ColorMaterial {
             color: Color::srgba(1.0, 1.0, 1.0, 1.0),
@@ -59,11 +59,11 @@ pub fn setup_world(
     commands.spawn((
         Camera2d::default(),
         OrthographicProjection {
-            far: 1100.0, // Ensure Z_STARS_FAR (-100) is visible from Z=900
-            ..default()
+            far: 1200.0, // Headroom for Z_STARS_FAR (-100) from Z=1000
+            ..OrthographicProjection::default_2d()
         },
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 900.0), 
+        Transform::from_xyz(0.0, 0.0, 1000.0), 
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
             ..default()
@@ -119,7 +119,11 @@ pub fn setup_world(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: Color::srgb(0.0, 1.0, 1.0),
+                alpha_mode: AlphaMode2d::Opaque,
+                ..default()
+            })),
             Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), 
             Visibility::Hidden,
         ));
@@ -153,7 +157,11 @@ pub fn setup_world(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(16.0))),
-            MeshMaterial2d(materials.add(COLOR_MAP_STATION)),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: COLOR_MAP_STATION,
+                alpha_mode: AlphaMode2d::Opaque,
+                ..default()
+            })),
             Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
@@ -180,7 +188,11 @@ pub fn setup_world(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
-            MeshMaterial2d(materials.add(COLOR_MAP_S1)),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: COLOR_MAP_S1,
+                alpha_mode: AlphaMode2d::Opaque,
+                ..default()
+            })),
             Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
@@ -206,7 +218,11 @@ pub fn setup_world(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
-            MeshMaterial2d(materials.add(COLOR_MAP_S7)),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: COLOR_MAP_S7,
+                alpha_mode: AlphaMode2d::Opaque,
+                ..default()
+            })),
             Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
@@ -229,7 +245,11 @@ pub fn setup_world(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
-            MeshMaterial2d(materials.add(COLOR_MAP_S3)),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: COLOR_MAP_S3,
+                alpha_mode: AlphaMode2d::Opaque,
+                ..default()
+            })),
             Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
@@ -253,7 +273,11 @@ pub fn setup_world(
         MapElement,
         DestinationHighlight,
         Mesh2d(meshes.add(Circle::new(40.0))), // Large ring
-        MeshMaterial2d(materials.add(Color::srgba(1.0, 1.0, 1.0, 0.1))), // Static dim white
+        MeshMaterial2d(materials.add(ColorMaterial {
+            color: Color::srgba(1.0, 1.0, 1.0, 0.1),
+            alpha_mode: AlphaMode2d::Opaque, // Still dim due to 0.1 alpha color in opaque phase? Wait...
+            ..default()
+        })),
         Transform::from_xyz(0.0, 0.0, Z_HUD - 0.1), // Slightly behind markers
         Visibility::Hidden,
     ));

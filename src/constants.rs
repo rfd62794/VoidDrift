@@ -2,6 +2,7 @@
 
 pub const SHIP_SPEED: f32 = 180.0;
 pub const ARRIVAL_THRESHOLD: f32 = 8.0;
+pub const ARRIVAL_THRESHOLD_MINING: f32 = 40.0;
 pub const MAP_OVERVIEW_SCALE: f32 = 1.5;
 
 // [PHASE 4] EGUI CONFIG 
@@ -37,10 +38,10 @@ pub const Z_STARS_FAR: f32     = -100.0;
 pub const Z_STARS_NEAR: f32    = -50.0;
 pub const Z_CONNECTORS: f32    = -5.0;
 pub const Z_ENVIRONMENT: f32   = 0.5;  // Asteroids, station
+pub const Z_MAP_MARKERS: f32   = 0.6;  // Opaque border/marker overlay
 pub const Z_SHIP: f32          = 1.0;
 pub const Z_BEAM: f32          = 0.8;
 pub const Z_CARGO_BAR: f32     = 1.1;
-pub const Z_MAP_MARKERS: f32   = 2.0;
 pub const Z_HUD: f32           = 10.0;
 // ─────────────────────────────────────────────────────────────────────────────
 

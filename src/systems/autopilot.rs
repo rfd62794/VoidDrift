@@ -18,7 +18,11 @@ pub fn autopilot_system(
                 let current_pos = transform.translation.truncate();
                 let direction = target.destination - current_pos;
                 let distance = direction.length();
-                if distance < ARRIVAL_THRESHOLD {
+                let threshold = if let Some(target_ent) = target.target_entity {
+                    if asteroid_query.get(target_ent).is_ok() { ARRIVAL_THRESHOLD_MINING } else { ARRIVAL_THRESHOLD }
+                } else { ARRIVAL_THRESHOLD };
+
+                if distance < threshold {
                     if let Some(target_ent) = target.target_entity {
                         if asteroid_query.get(target_ent).is_ok() { 
                             ship.state = ShipState::Mining; 
@@ -34,7 +38,8 @@ pub fn autopilot_system(
 
                             // [PHASE 8b] Automatic deposit of cells to ship (up to 3, cap 5)
                             if station.power_cells > 10 && ship.power_cells < 5 {
-                                let transfer = (3 as u32).min(5 - ship.power_cells);
+                                let needed = 5u32.saturating_sub(ship.power_cells);
+                                let transfer = 3u32.min(needed);
                                 if station.power_cells >= transfer {
                                     station.power_cells -= transfer;
                                     ship.power_cells += transfer;
@@ -52,7 +57,7 @@ pub fn autopilot_system(
                                         station.carbon_reserves += ship.cargo;
                                         let msg = format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves);
                                         add_log_entry(&mut station, msg);
-                                        if station.hull_plate_reserves == 0 && station.carbon_reserves >= HULL_REFINERY_RATIO as f32 {
+                                        if station.hull_plate_reserves == 0 && station.carbon_reserves >= (HULL_REFINERY_RATIO as f32) {
                                             add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Fabricate AI Cores to expand autonomous fleet.".to_string());
                                         }
                                     }

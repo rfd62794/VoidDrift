@@ -22,7 +22,7 @@ pub fn autonomous_ship_system(
                 AutonomousShipState::Outbound => {
                     let direction = assignment.target_pos - transform.translation.truncate();
                     let distance = direction.length();
-                    if distance < ARRIVAL_THRESHOLD {
+                    if distance < ARRIVAL_THRESHOLD_MINING {
                         ship.state = AutonomousShipState::Mining;
                         ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     } else {
