@@ -497,10 +497,17 @@ fn autopilot_system(
 }
 
 fn ship_rotation_system(
-    mut query: Query<(&mut Transform, &mut LastHeading, Option<&AutopilotTarget>, Option<&Ship>, Option<&AutonomousShip>)>,
+    mut query: Query<(
+        &mut Transform, 
+        &mut LastHeading, 
+        Option<&AutopilotTarget>, 
+        Option<&AutonomousAssignment>, 
+        Option<&Ship>, 
+        Option<&AutonomousShip>
+    )>,
 ) {
     use std::f32::consts::PI;
-    for (mut transform, mut last_heading, target_opt, ship_opt, auto_ship_opt) in query.iter_mut() {
+    for (mut transform, mut last_heading, target_opt, assign_opt, ship_opt, auto_ship_opt) in query.iter_mut() {
         let is_navigating = if let Some(ship) = ship_opt {
             ship.state == ShipState::Navigating
         } else if let Some(auto_ship) = auto_ship_opt {
@@ -510,19 +517,24 @@ fn ship_rotation_system(
         };
 
         if is_navigating {
-            if let Some(target) = target_opt {
+            let destination = if let Some(target) = target_opt {
+                Some(target.destination)
+            } else if let Some(assign) = assign_opt {
+                Some(assign.target_pos)
+            } else {
+                None
+            };
+            
+            if let Some(dest) = destination {
                 let current_pos = transform.translation.truncate();
-                let dir = target.destination - current_pos;
+                let dir = dest - current_pos;
                 if dir.length_squared() > 1.0 {
-                    // Triangle mesh points +Y. atan2 gives angle from +X to vector.
-                    // Subtract PI/2 so 0 radians is +Y.
                     let heading = dir.y.atan2(dir.x) - PI / 2.0;
                     last_heading.0 = heading;
                 }
             }
         }
         
-        // Always apply LastHeading, so we hold rotation when stopped
         transform.rotation = Quat::from_rotation_z(last_heading.0);
     }
 }
