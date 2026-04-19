@@ -5,8 +5,8 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>)>,
-    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>)>,
+    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
         for (mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
@@ -89,8 +89,8 @@ pub fn autonomous_ship_system(
 }
 
 pub fn autonomous_beam_system(
-    ship_query: Query<(&AutonomousShip, &Transform, &AutonomousAssignment, &Children), Without<MiningBeam>>,
-    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>)>,
+    ship_query: Query<(&AutonomousShip, &Transform, &AutonomousAssignment, &Children), (Without<MiningBeam>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
 ) {
     for (ship, transform, assignment, children) in ship_query.iter() {
         for &child in children.iter() {

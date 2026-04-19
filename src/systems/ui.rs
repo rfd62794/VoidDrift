@@ -13,7 +13,7 @@ pub fn add_log_entry(station: &mut Station, entry: String) {
 
 pub fn ship_cargo_display_system(
     ship_query: Query<&Ship>, 
-    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), With<ShipCargoBarFill>>, 
+    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<DestinationHighlight>)>, 
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     for (mut tr, parent, mat_handle) in fill_query.iter_mut() {
@@ -35,7 +35,7 @@ pub fn ship_cargo_display_system(
 
 pub fn autonomous_ship_cargo_display_system(
     ship_query: Query<&AutonomousShip>, 
-    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), With<ShipCargoBarFill>>, 
+    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<DestinationHighlight>)>, 
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     for (mut tr, parent, mat_handle) in fill_query.iter_mut() {

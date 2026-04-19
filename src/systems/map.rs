@@ -4,8 +4,8 @@ use crate::constants::*;
 
 pub fn camera_follow_system(
     state: Res<State<GameState>>,
-    ship: Query<&Transform, (With<Ship>, Without<MainCamera>)>,
-    mut cam: Query<&mut Transform, (With<MainCamera>, Without<Ship>)>,
+    ship: Query<&Transform, (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
+    mut cam: Query<&mut Transform, (With<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut cam_delta: ResMut<CameraDelta>,
 ) {
     let st = ship.single();
@@ -36,7 +36,7 @@ pub fn hide_map_elements(mut query: Query<&mut Visibility, With<MapElement>>) {
 
 pub fn map_highlight_system(
     auto_target: Query<(&AutopilotTarget, &Ship)>,
-    mut highlight: Query<(&mut Transform, &mut Visibility), With<DestinationHighlight>>,
+    mut highlight: Query<(&mut Transform, &mut Visibility), (With<DestinationHighlight>, Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<StarLayer>)>,
 ) {
     if let Ok((target, ship)) = auto_target.get_single() {
         if let Ok((mut h_transform, mut h_vis)) = highlight.get_single_mut() {

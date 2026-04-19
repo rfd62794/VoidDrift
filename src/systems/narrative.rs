@@ -5,8 +5,8 @@ use crate::constants::*;
 pub fn opening_sequence_system(
     time: Res<Time>,
     mut opening: ResMut<OpeningSequence>,
-    mut ship_query: Query<(Entity, &mut Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>)>,
-    station_query: Query<(Entity, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>)>,
+    mut ship_query: Query<(Entity, &mut Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    station_query: Query<(Entity, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     mut commands: Commands,
 ) {
     if opening.phase == OpeningPhase::Complete {
@@ -92,7 +92,8 @@ pub fn signal_system(
     opening: Res<OpeningSequence>,
     station_query: Query<&Station>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
-    ship_query: Query<(&Ship, &Transform), (Without<Station>, Without<AutonomousShip>)>,
+    ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    station_transform_query: Query<&Transform, (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
 ) {
     let now = time.elapsed_secs();
     let station = station_query.get_single();

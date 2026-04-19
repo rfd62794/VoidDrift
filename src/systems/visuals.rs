@@ -34,7 +34,7 @@ pub fn ship_rotation_system(
         Option<&AutonomousAssignment>, 
         Option<&Ship>, 
         Option<&AutonomousShip>
-    )>,
+    ), (Without<Station>, Without<StarLayer>, Without<StationVisualsContainer>, Without<AsteroidField>, Without<Berth>)>,
 ) {
     use std::f32::consts::PI;
     for (mut transform, mut last_heading, target_opt, assign_opt, ship_opt, auto_ship_opt) in query.iter_mut() {
@@ -73,8 +73,8 @@ pub fn ship_rotation_system(
 /// Stars track camera movement at (1 - parallax_factor) speed, creating the illusion
 /// that far stars (factor=0.05) barely drift while near stars (0.15) move slightly more.
 pub fn starfield_scroll_system(
-    cam_query: Query<&Transform, (With<MainCamera>, Without<StarLayer>)>,
-    mut star_query: Query<(&StarLayer, &mut Transform), Without<MainCamera>>,
+    cam_query: Query<&Transform, (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
+    mut star_query: Query<(&StarLayer, &mut Transform), (Without<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
     cam_delta: Res<CameraDelta>,
 ) {
     // DEVICE-CALIBRATED: These bounds are tuned for the Moto G 2025 screen

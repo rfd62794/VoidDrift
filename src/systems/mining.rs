@@ -4,9 +4,9 @@ use crate::constants::*;
 
 pub fn mining_system(
     time: Res<Time>, 
-    mut ship_query: Query<(&mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<AsteroidField>)>, 
-    mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>), (Without<Ship>, Without<MiningBeam>)>,
-    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>)>,
+    mut ship_query: Query<(&mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>, 
+    mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>), (Without<Ship>, Without<MiningBeam>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut materials: ResMut<Assets<ColorMaterial>>
 ) {
     for (mut ship, ship_transform, children) in ship_query.iter_mut() {
