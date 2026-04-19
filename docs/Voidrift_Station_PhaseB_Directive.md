@@ -1,384 +1,451 @@
-# Voidrift — Station Phase B Directive: Berth Navigation & Docking Sequence
+# Voidrift — Directive: World Expansion, Asteroid Identity & Pinch Zoom
 **Status:** Approved — Ready for Execution  
-**Type:** Gameplay + Visual  
+**Type:** World Design + Visual + Input  
 **Date:** April 2026  
-**Depends On:** Station Phase A VERIFIED ✅ | Station Architecture Design LOCKED ✅
+**Depends On:** Processing Queue Directive COMPLETE ✅
 
 ---
 
 ## 1. Objective
 
-Ships navigate to specific berths, not the station center. The station cooperates with the docking sequence — it slows as a ship approaches, pauses as the ship arrives, and resumes rotation carrying the docked ship on the berth arm.
+Four things in one directive:
 
-This is the moment the station feels alive and aware.
+1. **World expansion** — all six asteroid fields placed, world scale increased, opening sequence adjusted
+2. **Asteroid shape families** — distinct geometry per ore type
+3. **Ore labels** — world-space text label below each asteroid, child of asteroid entity
+4. **Pinch/pull zoom** — multi-touch zoom on space view
 
----
-
-## 2. Scope
-
-**In scope:**
-- Berth entities with dynamic world positions
-- Player ship navigates to Berth 1 position
-- Autonomous ships navigate to Berth 2 position
-- Station slowdown on ship approach
-- Station pause on ship arrival
-- Station resume after docking with ship attached to berth
-- Ship visual attaches to berth — rotates with station while docked
-- Signal lines for docking sequence
-- Berth occupancy visual — berth circle color reflects occupancy
-
-**Explicitly out of scope:**
-- Berth 3 NPC logic (future)
-- Dynamic berth assignment beyond Berth 1 (player) and Berth 2 (drone)
-- Drone Depot construction
-- Additional berth unlocking
-- Multi-device egui scaling (separate directive)
+All fields visible from the start. Laser tier gates extraction, not visibility.
 
 ---
 
-## 3. New Constants
+## 2. World Layout — All Fields
+
+### 2.1 New Sector Positions
+
+Replace all existing sector position constants in `constants.rs`:
+
+```rust
+pub const STATION_POS: Vec2      = Vec2::new(0.0, 0.0);
+pub const SECTOR_1_POS: Vec2     = Vec2::new(320.0, 140.0);   // Magnetite — basic, further than before
+pub const SECTOR_2_POS: Vec2     = Vec2::new(-220.0, 340.0);  // Iron — basic
+pub const SECTOR_3_POS: Vec2     = Vec2::new(380.0, -280.0);  // Carbon — basic
+pub const SECTOR_4_POS: Vec2     = Vec2::new(-520.0, -380.0); // Tungsten — Tungsten Laser gated
+pub const SECTOR_5_POS: Vec2     = Vec2::new(680.0, 320.0);   // Titanite — Tungsten Laser gated
+pub const SECTOR_6_POS: Vec2     = Vec2::new(-650.0, 520.0);  // Crystal Core — Composite Laser gated
+```
+
+### 2.2 Field Definitions
+
+| Sector | Position | Ore | Laser Gate | Visible | Notes |
+|--------|----------|-----|-----------|---------|-------|
+| Sector 1 | `(320, 140)` | Magnetite | Basic | Always | Starting field — further than before |
+| Sector 2 | `(-220, 340)` | Iron | Basic | Always | Basic field |
+| Sector 3 | `(380, -280)` | Carbon | Basic | Always | Basic field |
+| Sector 4 | `(-520, -380)` | Tungsten | Tungsten Laser | Always | Visible but inaccessible early |
+| Sector 5 | `(680, 320)` | Titanite | Tungsten Laser | Always | Distant — feels like frontier |
+| Sector 6 | `(-650, 520)` | Crystal Core | Composite Laser | Always | Very distant — endgame |
+
+All six fields spawn at game start. All are visible in space view and on the map. Laser gating is enforced by the mining system — if the player's laser tier is insufficient, mining does not begin and Signal reports:
+```
+> INSUFFICIENT LASER RATING. UPGRADE REQUIRED.
+```
+
+### 2.3 Opening Sequence Adjustment
+
+The opening sequence spawns the player ship at `(-1000, -800)` and autopilots to the station at `(0, 0)`. With the world expanded, Sector 1 at `(320, 140)` is still within reasonable range for first mining run. No opening sequence changes required beyond verifying the approach distance still feels cinematic at the new scale.
+
+---
+
+## 3. Asteroid Shape Families
+
+Replace the current single `generate_asteroid_mesh` function with ore-type-specific generation functions.
+
+### 3.1 Shape Family Specifications
+
+Each function takes a `seed: u64` for per-asteroid variation within the family.
+
+**Magnetite — Crystalline**
+```rust
+fn generate_magnetite_mesh(seed: u64) -> Mesh {
+    // 10-12 vertices
+    // High radius variation: base ± 40%
+    // Some vertices pushed out sharply (spikes)
+    // Elongated overall shape — not circular
+    // Base radius: 26.0
+}
+```
+
+**Iron — Jagged**
+```rust
+fn generate_iron_mesh(seed: u64) -> Mesh {
+    // 8-10 vertices
+    // Medium radius variation: base ± 25%
+    // No spikes — compact and rough
+    // Slightly irregular but not extreme
+    // Base radius: 20.0
+}
+```
+
+**Carbon — Smooth Round**
+```rust
+fn generate_carbon_mesh(seed: u64) -> Mesh {
+    // 12-14 vertices
+    // Low radius variation: base ± 10%
+    // Nearly circular — gentle lumps only
+    // Largest of the basic ores
+    // Base radius: 30.0
+}
+```
+
+**Tungsten — Dense Blocky**
+```rust
+fn generate_tungsten_mesh(seed: u64) -> Mesh {
+    // 6-8 vertices
+    // Very low variation: base ± 8%
+    // Nearly rectangular/hexagonal
+    // Heavy and regular — industrial looking
+    // Base radius: 22.0
+}
+```
+
+**Titanite — Layered**
+```rust
+fn generate_titanite_mesh(seed: u64) -> Mesh {
+    // 10 vertices arranged in stepped profile
+    // Flat top and bottom
+    // Wide in middle, narrower at poles
+    // Striated appearance
+    // Base radius: 28.0
+}
+```
+
+**Crystal Core — Faceted**
+```rust
+fn generate_crystal_mesh(seed: u64) -> Mesh {
+    // 6 vertices — hexagonal base
+    // Very low variation: base ± 5%
+    // Near-perfect geometric form
+    // Gem-like, high symmetry
+    // Base radius: 18.0 (rare — smaller but valuable)
+}
+```
+
+### 3.2 Asteroid Size Constants
 
 Add to `constants.rs`:
 
 ```rust
-pub const STATION_DOCK_SLOWDOWN_DISTANCE: f32 = 200.0; // Distance at which station begins slowing
-pub const STATION_SLOWDOWN_RATE: f32 = STATION_ROTATION_SPEED * 3.0; // Deceleration rate per second
-pub const STATION_RESUME_DELAY: f32 = 1.5;  // Seconds after dock before rotation resumes
-pub const STATION_RESUME_RATE: f32 = STATION_ROTATION_SPEED * 2.0; // Acceleration rate on resume
-pub const BERTH_1_ARM_INDEX: u8 = 0;  // Player berth — arm 0
-pub const BERTH_2_ARM_INDEX: u8 = 1;  // Drone/NPC berth — arm 1
-pub const BERTH_3_ARM_INDEX: u8 = 2;  // Open berth — arm 2
+pub const ASTEROID_RADIUS_MAGNETITE: f32 = 26.0;
+pub const ASTEROID_RADIUS_IRON: f32      = 20.0;
+pub const ASTEROID_RADIUS_CARBON: f32    = 30.0;
+pub const ASTEROID_RADIUS_TUNGSTEN: f32  = 22.0;
+pub const ASTEROID_RADIUS_TITANITE: f32  = 28.0;
+pub const ASTEROID_RADIUS_CRYSTAL: f32   = 18.0;
 ```
 
----
+### 3.3 Ore Colors
 
-## 4. Station Component Extension
-
-Extend `Station` in `components.rs`:
+Update or confirm in `constants.rs`:
 
 ```rust
-pub struct Station {
-    // ... existing fields ...
-    pub rotation: f32,
-    pub rotation_speed: f32,        // NEW — current speed, varies during dock sequence
-    pub dock_state: StationDockState, // NEW
-    pub resume_timer: f32,          // NEW — countdown before rotation resumes
-}
+pub const COLOR_MAGNETITE: Color  = Color::srgb(0.55, 0.75, 1.0);   // Blue-white
+pub const COLOR_IRON: Color       = Color::srgb(0.75, 0.38, 0.15);  // Rust orange
+pub const COLOR_CARBON: Color     = Color::srgb(0.28, 0.28, 0.28);  // Dark grey
+pub const COLOR_TUNGSTEN: Color   = Color::srgb(0.72, 0.68, 0.35);  // Yellow-grey
+pub const COLOR_TITANITE: Color   = Color::srgb(0.72, 0.78, 0.82);  // Silver-blue
+pub const COLOR_CRYSTAL: Color    = Color::srgb(0.55, 1.0, 0.88);   // Cyan-green
 
-#[derive(PartialEq, Default)]
-pub enum StationDockState {
-    #[default]
-    Rotating,      // Normal rotation at STATION_ROTATION_SPEED
-    Slowing,       // Incoming ship detected — decelerating
-    Paused,        // Ship arrived — fully stopped
-    Resuming,      // Ship docked — accelerating back to full speed
-}
+// Depleted state — same for all
+pub const COLOR_DEPLETED: Color   = Color::srgb(0.18, 0.18, 0.18);  // Very dark grey
 ```
-
-Initialize:
-- `rotation_speed = STATION_ROTATION_SPEED`
-- `dock_state = StationDockState::Rotating`
-- `resume_timer = 0.0`
 
 ---
 
-## 5. Berth Entities
-
-### 5.1 Berth Component
+## 4. Ore Type Component
 
 Add to `components.rs`:
 
 ```rust
-#[derive(Component)]
-pub struct Berth {
-    pub arm_index: u8,
-    pub occupied_by: Option<Entity>,
-    pub berth_type: BerthType,
+#[derive(Component, Clone, PartialEq)]
+pub enum OreDeposit {
+    Magnetite,
+    Iron,
+    Carbon,
+    Tungsten,
+    Titanite,
+    CrystalCore,
+}
+
+pub const fn ore_name(ore: &OreDeposit) -> &'static str {
+    match ore {
+        OreDeposit::Magnetite  => "MAGNETITE",
+        OreDeposit::Iron       => "IRON",
+        OreDeposit::Carbon     => "CARBON",
+        OreDeposit::Tungsten   => "TUNGSTEN",
+        OreDeposit::Titanite   => "TITANITE",
+        OreDeposit::CrystalCore => "CRYSTAL",
+    }
+}
+
+pub const fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
+    match ore {
+        OreDeposit::Magnetite  => LaserTier::Basic,
+        OreDeposit::Iron       => LaserTier::Basic,
+        OreDeposit::Carbon     => LaserTier::Basic,
+        OreDeposit::Tungsten   => LaserTier::Tungsten,
+        OreDeposit::Titanite   => LaserTier::Tungsten,
+        OreDeposit::CrystalCore => LaserTier::Composite,
+    }
 }
 
 #[derive(PartialEq)]
-pub enum BerthType {
-    Player,   // Berth 1 — always player
-    Drone,    // Berth 2 — autonomous ship
-    Open,     // Berth 3 — NPC/visitor
+pub enum LaserTier {
+    Basic,
+    Tungsten,
+    Composite,
 }
 ```
 
-### 5.2 Berth World Position Calculation
-
-Berth position is dynamic — recalculated every tick from current station rotation:
-
-```rust
-pub fn berth_world_pos(
-    station_pos: Vec2,
-    station_rotation: f32,
-    arm_index: u8,
-) -> Vec2 {
-    let arm_angle = station_rotation + (arm_index as f32 * std::f32::consts::TAU / 6.0);
-    station_pos + Vec2::new(
-        arm_angle.cos() * STATION_ARM_LENGTH,
-        arm_angle.sin() * STATION_ARM_LENGTH,
-    )
-}
-```
-
-Add this as a public function in `systems/setup.rs` or a new `systems/station.rs` file.
-
-### 5.3 Berth Spawn
-
-Spawn 3 Berth entities in `setup_world`. These are logical entities — not visual. The visual berth circles are already children of the station visual container.
-
-```rust
-// Berth 1 — Player
-commands.spawn((
-    Berth {
-        arm_index: BERTH_1_ARM_INDEX,
-        occupied_by: None,
-        berth_type: BerthType::Player,
-    },
-    Name::new("Berth1"),
-));
-
-// Berth 2 — Drone
-commands.spawn((
-    Berth {
-        arm_index: BERTH_2_ARM_INDEX,
-        occupied_by: None,
-        berth_type: BerthType::Drone,
-    },
-    Name::new("Berth2"),
-));
-
-// Berth 3 — Open
-commands.spawn((
-    Berth {
-        arm_index: BERTH_3_ARM_INDEX,
-        occupied_by: None,
-        berth_type: BerthType::Open,
-    },
-    Name::new("Berth3"),
-));
-```
+Add `LaserTier::Basic` to the `Ship` component as the player's current laser tier. Default: `Basic`. Upgrade path deferred to future directive.
 
 ---
 
-## 6. Autopilot Changes
+## 5. Ore Labels
 
-### 6.1 Player Ship
+### 5.1 Label Entity
 
-When player taps station on map, assign `AutopilotTarget` to Berth 1 entity (not station entity).
+Each asteroid field spawns a `Text2d` label as a direct child of the asteroid root entity.
 
-In `handle_input` — when station marker tapped:
-```rust
-// Find Berth 1 entity
-// Set AutopilotTarget { destination: berth_world_pos(...), target_entity: Some(berth1_entity) }
-```
-
-The berth destination must be recalculated every tick since the station is rotating. In `autopilot_system`, when `target_entity` has a `Berth` component:
+**Position:** Below the asteroid center by `asteroid_radius + 12.0` units.
 
 ```rust
-// Recalculate destination each tick
-if let Ok(berth) = berth_query.get(target.target_entity.unwrap()) {
-    if let Ok((station, station_transform)) = station_query.get_single() {
-        target.destination = berth_world_pos(
-            station_transform.translation.truncate(),
-            station.rotation,
-            berth.arm_index,
-        );
-    }
-}
+// In setup_world, when spawning asteroid field:
+commands.entity(asteroid_entity).with_children(|parent| {
+    // ... existing map icon and map label children ...
+    
+    // Ore type label — world space, always visible in space view
+    parent.spawn((
+        Text2d::new(ore_name(&ore_type)),
+        TextFont {
+            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+            font_size: 10.0,
+            ..default()
+        },
+        TextColor(Color::srgba(0.8, 0.8, 0.8, 0.6)),  // dim white, partial opacity
+        Transform::from_xyz(0.0, -(asteroid_radius + 12.0), Z_HUD),
+        // NOT a MapElement — visible in space view, not on map
+    ));
+});
 ```
 
-### 6.2 Autonomous Ships
+### 5.2 Label Visibility
 
-Same pattern — autonomous ships target Berth 2 entity. `autonomous_ship_system` recalculates berth position each tick on return.
+The ore label is NOT a `MapElement` — it does not toggle with the map. It is always visible in space view.
 
-### 6.3 Arrival Threshold
+In map view (camera zoomed out), the label will be tiny but readable as an identifier — this is acceptable and desirable.
 
-Berth arrival uses `ARRIVAL_THRESHOLD = 8.0` — same as current station arrival. No change.
+### 5.3 Laser-Gated Fields Visual
+
+For Tungsten, Titanite, and Crystal Core fields (laser-gated), apply additional visual treatment:
+
+- Asteroid color slightly desaturated — 70% of normal color saturation
+- Label shows laser requirement below ore name:
+
+```
+TUNGSTEN
+[LASER UPGRADE]
+```
+
+Two `Text2d` entities as children — ore name above, requirement below. Requirement label hidden once player has the required laser tier.
+
+This is deferred complexity — implement ore name label first, add laser requirement label in a follow-up if needed.
 
 ---
 
-## 7. Docking Sequence
+## 6. Pinch/Pull Zoom
 
-### 7.1 Station Slowdown
+### 6.1 Input System
 
-In `station_rotation_system` — check distance from any approaching ship:
+Add to `map.rs` or new section in `map.rs`:
 
 ```rust
-fn station_rotation_system(
-    time: Res<Time>,
-    mut station_query: Query<(&mut Station, &Transform)>,
-    ship_query: Query<(&Ship, &Transform), Without<Station>>,
-    autonomous_query: Query<(&AutonomousShip, &Transform), Without<Station>>,
+pub fn pinch_zoom_system(
+    touches: Res<Touches>,
+    mut camera_query: Query<&mut OrthographicProjection, With<MainCamera>>,
+    mut last_pinch_distance: Local<Option<f32>>,
 ) {
-    for (mut station, station_transform) in &mut station_query {
-        let station_pos = station_transform.translation.truncate();
+    let touch_positions: Vec<Vec2> = touches.iter()
+        .map(|t| t.position())
+        .collect();
+    
+    if touch_positions.len() == 2 {
+        let current_distance = touch_positions[0].distance(touch_positions[1]);
         
-        // Check if any ship is approaching
-        let ship_approaching = ship_query.iter().any(|(ship, ship_transform)| {
-            ship.state == ShipState::Navigating &&
-            ship_transform.translation.truncate().distance(station_pos) < STATION_DOCK_SLOWDOWN_DISTANCE
-        });
-        
-        let drone_approaching = autonomous_query.iter().any(|(drone, drone_transform)| {
-            drone.state == AutonomousShipState::Returning &&
-            drone_transform.translation.truncate().distance(station_pos) < STATION_DOCK_SLOWDOWN_DISTANCE
-        });
-        
-        let incoming = ship_approaching || drone_approaching;
-        
-        match station.dock_state {
-            StationDockState::Rotating => {
-                if incoming {
-                    station.dock_state = StationDockState::Slowing;
-                }
-                station.rotation += station.rotation_speed * time.delta_secs();
-            }
-            StationDockState::Slowing => {
-                if !incoming {
-                    station.dock_state = StationDockState::Rotating;
-                    station.rotation_speed = STATION_ROTATION_SPEED;
-                } else {
-                    station.rotation_speed = (station.rotation_speed - STATION_SLOWDOWN_RATE * time.delta_secs())
-                        .max(0.0);
-                    if station.rotation_speed == 0.0 {
-                        station.dock_state = StationDockState::Paused;
-                    }
-                }
-                station.rotation += station.rotation_speed * time.delta_secs();
-            }
-            StationDockState::Paused => {
-                // No rotation — waiting for dock
-                // Transition to Resuming is triggered externally when ship docks
-            }
-            StationDockState::Resuming => {
-                station.rotation_speed = (station.rotation_speed + STATION_RESUME_RATE * time.delta_secs())
-                    .min(STATION_ROTATION_SPEED);
-                station.rotation += station.rotation_speed * time.delta_secs();
-                if station.rotation_speed >= STATION_ROTATION_SPEED {
-                    station.dock_state = StationDockState::Rotating;
-                }
+        if let Some(last_distance) = *last_pinch_distance {
+            let delta = current_distance - last_distance;
+            
+            if let Ok(mut projection) = camera_query.get_single_mut() {
+                projection.scale = (projection.scale - delta * ZOOM_SPEED)
+                    .clamp(ZOOM_MIN, ZOOM_MAX);
             }
         }
+        
+        *last_pinch_distance = Some(current_distance);
+    } else {
+        *last_pinch_distance = None;
     }
 }
 ```
 
-### 7.2 Dock Trigger
+### 6.2 Zoom Constants
 
-When ship arrives at berth (autopilot arrival condition met):
-- Set `ShipState::Docked`
-- Set `berth.occupied_by = Some(ship_entity)`
-- Set `station.dock_state = StationDockState::Resuming`
-- Start resume timer: `station.resume_timer = STATION_RESUME_DELAY`
-- Fire Signal S-030: `> DOCKING COMPLETE. ROTATION RESUMING.`
-
-### 7.3 Ship Attaches to Berth
-
-When docked, the ship visual should rotate with the station. Two approaches:
-
-**Option A — Reparent ship to station visual container.** On dock, make the ship entity a child of `StationVisualsContainer`. On undock, reparent back to world. This is clean but reparenting in Bevy requires `Commands` and takes one frame.
-
-**Option B — Match rotation each tick.** While `ShipState::Docked`, set ship Transform to match the berth world position each tick. Simple, no reparenting.
-
-**Use Option B for Phase B.** Less elegant but reliable. Reparenting approach can be revisited in Phase C.
+Add to `constants.rs`:
 
 ```rust
-// In a new docked_ship_system or inside autopilot_system
-// While ship.state == Docked:
-//   ship_transform.translation = berth_world_pos(...).extend(Z_SHIP);
+pub const ZOOM_MIN: f32   = 0.3;   // most zoomed in
+pub const ZOOM_MAX: f32   = 8.0;   // most zoomed out — sees full solar system
+pub const ZOOM_SPEED: f32 = 0.005; // scale change per pixel of pinch delta
 ```
+
+### 6.3 Zoom Interaction with Map View
+
+The current map toggle switches to a fixed `MAP_STRATEGIC_SCALE`. With pinch zoom, the player can now zoom out naturally rather than toggling.
+
+Keep the MAP button behavior unchanged — it's a shortcut to the strategic overview. Pinch zoom works in both Space View and Map View as a continuous control.
+
+### 6.4 System Registration
+
+Add to `lib.rs`:
+```rust
+.add_systems(Update, systems::map::pinch_zoom_system)
+```
+
+No ordering constraint needed — reads touch input, writes only to camera projection.
 
 ---
 
-## 8. Berth Occupancy Visual
+## 7. Mining System Update — Laser Gate
 
-Update berth circle colors based on occupancy. This requires access to the berth visual entities (children of StationVisualsContainer).
-
-Add marker components to berth visual circles at spawn:
+Update `mining_system` to check `OreDeposit` laser requirement against player's `LaserTier`:
 
 ```rust
-#[derive(Component)]
-pub struct BerthVisual(pub u8); // arm_index
-```
-
-In `station_visual_system` — update berth circle colors:
-
-```rust
-for (berth_visual, material_handle) in &berth_visual_query {
-    if let Some(material) = materials.get_mut(&material_handle.0) {
-        material.color = match berth_occupancy[berth_visual.0 as usize] {
-            BerthOccupancy::Empty => Color::srgb(0.4, 0.4, 0.4),     // grey
-            BerthOccupancy::Player => Color::srgb(0.0, 0.67, 1.0),   // cyan
-            BerthOccupancy::Drone => Color::srgb(1.0, 0.53, 0.0),    // orange
-            BerthOccupancy::Open => Color::srgb(0.4, 0.4, 0.4),      // grey — waiting
-        };
-    }
+// In mining_system, before beginning extraction:
+if ore_laser_required(&field.ore_deposit) > ship.laser_tier {
+    // Cannot mine — wrong laser
+    // Fire signal once (not every tick):
+    signal_log.push("> INSUFFICIENT LASER RATING. UPGRADE REQUIRED.");
+    ship.state = ShipState::Idle;
+    return;
 }
 ```
 
----
-
-## 9. Signal Lines
-
-Add to `narrative.rs`:
-
-| ID | Trigger | Line |
-|----|---------|------|
-| S-028 | Ship within DOCK_SLOWDOWN_DISTANCE of station | `> INCOMING VESSEL DETECTED. DOCKING SEQUENCE INITIATED.` |
-| S-029 | Station fully stopped (dock_state == Paused) | `> ROTATION SUSPENDED. BERTH ALIGNED.` |
-| S-030 | Ship docks, rotation resuming | `> DOCKING COMPLETE. ROTATION RESUMING.` |
-| S-031 | Ship undocks | `> VESSEL DEPARTED. BERTH CLEAR.` |
-
-S-028 and S-029 may refire per docking event — not one-time triggers. Use the same cooldown pattern as S-019/S-020.
+Player's laser tier is `LaserTier::Basic` for now — all basic fields are accessible, advanced fields are not.
 
 ---
 
-## 10. File Scope
+## 8. Setup Changes
+
+### 8.1 Spawn All Six Fields
+
+Update `setup_world` to spawn all six asteroid fields:
+
+```rust
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_1_POS, OreDeposit::Magnetite, seed_from_pos(SECTOR_1_POS));
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_2_POS, OreDeposit::Iron, seed_from_pos(SECTOR_2_POS));
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_3_POS, OreDeposit::Carbon, seed_from_pos(SECTOR_3_POS));
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_4_POS, OreDeposit::Tungsten, seed_from_pos(SECTOR_4_POS));
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_5_POS, OreDeposit::Titanite, seed_from_pos(SECTOR_5_POS));
+spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
+    SECTOR_6_POS, OreDeposit::CrystalCore, seed_from_pos(SECTOR_6_POS));
+```
+
+### 8.2 Spawn Helper Function
+
+Refactor asteroid spawning into a reusable function:
+
+```rust
+fn spawn_asteroid_field(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+    asset_server: &AssetServer,
+    position: Vec2,
+    ore: OreDeposit,
+    seed: u64,
+) {
+    let mesh = generate_ore_mesh(&ore, seed);
+    let color = ore_color(&ore);
+    let radius = ore_radius(&ore);
+    let name = ore_name(&ore);
+    
+    // Spawn asteroid with appropriate mesh, color, label
+}
+```
+
+### 8.3 Map Markers for All Fields
+
+All six fields get map markers. Gated fields (4, 5, 6) use desaturated color on the map marker — same color family but dimmer. Label shows ore name.
+
+---
+
+## 9. File Scope
 
 | File | Change |
 |------|--------|
-| `src/constants.rs` | Add berth and docking sequence constants |
-| `src/components.rs` | Add Berth, BerthType, StationDockState, BerthVisual components |
-| `src/systems/setup.rs` | Spawn 3 Berth entities, add BerthVisual marker to berth circles |
-| `src/systems/autopilot.rs` | Recalculate berth destination each tick, trigger dock sequence |
-| `src/systems/autonomous.rs` | Target Berth 2 on return, recalculate each tick |
-| `src/systems/visuals.rs` | Extend station_rotation_system with dock state machine |
-| `src/systems/ui.rs` | Update station tap target to use Berth 1 entity |
-| `src/systems/map.rs` | Update handle_input to assign Berth 1 as target |
-| `src/systems/narrative.rs` | Add S-028 through S-031 |
+| `src/constants.rs` | New sector positions, asteroid radii, ore colors, zoom constants, processing times |
+| `src/components.rs` | Add OreDeposit enum, LaserTier enum, ore_name/ore_laser_required helpers |
+| `src/systems/setup.rs` | Spawn all 6 fields, shape family generators, spawn helper function, ore labels |
+| `src/systems/map.rs` | Add pinch_zoom_system, update map markers for all 6 fields |
+| `src/systems/mining.rs` | Add laser tier gate check |
+| `src/systems/narrative.rs` | Sector 7 discovery trigger now uses Sector 3 (Carbon) position — update if needed |
+| `src/lib.rs` | Register pinch_zoom_system |
 | `Cargo.toml` | READ-ONLY |
 
 ---
 
-## 11. Pre-Implementation Research
+## 10. Implementation Sequence
 
-Before writing any code:
-
-1. How is the station currently referenced in `handle_input` when the player taps the station marker — by entity, by component query, or by stored position? This determines how to switch from station target to berth target.
-2. Does the current `autopilot_system` update `AutopilotTarget.destination` in place, or does it read it as fixed? This determines whether dynamic destination recalculation requires a system change or just works.
-3. What is the current approach in `autonomous_ship_system` for the return-to-station destination? Is it a hardcoded `STATION_POS` or an entity reference?
-
-Report findings before implementation.
-
----
-
-## 12. Completion Criteria
-
-- [ ] Player ship navigates to Berth 1 position (end of arm 0)
-- [ ] Autonomous ship navigates to Berth 2 position (end of arm 1)
-- [ ] Station slows as ship approaches within 200 units
-- [ ] Station pauses fully when ship arrives at berth
-- [ ] Signal S-028 fires on approach detection
-- [ ] Signal S-029 fires when station fully stopped
-- [ ] Station resumes rotation after dock, carrying ship on berth
-- [ ] Ship visual tracks berth position while docked — rotates with station
-- [ ] Signal S-030 fires on dock completion
-- [ ] Berth circle colors reflect occupancy
-- [ ] Gate screenshot: ship visibly docked on rotating berth arm
+1. Add constants and `OreDeposit`/`LaserTier` components — verify compile
+2. Create shape family generator functions — verify in desktop build visually
+3. Spawn all 6 asteroid fields with correct shapes and colors — deploy, verify on device
+4. Add ore labels as children — deploy, verify readable on device
+5. Add laser gate to mining system — deploy, verify inaccessible fields cannot be mined
+6. Add pinch zoom — deploy, verify smooth zoom gesture on device
+7. Update map markers for all 6 fields — deploy, verify map shows all sectors
 
 ---
 
-*Voidrift Station Phase B Directive | April 2026 | RFD IT Services Ltd.*  
-*The station slows. The station stops. The station waits for you.*
+## 11. Completion Criteria
+
+- [ ] All 6 asteroid fields visible in space view at game start
+- [ ] Each ore type has visually distinct shape
+- [ ] Each ore type has correct color
+- [ ] Ore name label visible below each asteroid
+- [ ] Laser-gated fields (4, 5, 6) cannot be mined — Signal reports reason
+- [ ] Pinch to zoom in/out works smoothly on device
+- [ ] Zoom clamped to ZOOM_MIN and ZOOM_MAX
+- [ ] Map markers for all 6 fields on strategic view
+- [ ] Opening sequence still completes correctly at new world scale
+- [ ] No B0001 crashes — all new queries follow Universal Disjointness pattern
+
+**Gate screenshot:** Space view showing at least 3 distinct asteroid field shapes simultaneously, with ore labels visible, station rotating in background.
+
+---
+
+## 12. Future Notes (Not In Scope)
+
+- Individual smaller asteroids within field boundary circle — deferred
+- Particle/shimmer effects per ore type — deferred  
+- Laser upgrade system — deferred (LaserTier::Basic hardcoded for now)
+- Sector discovery animation — deferred
+
+---
+
+*Voidrift World Expansion Directive | April 2026 | RFD IT Services Ltd.*  
+*The world exists before the player can reach it. That's what makes it worth exploring.*
