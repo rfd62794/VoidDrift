@@ -307,7 +307,7 @@ fn autopilot_system(
                         if asteroid_query.get(target_ent).is_ok() { 
                             ship.state = ShipState::Mining; 
                         }
-                        else if let Ok((_station_ent, mut station)) = station_query.get_mut(target_ent) { 
+                        else if let Ok((station_ent, mut station)) = station_query.get_mut(target_ent) { 
                             ship.state = ShipState::Docked; 
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
@@ -484,7 +484,7 @@ fn hud_ui_system(
 
                         // SECTION 2: RESOURCE STATUS BAR
                         ui.horizontal(|ui| {
-                            ui.add_space(8.0);
+                            ui.spacing_mut().item_spacing.x = 8.0;
                             ui.label(format!("MAG: {:.0}", station.magnetite_reserves));
                             ui.separator();
                             ui.label(format!("CAR: {:.0}", station.carbon_reserves));
@@ -493,16 +493,26 @@ fn hud_ui_system(
                             ui.separator();
                             ui.label(format!("HULLS: {}", station.hull_plate_reserves));
                         });
+                        ui.add_space(2.0);
+                        
+                        // [PHASE 8b] POWER STATUS
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(format!("STATION POWER: {:.1}/{:.0}", station.power, STATION_POWER_MAX)).color(if station.power < STATION_POWER_FLOOR { egui::Color32::RED } else { egui::Color32::LIGHT_BLUE }));
+                            ui.separator();
+                            ui.label(egui::RichText::new(format!("SHIP POWER: {:.1}/{:.0} (CELLS: {})", ship.power, SHIP_POWER_MAX, ship.power_cells)).color(egui::Color32::LIGHT_GREEN));
+                        });
                         ui.add_space(4.0);
 
                         // SECTION 3: ACTION BUTTONS (Split into 2 rows for touch safety)
                         ui.horizontal(|ui| {
                             // Row 1: Production
+                            let automation_suspended = station.power < STATION_POWER_FLOOR;
+                            
                             let can_refine_mag = station.magnetite_reserves >= REFINERY_RATIO as f32;
                             let has_power_mag = station.power_cells >= POWER_COST_REFINERY;
-                            let label_mag = if has_power_mag { "REFINE CELLS" } else { "REFINERY OFFLINE" };
+                            let label_mag = if automation_suspended { "SUSPENDED" } else if has_power_mag { "REFINE CELLS" } else { "REFINERY OFFLINE" };
                             
-                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_mag)).clicked() && can_refine_mag && has_power_mag {
+                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_mag)).clicked() && can_refine_mag && has_power_mag && !automation_suspended {
                                 let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
                                 station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
                                 station.power_cells += cells;
@@ -512,9 +522,9 @@ fn hud_ui_system(
 
                             let can_refine_carb = station.carbon_reserves >= HULL_REFINERY_RATIO as f32;
                             let has_power_hull = station.power_cells >= POWER_COST_HULL_FORGE;
-                            let label_hull = if has_power_hull { "REFINE HULL" } else { "FORGE OFFLINE" };
+                            let label_hull = if automation_suspended { "SUSPENDED" } else if has_power_hull { "REFINE HULL" } else { "FORGE OFFLINE" };
 
-                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_hull)).clicked() && can_refine_carb && has_power_hull {
+                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_hull)).clicked() && can_refine_carb && has_power_hull && !automation_suspended {
                                 let plates = (station.carbon_reserves as u32) / HULL_REFINERY_RATIO;
                                 station.carbon_reserves -= (plates * HULL_REFINERY_RATIO) as f32;
                                 station.hull_plate_reserves += plates;
@@ -527,17 +537,29 @@ fn hud_ui_system(
 
                         ui.horizontal(|ui| {
                             // Row 2: Construction & Repair
+                            let automation_suspended = station.power < STATION_POWER_FLOOR;
+
+                            // TOP UP SHIP action
+                            let can_top_up = station.power_cells >= 3 && ship.power_cells < 5;
+                            if ui.add_sized([100.0, 30.0], egui::Button::new("TOP UP SHIP")).clicked() && can_top_up {
+                                station.power_cells -= 3;
+                                ship.power_cells = (ship.power_cells + 3).min(5);
+                                add_log_entry(&mut station, "[STATION AI] Ship cells replenished.".to_string());
+                            }
+                            ui.separator();
+
                             if ai_core_query.get(station_ent).is_err() {
                                 let can_build_core = station.power_cells >= AI_CORE_COST;
-                                let core_label = if can_build_core { format!("AI CORE ({})", AI_CORE_COST) } else { "CORE LACKS POWER".to_string() };
-                                if ui.add_sized([120.0, 30.0], egui::Button::new(core_label)).clicked() && can_build_core {
+                                let core_label = if automation_suspended { "SUSPENDED".to_string() } else if can_build_core { format!("AI CORE ({})", AI_CORE_COST) } else { "CORE LACKS POWER".to_string() };
+                                if ui.add_sized([110.0, 30.0], egui::Button::new(core_label)).clicked() && can_build_core && !automation_suspended {
                                     station.power_cells -= AI_CORE_COST;
                                     commands.entity(station_ent).insert(AiCore);
                                     add_log_entry(&mut station, "[STATION AI] AI Core nominal. Awaiting directive.".to_string());
                                 }
                             } else if auto_ship_query.iter().count() < 2 {
                                 let can_assemble = station.hull_plate_reserves >= 1;
-                                if ui.add_sized([120.0, 30.0], egui::Button::new("ASSEMBLE SHIP")).clicked() && can_assemble {
+                                let assemble_label = if automation_suspended { "SUSPENDED".to_string() } else { "ASSEMBLE SHIP".to_string() };
+                                if ui.add_sized([110.0, 30.0], egui::Button::new(assemble_label)).clicked() && can_assemble && !automation_suspended {
                                     station.hull_plate_reserves -= 1;
                                     commands.entity(station_ent).remove::<AiCore>();
                                     
@@ -549,7 +571,7 @@ fn hud_ui_system(
                                     };
 
                                     commands.spawn((
-                                        AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore },
+                                        AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX },
                                         AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.clone() },
                                         Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
                                         MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
