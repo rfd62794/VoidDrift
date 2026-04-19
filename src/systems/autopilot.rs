@@ -55,45 +55,12 @@ pub fn autopilot_system(
                                 ship.power = SHIP_POWER_MAX;
                             }
 
-                            // [PHASE 8b] Automatic deposit of cells to ship (up to 3, cap 5)
-                            if station.power_cells > 10 && ship.power_cells < 5 {
-                                let needed = 5u32.saturating_sub(ship.power_cells);
-                                let transfer = 3u32.min(needed);
-                                if station.power_cells >= transfer {
-                                    station.power_cells -= transfer;
-                                    ship.power_cells += transfer;
-                                }
+                             // [PHASE 8b] Reset player power for free if station has power
+                            if station.power >= STATION_POWER_FLOOR {
+                                ship.power = SHIP_POWER_MAX;
                             }
 
-                            if ship.cargo > 0.0 {
-                                match ship.cargo_type {
-                                    OreType::Magnetite => {
-                                        station.magnetite_reserves += ship.cargo;
-                                        let msg = format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, station.power_cells);
-                                        add_log_entry(&mut station, msg);
-                                    }
-                                    OreType::Carbon => {
-                                        station.carbon_reserves += ship.cargo;
-                                        let msg = format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves);
-                                        add_log_entry(&mut station, msg);
-                                        if station.hull_plate_reserves == 0 && station.carbon_reserves >= (HULL_REFINERY_RATIO as f32) {
-                                            add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Fabricate AI Cores to expand autonomous fleet.".to_string());
-                                        }
-                                    }
-                                    OreType::Empty => {}
-                                }
-                                ship.cargo = 0.0;
-                                ship.cargo_type = OreType::Empty;
-                            }
-                            
-                            // SECTOR 7 DISCOVERY LOGIC - FALLBACK
-                            if station.ai_cores > 0 {
-                                if let Ok(s7_ent) = carbon_field_query.get_single() {
-                                    commands.entity(s7_ent).insert((MapMarker, Visibility::Visible));
-                                }
-                            }
-                            
-                            info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
+                             info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
                             commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(target_ent));
                         }
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {

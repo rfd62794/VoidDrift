@@ -188,27 +188,26 @@ pub fn setup_world(
     // STATION / SECTORS setup
     let _station_ent = commands.spawn((
         MapMarker,
-        Station { 
-            repair_progress: 0.0, 
-            online: false,
-            magnetite_reserves: 0.0,
-            carbon_reserves: 0.0,
+        Station {
+            repair_progress: 1.0,
+            online: true,
+            magnetite_reserves: 50.0,
+            carbon_reserves: 25.0,
             hull_plate_reserves: 0,
             ship_hulls: 0,
             ai_cores: 0,
-            power_cells: 0,
+            power_cells: 5,
             power: STATION_POWER_MAX,
-            maintenance_timer: Timer::from_seconds(1.0, TimerMode::Repeating),
-            last_power_warning_time: 0.0,
-            log: std::collections::VecDeque::from([
-                "SYSTEMS INITIALIZED.".to_string(),
-            ]),
+            maintenance_timer: Timer::from_seconds(10.0, TimerMode::Repeating),
+            last_power_warning_time: -100.0,
+            log: std::collections::VecDeque::new(),
             rotation: 0.0,
             rotation_speed: STATION_ROTATION_SPEED,
             dock_state: StationDockState::Rotating,
             resume_timer: 0.0,
         },
-        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
+        StationQueues::default(),
+        SpatialBundle::from_transform(Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT)),
         Visibility::Visible,
     ))
     .with_children(|parent| {

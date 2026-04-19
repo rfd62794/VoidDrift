@@ -262,3 +262,45 @@ pub enum ForgeQuantity {
 pub struct ForgeSettings {
     pub quantity: ForgeQuantity,
 }
+
+#[derive(Clone, Debug)]
+pub struct ProcessingJob {
+    pub operation: ProcessingOperation,
+    pub batches: u32,           // number of batches queued (including current)
+    pub timer: f32,             // seconds remaining on current batch
+    pub completed: u32,         // batches completed so far in this session
+    pub clearing: bool,         // if true, finish current batch then None
+}
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum ProcessingOperation {
+    MagnetiteRefinery,   // Magnetite → Power Cells
+    CarbonRefinery,      // Carbon → Hull Plates
+    HullForge,           // Hull Plates → Ship Hull
+    CoreFabricator,      // Power Cells → AI Core
+}
+
+#[derive(Component, Default)]
+pub struct StationQueues {
+    pub magnetite_refinery: Option<ProcessingJob>,
+    pub carbon_refinery:    Option<ProcessingJob>,
+    pub hull_forge:         Option<ProcessingJob>,
+    pub core_fabricator:    Option<ProcessingJob>,
+}
+
+#[derive(Resource)]
+pub struct AutoDockSettings {
+    pub auto_unload: bool,           // default: true
+    pub auto_smelt_magnetite: bool,  // default: false
+    pub auto_smelt_carbon: bool,     // default: false
+}
+
+impl Default for AutoDockSettings {
+    fn default() -> Self {
+        Self {
+            auto_unload: true,
+            auto_smelt_magnetite: false,
+            auto_smelt_carbon: false,
+        }
+    }
+}

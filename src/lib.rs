@@ -39,6 +39,7 @@ fn main() {
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
         .insert_resource(ActiveStationTab::default())
         .insert_resource(ForgeSettings::default())
+        .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())
         .add_systems(Startup, systems::setup::setup_world)
         .add_systems(Update, (
@@ -70,9 +71,11 @@ fn main() {
             systems::ui::ship_cargo_display_system,
             systems::ui::autonomous_ship_cargo_display_system,
             systems::economy::station_status_system,
-            systems::economy::ship_self_preservation_system,
             systems::economy::station_maintenance_system,
-            systems::quest::quest_update_system,
+            systems::economy::ship_self_preservation_system,
+            systems::economy::processing_queue_system,
+            systems::economy::auto_dock_system,
+            systems::autopilot::autopilot_system,
             systems::map::map_highlight_system,
             systems::narrative::opening_sequence_system,
             systems::narrative::signal_system,

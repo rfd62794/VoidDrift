@@ -16,13 +16,14 @@ pub const HULL_REFINERY_RATIO: u32 = 5;
 pub const REPAIR_COST: u32 = 25;
 
 // [PHASE 9] PRODUCTION CHAIN COSTS
-pub const SHIP_HULL_COST_PLATES: u32 = 3;
-pub const AI_CORE_COST_CELLS: u32 = 50;
-pub const POWER_COST_SHIP_FORGE: u32 = 3;
+pub const SHIP_HULL_COST_PLATES: u32   = 3;
+pub const HULL_PLATE_COST_CARBON: u32  = 5;
+pub const AI_CORE_COST_CELLS: u32      = 55;
+pub const POWER_COST_SHIP_FORGE: u32   = 3;
 pub const POWER_COST_AI_FABRICATE: u32 = 5;
 
 // Adding missing AI_CORE_COST from audit directive
-pub const AI_CORE_COST: u32 = 50; 
+pub const AI_CORE_COST: u32 = 55; 
 
 use bevy::math::Vec2;
 use bevy::prelude::Color;
@@ -85,6 +86,12 @@ pub const POWER_COST_CYCLE_TOTAL: u32 = 4;
 pub const POWER_COST_REFINERY: u32 = 1;
 pub const POWER_COST_HULL_FORGE: u32 = 2;
 pub const POWER_WARNING_INTERVAL: f32 = 30.0;
+
+// [PHASE 10] PROCESSING QUEUE TIMES (Seconds per batch)
+pub const REFINERY_MAGNETITE_TIME: f32 = 20.0;
+pub const REFINERY_CARBON_TIME: f32    = 30.0;
+pub const FORGE_HULL_TIME: f32         = 45.0;
+pub const FORGE_CORE_TIME: f32         = 60.0;
 
 // [PHASE 8b] POWER vs POWER CELLS
 pub const POWER_CELL_RESTORE_VALUE: f32 = 3.0;

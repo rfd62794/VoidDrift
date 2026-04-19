@@ -90,13 +90,13 @@ pub fn signal_system(
     time: Res<Time>,
     mut signal: ResMut<SignalLog>,
     opening: Res<OpeningSequence>,
-    station_query: Query<&Station>,
+    station_query: Query<(&Station, &StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShip>)>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
     ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     mut quest_log: ResMut<QuestLog>,
 ) {
     let now = time.elapsed_secs();
-    let station = station_query.get_single();
+    let station_res = station_query.get_single();
 
     // ID 1: Game Start
     fire_signal(&mut signal, 1, "> SIGNAL RECEIVED.");
@@ -299,6 +299,23 @@ pub fn signal_system(
                 now,
                 st.dock_state == StationDockState::Rotating && !any_docked && s30_fired,
                 st.dock_state == StationDockState::Resuming
+            );
+        }
+
+        if let Ok((st, q)) = station_res {
+            let processing_active = q.magnetite_refinery.is_some() || q.carbon_refinery.is_some() || q.hull_forge.is_some() || q.core_fabricator.is_some();
+            
+            fire_refirable(&mut signal, 32, "> INDUSTRIAL PROCESSING ACTIVE. PARALLEL QUEUES COMMENCED.",
+                now,
+                processing_active,
+                !processing_active
+            );
+
+            let s32_fired = signal.fired.contains(&32);
+            fire_refirable(&mut signal, 33, "> PROCESSING QUEUES EMPTY. PRODUCTION HALTED.",
+                now,
+                !processing_active && s32_fired,
+                processing_active
             );
         }
 
