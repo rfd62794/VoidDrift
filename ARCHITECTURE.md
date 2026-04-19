@@ -68,6 +68,12 @@ Idle → Navigating → Idle (station arrival)
 
 Holding → Outbound → Mining → Returning → Unloading → Holding
 
+## Narrative Architecture
+- **The Signal**: A unified narrative voice governed by strict telemetry-style rules.
+- **SignalLog**: A central resource for persistent, character-driven reports.
+- **OpeningSequence**: A dedicated state machine for the game's scripted introduction.
+- Design Spec: [Signal: Narrative Design Document](docs/Voidrift_Signal_Narrative_Design.md)
+
 ## Hardware Constraints (ADRs)
 
 ADR-001: PresentMode::Fifo — mandatory, Mali GPU buffer starvation

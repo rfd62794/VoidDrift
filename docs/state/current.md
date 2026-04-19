@@ -18,6 +18,7 @@ short of asteroid — known issue, deferred.
 
 ## What Is Next
 Step 6: Map Polish — circle markers, connection lines, sector labels.
+Step 7: Narrative Signal — implement the locked Signal voice and opening sequence.
 After map polish: module-aware ADR documentation, then post-slice economy 
 expansion (five-ore mineral map, laser tiers, sector progression).
 
