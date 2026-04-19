@@ -92,6 +92,7 @@ pub fn signal_system(
     opening: Res<OpeningSequence>,
     station_query: Query<&Station>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
+    ship_query: Query<(&Ship, &Transform)>,
 ) {
     let now = time.elapsed_secs();
     let station = station_query.get_single();
@@ -231,9 +232,10 @@ pub fn signal_system(
             );
 
             let any_docked = ship_query.iter().any(|(s, _)| s.state == ShipState::Docked);
+            let s30_fired = signal.fired.contains(&30);
             fire_refirable(&mut signal, 31, "> VESSEL DEPARTED. BERTH CLEAR.",
                 now,
-                st.dock_state == StationDockState::Rotating && !any_docked && signal.fired.contains(&30),
+                st.dock_state == StationDockState::Rotating && !any_docked && s30_fired,
                 st.dock_state == StationDockState::Resuming
             );
         }
