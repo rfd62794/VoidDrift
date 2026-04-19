@@ -408,73 +408,72 @@ fn hud_ui_system(
             .show(ctx, |ui| {
                 ui.add_space(8.0);
                 
-                // --- STATION AI LOG ---
-                if let Ok((_, station)) = station_query.get_single() {
-                    ui.group(|ui| {
-                        ui.set_height(80.0);
-                        egui::ScrollArea::vertical()
-                            .stick_to_bottom(true)
-                            .show(ui, |ui| {
-                                for line in &station.log {
-                                    ui.label(egui::RichText::new(line).monospace().size(10.0));
-                                }
-                            });
-                    });
-                }
-                ui.add_space(8.0);
-
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-                    
-                    if let Ok((station_ent, mut station)) = station_query.get_single_mut() {
-                        // DATA COLUMN
-                        ui.vertical(|ui| {
-                            ui.label(format!("MAGNETITE: {:.1}", station.magnetite_reserves));
-                            ui.label(format!("CARBON: {:.1}", station.carbon_reserves));
+                if let Ok((station_ent, mut station)) = station_query.get_single_mut() {
+                    ui.vertical_centered(|ui| {
+                        // SECTION 1: SYSTEM LOG (Fixed 5-line height)
+                        ui.group(|ui| {
+                            ui.set_height(60.0); 
+                            egui::ScrollArea::vertical()
+                                .stick_to_bottom(true)
+                                .show(ui, |ui| {
+                                    for line in &station.log {
+                                        ui.label(egui::RichText::new(line).monospace().size(9.0).color(egui::Color32::LIGHT_GRAY));
+                                    }
+                                });
                         });
-                        ui.add_space(16.0);
-                        ui.vertical(|ui| {
-                            ui.label(format!("POWER CELLS: {}", ship.power_cells));
-                            ui.label(format!("HULL PLATES: {}", station.hull_plate_reserves));
-                        });
+                        ui.add_space(4.0);
 
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        // SECTION 2: RESOURCE STATUS BAR
+                        ui.horizontal(|ui| {
                             ui.add_space(8.0);
-                            
-                            // 1. REFINE POWER CELLS
+                            ui.label(format!("MAG: {:.0}", station.magnetite_reserves));
+                            ui.separator();
+                            ui.label(format!("CAR: {:.0}", station.carbon_reserves));
+                            ui.separator();
+                            ui.label(format!("CELLS: {}", ship.power_cells));
+                            ui.separator();
+                            ui.label(format!("HULLS: {}", station.hull_plate_reserves));
+                        });
+                        ui.add_space(4.0);
+
+                        // SECTION 3: ACTION BUTTONS (Split into 2 rows for touch safety)
+                        ui.horizontal(|ui| {
+                            // Row 1: Production
                             let can_refine_mag = station.magnetite_reserves >= REFINERY_RATIO as f32;
-                            if ui.add_enabled(can_refine_mag, egui::Button::new("REFINE CELLS")).clicked() {
+                            if ui.add_sized([100.0, 30.0], egui::Button::new("REFINE CELLS")).clicked() && can_refine_mag {
                                 let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
                                 station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
                                 ship.power_cells += cells;
                                 add_log_entry(&mut station, format!("[STATION AI] Magnetite refined -> {} cells.", cells));
                             }
 
-                            // 2. REFINE HULL PLATE
                             let can_refine_carb = station.carbon_reserves >= HULL_REFINERY_RATIO as f32;
-                            if ui.add_enabled(can_refine_carb, egui::Button::new("REFINE HULL")).clicked() {
+                            if ui.add_sized([100.0, 30.0], egui::Button::new("REFINE HULL")).clicked() && can_refine_carb {
                                 let plates = (station.carbon_reserves as u32) / HULL_REFINERY_RATIO;
                                 station.carbon_reserves -= (plates * HULL_REFINERY_RATIO) as f32;
                                 station.hull_plate_reserves += plates;
                                 add_log_entry(&mut station, format!("[STATION AI] Hull synthesis complete: {} units.", plates));
                             }
+                        });
 
-                            // 3. BUILD AI CORE
+                        ui.add_space(4.0);
+
+                        ui.horizontal(|ui| {
+                            // Row 2: Construction & Repair
                             if ai_core_query.get(station_ent).is_err() {
                                 let can_build_core = ship.power_cells >= AI_CORE_COST;
-                                if ui.add_enabled(can_build_core, egui::Button::new(format!("AI CORE ({})", AI_CORE_COST))).clicked() {
+                                let core_label = if can_build_core { format!("AI CORE ({})", AI_CORE_COST) } else { "CORE LACKS POWER".to_string() };
+                                if ui.add_sized([120.0, 30.0], egui::Button::new(core_label)).clicked() && can_build_core {
                                     ship.power_cells -= AI_CORE_COST;
                                     commands.entity(station_ent).insert(AiCore);
                                     add_log_entry(&mut station, "[STATION AI] AI Core nominal. Awaiting directive.".to_string());
                                 }
                             } else {
-                                // 4. ASSEMBLE SHIP (Only if AI Core exists)
                                 let can_assemble = station.hull_plate_reserves >= 1;
-                                if ui.add_enabled(can_assemble, egui::Button::new("ASSEMBLE SHIP")).clicked() {
+                                if ui.add_sized([120.0, 30.0], egui::Button::new("ASSEMBLE SHIP")).clicked() && can_assemble {
                                     station.hull_plate_reserves -= 1;
                                     commands.entity(station_ent).remove::<AiCore>();
                                     
-                                    // Spawn Autonomous Ship
                                     commands.spawn((
                                         AutonomousShip { state: DroneState::Outbound, cargo: 0.0, cargo_type: OreType::Empty },
                                         Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
@@ -498,10 +497,9 @@ fn hud_ui_system(
                                 }
                             }
 
-                            // 5. REPAIR (Legacy)
                             if !station.online {
                                 let can_repair = ship.power_cells >= REPAIR_COST;
-                                if ui.add_enabled(can_repair, egui::Button::new("REPAIR")).clicked() {
+                                if ui.add_sized([80.0, 30.0], egui::Button::new("REPAIR")).clicked() && can_repair {
                                     ship.power_cells -= REPAIR_COST;
                                     station.repair_progress = 1.0;
                                     station.online = true;
@@ -509,8 +507,8 @@ fn hud_ui_system(
                                 }
                             }
                         });
-                    }
-                });
+                    });
+                }
                 ui.add_space(8.0);
             });
     }
