@@ -554,21 +554,82 @@ fn hud_ui_system(
 
                         // SECTION 4: MANUFACTURING ROW (Hull Forge & Core Fabrication)
                         ui.horizontal(|ui| {
-                            // Placeholder for Step 4 FORGE HULL
-                            let forge_hull_label = "FORGE HULL".to_string();
-                            ui.add_sized([125.0, 30.0], egui::Button::new(forge_hull_label));
+                            let can_forge_hull = station.hull_plate_reserves >= SHIP_HULL_COST_PLATES && station.power_cells >= POWER_COST_SHIP_FORGE;
+                            let forge_hull_label = if automation_suspended { "SUSPENDED".to_string() } 
+                                                  else if station.hull_plate_reserves < SHIP_HULL_COST_PLATES { format!("FORGE HULL (need {} plt)", SHIP_HULL_COST_PLATES) }
+                                                  else if station.power_cells < POWER_COST_SHIP_FORGE { "FORGE HULL (insufficient power)".to_string() }
+                                                  else { "FORGE HULL".to_string() };
 
-                            // Placeholder for Step 4 FABRICATE CORE
-                            let fab_core_label = if station.ai_cores >= 2 { "CORE STOCKPILE FULL".to_string() } else { "FABRICATE CORE".to_string() };
-                            ui.add_sized([135.0, 30.0], egui::Button::new(fab_core_label));
+                            if ui.add_sized([125.0, 30.0], egui::Button::new(forge_hull_label)).clicked() && can_forge_hull && !automation_suspended {
+                                station.hull_plate_reserves -= SHIP_HULL_COST_PLATES;
+                                station.power_cells -= POWER_COST_SHIP_FORGE;
+                                station.ship_hulls += 1;
+                                add_log_entry(&mut station, "[STATION AI] Ship Hull fabricated. Structural assembly ready.".to_string());
+                            }
+
+                            let total_core_cost = AI_CORE_COST_CELLS + POWER_COST_AI_FABRICATE;
+                            let can_fab_core = station.power_cells >= total_core_cost && station.ai_cores < 2;
+                            let fab_core_label = if automation_suspended { "SUSPENDED".to_string() }
+                                                else if station.ai_cores >= 2 { "CORE STOCKPILE FULL".to_string() }
+                                                else if station.power_cells < total_core_cost { format!("FABRICATE CORE (need {} cells)", total_core_cost) }
+                                                else { "FABRICATE CORE".to_string() };
+
+                            if ui.add_sized([135.0, 30.0], egui::Button::new(fab_core_label)).clicked() && can_fab_core && !automation_suspended {
+                                station.power_cells -= total_core_cost;
+                                station.ai_cores += 1;
+                                add_log_entry(&mut station, "[STATION AI] AI Core fabricated. Unit ready for assembly.".to_string());
+                                
+                                // [PHASE 9] Immediate discovery upon first fabrication
+                                if let Ok(s7_ent) = carbon_field_query.get_single() {
+                                    commands.entity(s7_ent).insert((MapMarker, Visibility::Visible));
+                                    add_log_entry(&mut station, "[STATION AI] Carbon signature detected. Designation: Sector 7.".to_string());
+                                }
+                            }
                         });
                         ui.add_space(4.0);
 
                         // SECTION 5: ASSEMBLY & MAINTENANCE ROW
                         ui.horizontal(|ui| {
-                            // Placeholder for Step 4 ASSEMBLE SHIP
-                            if auto_ship_query.iter().count() < 2 {
-                                ui.add_sized([120.0, 30.0], egui::Button::new("ASSEMBLE SHIP"));
+                            let ship_count = auto_ship_query.iter().count();
+                            if ship_count < 2 {
+                                let can_assemble = station.ship_hulls >= 1 && station.ai_cores >= 1;
+                                let assemble_label = if automation_suspended { "SUSPENDED".to_string() }
+                                                     else if station.ship_hulls < 1 { "ASSEMBLE SHIP (no hull)".to_string() }
+                                                     else if station.ai_cores < 1 { "ASSEMBLE SHIP (no core)".to_string() }
+                                                     else { "ASSEMBLE SHIP".to_string() };
+
+                                if ui.add_sized([120.0, 30.0], egui::Button::new(assemble_label)).clicked() && can_assemble && !automation_suspended {
+                                    station.ship_hulls -= 1;
+                                    station.ai_cores -= 1;
+                                    
+                                    let (target_pos, ore, name) = if ship_count == 0 {
+                                        (SECTOR_1_POS, OreType::Magnetite, "Sector 1".to_string())
+                                    } else {
+                                        (SECTOR_7_POS, OreType::Carbon, "Sector 7".to_string())
+                                    };
+
+                                    commands.spawn((
+                                        AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX },
+                                        AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.clone() },
+                                        Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
+                                        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                                        Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
+                                    ))
+                                    .with_children(|parent| {
+                                        parent.spawn((
+                                            Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                                            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                                            Transform::from_xyz(0.0, 24.0, 1.1),
+                                        ));
+                                        parent.spawn((
+                                            ShipCargoBarFill,
+                                            Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                                            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                                            Transform::from_xyz(0.0, 24.0, 1.2),
+                                        ));
+                                    });
+                                    add_log_entry(&mut station, format!("[STATION AI] Ship assembly complete. {}. {} extraction.", name, if ore == OreType::Magnetite { "Magnetite" } else { "Carbon" }));
+                                }
                             }
 
                             // TOP UP SHIP action
