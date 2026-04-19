@@ -192,7 +192,7 @@ fn autopilot_system(
     mut query: Query<(&mut Ship, &mut Transform, Entity)>,
     target_query: Query<&AutopilotTarget>,
     asteroid_query: Query<&AsteroidField>,
-    station_query: Query<&Station>,
+    mut station_query: Query<&mut Station>,
     mut commands: Commands,
 ) {
     for (mut ship, mut transform, entity) in query.iter_mut() {
