@@ -23,6 +23,7 @@ use systems::visuals::*;
 use systems::autopilot::*;
 use systems::mining::*;
 use systems::autonomous::*;
+use systems::economy::*;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -63,9 +64,9 @@ fn main() {
             systems::autonomous::autonomous_ship_system,
             ship_cargo_display_system,
             autonomous_ship_cargo_display_system,
-            station_status_system,
-            ship_self_preservation_system,
-            station_maintenance_system,
+            systems::economy::station_status_system,
+            systems::economy::ship_self_preservation_system,
+            systems::economy::station_maintenance_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -430,7 +431,7 @@ fn handle_input(
             }
         }
     }
-}
+}pub fn add_log_entry(station: &mut Station, entry: String) {}
 
 fn station_status_system(
     time: Res<Time>,
