@@ -312,7 +312,7 @@ fn autopilot_system(
                         if asteroid_query.get(target_ent).is_ok() { 
                             ship.state = ShipState::Mining; 
                         }
-                        else if let Ok((station_ent, mut station)) = station_query.get_mut(target_ent) { 
+                        else if let Ok((_station_ent, mut station)) = station_query.get_mut(target_ent) { 
                             ship.state = ShipState::Docked; 
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
@@ -342,7 +342,7 @@ fn autopilot_system(
                                         let msg = format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves);
                                         add_log_entry(&mut station, msg);
                                         if station.hull_plate_reserves == 0 && station.carbon_reserves >= HULL_REFINERY_RATIO as f32 {
-                                            add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Second AI Core required for autonomous operation.".to_string());
+                                            add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Fabricate AI Cores to expand autonomous fleet.".to_string());
                                         }
                                     }
                                     OreType::Empty => {}
@@ -475,7 +475,7 @@ fn hud_ui_system(
             .show(ctx, |ui| {
                 ui.add_space(8.0);
                 
-                if let Ok((station_ent, mut station)) = station_query.get_single_mut() {
+                if let Ok((_station_ent, mut station)) = station_query.get_single_mut() {
                     ui.vertical_centered(|ui| {
                         // SECTION 1: SYSTEM LOG (Fixed 5-line height)
                         ui.group(|ui| {
