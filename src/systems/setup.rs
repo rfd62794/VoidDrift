@@ -39,7 +39,7 @@ pub fn setup_world(
                 StarLayer(0.05),
                 Mesh2d(star_sm.clone()),
                 MeshMaterial2d(far_mat.clone()),
-                Transform::from_xyz(x, y, -100.0), // Far back
+                Transform::from_xyz(x, y, Z_STARS_FAR), 
             ));
         }
         for _ in 0..50 {
@@ -49,7 +49,7 @@ pub fn setup_world(
                 StarLayer(0.15),
                 Mesh2d(star_lg.clone()),
                 MeshMaterial2d(near_mat.clone()),
-                Transform::from_xyz(x, y, -50.0), // Moderate back
+                Transform::from_xyz(x, y, Z_STARS_NEAR), 
             ));
         }
     }
@@ -58,8 +58,12 @@ pub fn setup_world(
     // 1. CAMERA
     commands.spawn((
         Camera2d::default(),
+        OrthographicProjection {
+            far: 1100.0, // Ensure Z_STARS_FAR (-100) is visible from Z=900
+            ..default()
+        },
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 900.0), // Standard depth
+        Transform::from_xyz(0.0, 0.0, 900.0), 
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
             ..default()
@@ -81,35 +85,34 @@ pub fn setup_world(
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-        Transform::from_xyz(STATION_POS.x, STATION_POS.y, 1.0), // Start at station
+        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP),
     ))
     .with_children(|parent| {
-        // [POLISH] Thruster Glow
+        // [Z SYSTEM] Parent Z_SHIP (1.0) + local offsets
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
             MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), 
-            Transform::from_xyz(0.0, -18.0, 0.1), // Slightly in front of ship mesh
+            Transform::from_xyz(0.0, -18.0, 0.1), // Global 1.1
             Visibility::Hidden,
         ));
-        // [POLISH] Mining Beam
         parent.spawn((
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
             MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))), 
-            Transform::from_xyz(0.0, 0.0, 0.2), // In front of glow
+            Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), // Global Z_BEAM (0.8)
             Visibility::Hidden,
         ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
-            Transform::from_xyz(0.0, 24.0, 0.3), // HUD layers on ship
+            Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP), // Global Z_CARGO_BAR (1.1)
         ));
         parent.spawn((
             ShipCargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 24.0, 0.4),
+            Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05), // Slightly above bar back
         ));
 
         // [STEP 6] SHIP MAP MARKER
@@ -117,7 +120,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(2.0)), // High Z for map overlay
+            Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), 
             Visibility::Hidden,
         ));
     });
@@ -143,7 +146,7 @@ pub fn setup_world(
         },
         Mesh2d(meshes.add(Rectangle::new(40.0, 40.0))),
         MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
-        Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
+        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
     ))
     .with_children(|parent| {
         // [STEP 6] MAP ICON
@@ -151,7 +154,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(16.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_STATION)),
-            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         // [STEP 6] MAP LABEL
@@ -160,7 +163,7 @@ pub fn setup_world(
             Text2d::new("BASE"),
             TextFont { font_size: 24.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -40.0, 11.0),
+            Transform::from_xyz(0.0, -40.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
     });
@@ -171,14 +174,14 @@ pub fn setup_world(
         AsteroidField { ore_type: OreType::Magnetite, depleted: false },
         Mesh2d(meshes.add(generate_asteroid_mesh(1234))),
         MeshMaterial2d(materials.add(Color::srgb(0.8, 0.3, 0.3))), // Reddish
-        Transform::from_xyz(SECTOR_1_POS.x, SECTOR_1_POS.y, 0.5),
+        Transform::from_xyz(SECTOR_1_POS.x, SECTOR_1_POS.y, Z_ENVIRONMENT),
     ))
     .with_children(|parent| {
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S1)),
-            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -186,7 +189,7 @@ pub fn setup_world(
             Text2d::new("S1"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -36.0, 11.0),
+            Transform::from_xyz(0.0, -36.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
     });
@@ -196,7 +199,7 @@ pub fn setup_world(
         AsteroidField { ore_type: OreType::Carbon, depleted: false },
         Mesh2d(meshes.add(generate_asteroid_mesh(5678))),
         MeshMaterial2d(materials.add(Color::srgb(0.3, 0.8, 0.3))), // Greenish
-        Transform::from_xyz(SECTOR_7_POS.x, SECTOR_7_POS.y, 0.5),
+        Transform::from_xyz(SECTOR_7_POS.x, SECTOR_7_POS.y, Z_ENVIRONMENT),
         Visibility::Hidden,
     ))
     .with_children(|parent| {
@@ -204,7 +207,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S7)),
-            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -212,14 +215,14 @@ pub fn setup_world(
             Text2d::new("S7"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -36.0, 11.0),
+            Transform::from_xyz(0.0, -36.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
     });
 
     // [STEP 6] SECTOR 3: Unexplored
     commands.spawn((
-        Transform::from_xyz(SECTOR_3_POS.x, SECTOR_3_POS.y, 0.5),
+        Transform::from_xyz(SECTOR_3_POS.x, SECTOR_3_POS.y, Z_ENVIRONMENT),
         Visibility::Hidden, // World hidden
     ))
     .with_children(|parent| {
@@ -227,7 +230,7 @@ pub fn setup_world(
             MapElement,
             Mesh2d(meshes.add(Circle::new(14.0))),
             MeshMaterial2d(materials.add(COLOR_MAP_S3)),
-            Transform::from_xyz(0.0, 0.0, 10.0).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -235,7 +238,7 @@ pub fn setup_world(
             Text2d::new("???"),
             TextFont { font_size: 20.0, ..default() },
             TextColor(COLOR_MAP_S3), // Dimmed text
-            Transform::from_xyz(0.0, -36.0, 11.0),
+            Transform::from_xyz(0.0, -36.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
     });
@@ -251,7 +254,7 @@ pub fn setup_world(
         DestinationHighlight,
         Mesh2d(meshes.add(Circle::new(40.0))), // Large ring
         MeshMaterial2d(materials.add(Color::srgba(1.0, 1.0, 1.0, 0.1))), // Static dim white
-        Transform::from_xyz(0.0, 0.0, 9.9), // Slightly behind markers
+        Transform::from_xyz(0.0, 0.0, Z_HUD - 0.1), // Slightly behind markers
         Visibility::Hidden,
     ));
 }
@@ -278,7 +281,7 @@ fn spawn_map_connector(
             alpha_mode: AlphaMode2d::Opaque,
             ..default()
         })),
-        Transform::from_xyz(mid.x, mid.y, -5.0) // Pushed back to background layer
+        Transform::from_xyz(mid.x, mid.y, Z_CONNECTORS) 
             .with_rotation(Quat::from_rotation_z(angle)),
         Visibility::Hidden,
     ));

@@ -32,6 +32,18 @@ pub const SECTOR_3_POS: Vec2 = Vec2::new(-500.0, 400.0);
 
 pub const MAP_STRATEGIC_SCALE: f32 = 4.0;
 
+// ── Z-LAYER SYSTEM ───────────────────────────────────────────────────────────
+pub const Z_STARS_FAR: f32     = -100.0;
+pub const Z_STARS_NEAR: f32    = -50.0;
+pub const Z_CONNECTORS: f32    = -5.0;
+pub const Z_ENVIRONMENT: f32   = 0.5;  // Asteroids, station
+pub const Z_SHIP: f32          = 1.0;
+pub const Z_BEAM: f32          = 0.8;
+pub const Z_CARGO_BAR: f32     = 1.1;
+pub const Z_MAP_MARKERS: f32   = 2.0;
+pub const Z_HUD: f32           = 10.0;
+// ─────────────────────────────────────────────────────────────────────────────
+
 // [STEP 6] MAP COLORS
 pub const COLOR_MAP_STATION: Color    = Color::srgb(1.0, 1.0, 0.0);       // Yellow
 pub const COLOR_MAP_S1: Color         = Color::srgb(0.0, 1.0, 1.0);       // Cyan (Magnetite)
