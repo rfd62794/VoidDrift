@@ -17,8 +17,8 @@ pub fn opening_sequence_system(
     let delta = time.delta_secs();
     opening.timer += delta;
 
-    let (ship_ent, mut ship, mut ship_transform) = ship_query.single_mut();
-    let station_ent = station_query.single();
+    let (ship_ent, mut ship, ship_transform) = ship_query.single_mut();
+    let _station_ent = station_query.single();
     let (berth_ent, berth_transform) = berth_query.single();
     let dist_to_station = ship_transform.translation.truncate().distance(berth_transform.translation.truncate());
 
