@@ -11,7 +11,7 @@ pub fn autonomous_ship_system(
     mut commands: Commands,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
-        for (mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
+        for (ship_entity, mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     if station.power_cells >= POWER_COST_CYCLE_TOTAL {
