@@ -5,10 +5,8 @@
 
 use bevy::{
     prelude::*,
-    render::mesh::Mesh2d,
-    sprite::MeshMaterial2d,
 };
-use bevy_egui::{egui, EguiPlugin, EguiContextSettings, EguiContexts};
+use bevy_egui::EguiPlugin;
 use rand::{Rng, SeedableRng};
 
 mod constants;
@@ -18,13 +16,13 @@ mod components;
 pub use components::*;
 
 pub mod systems;
-use systems::setup::*;
-use systems::visuals::*;
-use systems::autopilot::*;
-use systems::mining::*;
-use systems::autonomous::*;
-use systems::economy::*;
-use systems::ui::*;
+use crate::systems::setup::*;
+use crate::systems::visuals::*;
+use crate::systems::autopilot::*;
+use crate::systems::mining::*;
+use crate::systems::autonomous::*;
+use crate::systems::economy::*;
+use crate::systems::ui::*;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
