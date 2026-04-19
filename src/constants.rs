@@ -25,7 +25,7 @@ pub const AI_CORE_COST: u32 = 50;
 
 use bevy::math::Vec2;
 use bevy::prelude::Color;
-pub const STATION_POS: Vec2 = Vec2::new(-150.0, -200.0);
+pub const STATION_POS: Vec2 = Vec2::new(0.0, 0.0);
 pub const SECTOR_1_POS: Vec2 = Vec2::new(180.0, 80.0);
 pub const SECTOR_7_POS: Vec2 = Vec2::new(-280.0, -180.0);
 pub const SECTOR_3_POS: Vec2 = Vec2::new(-500.0, 400.0);
