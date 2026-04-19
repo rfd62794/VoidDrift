@@ -51,7 +51,6 @@ struct Ship {
     cargo: f32,
     cargo_type: OreType,
     cargo_capacity: u32,
-    power_cells: u32,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
@@ -88,6 +87,8 @@ struct Station {
     magnetite_reserves: f32,
     carbon_reserves: f32,
     hull_plate_reserves: u32,
+    power_cells: u32,
+    last_power_warning_time: f32, // Track reminder timing
     log: std::collections::VecDeque<String>,
 }
 
@@ -185,7 +186,6 @@ fn setup_world(
             cargo: 0.0,
             cargo_type: OreType::Empty,
             cargo_capacity: CARGO_CAPACITY,
-            power_cells: 0,
         },
         Mesh2d(meshes.add(Rectangle::new(32.0, 32.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
@@ -214,6 +214,8 @@ fn setup_world(
             magnetite_reserves: 0.0,
             carbon_reserves: 0.0,
             hull_plate_reserves: 0,
+            power_cells: 0,
+            last_power_warning_time: 0.0,
             log: std::collections::VecDeque::from([
                 "SYSTEMS INITIALIZED.".to_string(),
             ]),
@@ -274,7 +276,7 @@ fn autopilot_system(
                                 match ship.cargo_type {
                                     OreType::Magnetite => {
                                         station.magnetite_reserves += ship.cargo;
-                                        let msg = format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, ship.power_cells);
+                                        let msg = format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, station.power_cells);
                                         add_log_entry(&mut station, msg);
                                     }
                                     OreType::Carbon => {
@@ -430,7 +432,7 @@ fn hud_ui_system(
                             ui.separator();
                             ui.label(format!("CAR: {:.0}", station.carbon_reserves));
                             ui.separator();
-                            ui.label(format!("CELLS: {}", ship.power_cells));
+                            ui.label(format!("CELLS: {}", station.power_cells));
                             ui.separator();
                             ui.label(format!("HULLS: {}", station.hull_plate_reserves));
                         });
@@ -443,7 +445,7 @@ fn hud_ui_system(
                             if ui.add_sized([100.0, 30.0], egui::Button::new("REFINE CELLS")).clicked() && can_refine_mag {
                                 let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
                                 station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
-                                ship.power_cells += cells;
+                                station.power_cells += cells;
                                 add_log_entry(&mut station, format!("[STATION AI] Magnetite refined -> {} cells.", cells));
                             }
 
@@ -461,10 +463,10 @@ fn hud_ui_system(
                         ui.horizontal(|ui| {
                             // Row 2: Construction & Repair
                             if ai_core_query.get(station_ent).is_err() {
-                                let can_build_core = ship.power_cells >= AI_CORE_COST;
+                                let can_build_core = station.power_cells >= AI_CORE_COST;
                                 let core_label = if can_build_core { format!("AI CORE ({})", AI_CORE_COST) } else { "CORE LACKS POWER".to_string() };
                                 if ui.add_sized([120.0, 30.0], egui::Button::new(core_label)).clicked() && can_build_core {
-                                    ship.power_cells -= AI_CORE_COST;
+                                    station.power_cells -= AI_CORE_COST;
                                     commands.entity(station_ent).insert(AiCore);
                                     add_log_entry(&mut station, "[STATION AI] AI Core nominal. Awaiting directive.".to_string());
                                 }
@@ -498,9 +500,9 @@ fn hud_ui_system(
                             }
 
                             if !station.online {
-                                let can_repair = ship.power_cells >= REPAIR_COST;
+                                let can_repair = station.power_cells >= REPAIR_COST;
                                 if ui.add_sized([80.0, 30.0], egui::Button::new("REPAIR")).clicked() && can_repair {
-                                    ship.power_cells -= REPAIR_COST;
+                                    station.power_cells -= REPAIR_COST;
                                     station.repair_progress = 1.0;
                                     station.online = true;
                                     add_log_entry(&mut station, "[STATION AI] Repair complete. Power grid online.".to_string());
