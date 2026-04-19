@@ -7,7 +7,7 @@ pub fn opening_sequence_system(
     mut opening: ResMut<OpeningSequence>,
     mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<PlayerShip>, Without<AutonomousShipTag>)>,
     station_query: Query<Entity, (With<Station>, Without<Ship>)>,
-    berth_query: Query<(Entity, &Transform), (With<Berth>, Without<Ship>)>,
+    berth_query: Query<(Entity, &Berth, &Transform), Without<Ship>>,
     mut commands: Commands,
 ) {
     if opening.phase == OpeningPhase::Complete {
@@ -19,7 +19,9 @@ pub fn opening_sequence_system(
 
     let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { return; };
     let Ok(_station_ent) = station_query.get_single() else { return; };
-    let Ok((berth_ent, berth_transform)) = berth_query.get_single() else { return; };
+    
+    // Find the player berth specifically (there are multiple berths now)
+    let Some((berth_ent, berth_transform)) = berth_query.iter().find(|(_, b, _)| b.berth_type == BerthType::Player).map(|(e, _, t)| (e, t)) else { return; };
 
     let dist_to_station = ship_transform.translation.truncate().distance(berth_transform.translation.truncate());
 
