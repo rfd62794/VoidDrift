@@ -168,6 +168,7 @@ fn main() {
             autonomous_ship_system,
             ship_cargo_display_system,
             autonomous_ship_cargo_display_system,
+            station_status_system,
         ))
         .add_systems(Update, handle_input)
         .run();
@@ -659,17 +660,44 @@ fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Unloading => {
+                    let ore_name = if assignment.ore_type == OreType::Magnetite { "Magnetite" } else { "Carbon" };
                     match assignment.ore_type {
                         OreType::Magnetite => station.magnetite_reserves += ship.cargo,
                         OreType::Carbon => station.carbon_reserves += ship.cargo,
                         _ => {}
                     }
-                    let msg = format!("[STATION AI] Cargo deposited: {}. Reserve updated.", assignment.sector_name);
+                    let msg = format!("[STATION AI] Cargo deposited: {}. {} recovered.", assignment.sector_name, ore_name);
                     add_log_entry(&mut station, msg);
                     ship.cargo = 0.0;
                     ship.state = AutonomousShipState::Holding;
                 }
             }
+        }
+    }
+}
+
+fn station_status_system(
+    time: Res<Time>,
+    mut station_query: Query<&mut Station>,
+    ship_query: Query<&AutonomousShip>,
+) {
+    if let Ok(mut station) = station_query.get_single_mut() {
+        let now = time.elapsed_secs();
+        let power = station.power_cells;
+        
+        let should_warn = now - station.last_power_warning_time > POWER_WARNING_INTERVAL || station.last_power_warning_time == 0.0;
+        
+        // 1. Critical Power Warning
+        if power < POWER_COST_CYCLE_TOTAL && should_warn {
+            add_log_entry(&mut station, format!("[STATION AI] Power reserves critical. Reserve: {} cells.", power));
+            station.last_power_warning_time = now;
+        }
+        
+        // 2. Ships Holding
+        let any_holding = ship_query.iter().any(|s| s.state == AutonomousShipState::Holding);
+        if any_holding && power < POWER_COST_CYCLE_TOTAL && should_warn {
+             add_log_entry(&mut station, "[STATION AI] Insufficient power. Autonomous unit holding.".to_string());
+             station.last_power_warning_time = now;
         }
     }
 }
