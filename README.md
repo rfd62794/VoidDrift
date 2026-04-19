@@ -133,10 +133,19 @@ VoidDrift/
 ├── docs/
 │   ├── adr/                # 6 Architectural Decision Records
 │   ├── phases/             # Phase summaries (archival)
-│   └── state/current.md    # Always-current project state
+│   ├── state/current.md    # Always-current project state
+│   └── Voidrift_Signal_Narrative_Design.md # Narrative voice & opening sequence
 ├── build_android.ps1       # Full build + deploy pipeline
 └── Cargo.toml
 ```
+
+---
+
+## Narrative Design
+
+Voidrift is driven by **The Signal** — a persistent, character-driven narrative voice that reports in telemetry. Every narrative event and opening sequence is governed by strict voice rules and trigger conditions.
+
+See the [Signal: Narrative Design Document](docs/Voidrift_Signal_Narrative_Design.md) for the locked voice specification and opening sequence machine.
 
 ---
 
