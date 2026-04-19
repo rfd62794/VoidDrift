@@ -371,10 +371,10 @@ fn hud_ui_system(
                                         
                                         // Spawn Drone
                                         commands.spawn((
-                                            Drone { state: DroneState::Mining, cargo: 0.0 },
+                                            Drone { state: DroneState::Outbound, cargo: 0.0 },
                                             Mesh2d(meshes.add(Rectangle::new(24.0, 24.0))),
                                             MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
-                                            Transform::from_xyz(FIELD_POS.x, FIELD_POS.y, 0.5),
+                                            Transform::from_xyz(STATION_POS.x, STATION_POS.y, 0.5),
                                         ))
                                         .with_children(|parent| {
                                             parent.spawn((
