@@ -17,9 +17,10 @@ pub fn opening_sequence_system(
     let delta = time.delta_secs();
     opening.timer += delta;
 
-    let (ship_ent, mut ship, ship_transform) = ship_query.single_mut();
-    let _station_ent = station_query.single();
-    let (berth_ent, berth_transform) = berth_query.single();
+    let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { return; };
+    let Ok(_station_ent) = station_query.get_single() else { return; };
+    let Ok((berth_ent, berth_transform)) = berth_query.get_single() else { return; };
+
     let dist_to_station = ship_transform.translation.truncate().distance(berth_transform.translation.truncate());
 
     match opening.phase {
