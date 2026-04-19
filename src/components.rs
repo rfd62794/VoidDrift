@@ -103,6 +103,9 @@ pub struct AutonomousShip {
 }
 
 #[derive(Component)]
+pub struct DockedAt(pub Entity);
+
+#[derive(Component)]
 pub struct AutonomousAssignment {
     pub target_pos: Vec2,
     pub ore_type: OreType,

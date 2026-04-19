@@ -32,12 +32,12 @@ pub fn opening_sequence_system(
                 opening.phase = OpeningPhase::AutoPiloting;
                 opening.timer = 0.0;
                 
-                // Engage Autopilot automatically
+                ship.state = ShipState::Navigating;
+                commands.entity(ship_ent).remove::<DockedAt>();
                 commands.entity(ship_ent).insert(AutopilotTarget {
                     destination: station_transform.translation.truncate(),
                     target_entity: Some(station_ent),
                 });
-                ship.state = ShipState::Navigating;
             }
         }
         OpeningPhase::AutoPiloting => {

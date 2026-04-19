@@ -102,6 +102,7 @@ pub fn map_input_system(
                     ship.state = ShipState::Navigating;
                     *active_tab = ActiveStationTab::Reserves;
                     ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
+                    commands.entity(ship_entity).remove::<DockedAt>();
                     commands.entity(ship_entity).insert(AutopilotTarget { 
                         destination, 
                         target_entity: Some(target_ent) 

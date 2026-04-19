@@ -94,8 +94,9 @@ pub fn autopilot_system(
                             }
                             
                             info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
+                            commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(target_ent));
                         }
-                    } else if let Ok((_ent, mut station, _)) = station_query.get_mut(target_ent) {
+                    } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
                         // NO BERTH? Dock at center (Initial / Opening Sequence)
                         ship.state = ShipState::Docked; 
                         station.dock_state = StationDockState::Resuming;
@@ -107,9 +108,9 @@ pub fn autopilot_system(
                         }
                         
                         info!("[Voidrift] Docking Complete: Station Hub.");
+                        commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));
                     }
                 } else { ship.state = ShipState::Idle; }
-                commands.entity(entity).remove::<AutopilotTarget>();
             } else {
                 let movement = direction.normalize() * ship.speed * time.delta_secs();
                 transform.translation += movement.extend(0.0);
@@ -120,26 +121,29 @@ pub fn autopilot_system(
 
 /// [PHASE B] Locks docked ship to berth position throughout rotation
 pub fn docked_ship_system(
-    mut ship_query: Query<(&Ship, &mut Transform, &AutopilotTarget), (Without<Station>, Without<Berth>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    mut ship_query: Query<(&Ship, &mut Transform, &DockedAt), (With<Ship>, Without<Station>, Without<Berth>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     berth_query: Query<&Berth>,
-    station_query: Query<(&Station, &Transform), (Without<Ship>, Without<Berth>)>,
+    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
 ) {
-    for (ship, mut transform, target) in ship_query.iter_mut() {
+    for (ship, mut transform, docked_at) in ship_query.iter_mut() {
         if ship.state == ShipState::Docked {
-            if let Some(target_ent) = target.target_entity {
-                if let Ok(berth) = berth_query.get(target_ent) {
-                    if let Ok((station, s_transform)) = station_query.get_single() {
-                        let pos = berth_world_pos(
-                            s_transform.translation.truncate(),
-                            station.rotation,
-                            berth.arm_index,
-                        );
-                        transform.translation = pos.extend(Z_SHIP);
-                        // Optional: Rotate ship to match arm? Direct alignment with arm direction:
-                        let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
-                        transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
-                    }
+            let target_ent = docked_at.0;
+            if let Ok(berth) = berth_query.get(target_ent) {
+                if let Ok((station, s_transform)) = station_query.get_single() {
+                    let pos = berth_world_pos(
+                        s_transform.translation.truncate(),
+                        station.rotation,
+                        berth.arm_index,
+                    );
+                    transform.translation = pos.extend(Z_SHIP);
+                    
+                    // Rotate ship to match arm direction:
+                    let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
+                    transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
                 }
+            } else if let Ok((station, s_transform)) = station_query.get(target_ent) {
+                // Docked at Hub (Station itself) - Intro sequence
+                transform.translation = s_transform.translation.truncate().extend(Z_SHIP);
             }
         }
     }

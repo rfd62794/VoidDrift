@@ -60,6 +60,7 @@ pub fn ship_self_preservation_system(
             // 3. Force Return
             else if ship.state != ShipState::Navigating {
                 ship.state = ShipState::Navigating;
+                commands.entity(ship_entity).remove::<DockedAt>();
                 commands.spawn(AutopilotTarget {
                     destination: STATION_POS,
                     target_entity: None,

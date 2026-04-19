@@ -44,7 +44,8 @@ fn main() {
             systems::map::camera_follow_system,                
             systems::visuals::starfield_scroll_system,
             systems::visuals::station_rotation_system,
-            systems::autopilot::docked_ship_system, // Chain after rotation to avoid jitter
+            systems::autopilot::docked_ship_system,
+            systems::autonomous::docked_autonomous_ship_system, // Chain after rotation to avoid jitter
             systems::visuals::berth_occupancy_system,
             systems::ui::station_visual_system,
             systems::visuals::ship_rotation_system,

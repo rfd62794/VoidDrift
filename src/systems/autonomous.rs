@@ -5,8 +5,10 @@ use crate::systems::ui::add_log_entry;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(&mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    berth_query: Query<(Entity, &Berth)>,
+    mut commands: Commands,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
         for (mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
@@ -15,6 +17,7 @@ pub fn autonomous_ship_system(
                     if station.power_cells >= POWER_COST_CYCLE_TOTAL {
                         station.power_cells -= POWER_COST_CYCLE_TOTAL;
                         ship.state = AutonomousShipState::Outbound;
+                        commands.entity(ship_entity).remove::<DockedAt>();
                         add_log_entry(&mut station, "[STATION AI] Power confirmed. Dispatching autonomous unit.".to_string());
                     }
                 }
@@ -52,6 +55,11 @@ pub fn autonomous_ship_system(
                         ship.state = AutonomousShipState::Unloading;
                         ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                         
+                        // Find Drone Berth entity to dock
+                        if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Drone) {
+                            commands.entity(ship_entity).insert(DockedAt(b_ent));
+                        }
+
                         // [PHASE B] Trigger station resume if not already resuming
                         station.dock_state = StationDockState::Resuming;
                         station.resume_timer = STATION_RESUME_DELAY;
@@ -98,10 +106,38 @@ pub fn autonomous_beam_system(
                 if ship.state == AutonomousShipState::Mining {
                     let dist = transform.translation.truncate().distance(assignment.target_pos);
                     *b_vis = Visibility::Visible;
-                    b_transform.scale.y = dist;
-                    b_transform.translation.y = dist / 2.0;
+                    
+                    b_transform.translation = Vec3::new(0.0, dist / 2.0, -0.1);
+                    b_transform.scale = Vec3::new(1.0, dist / 8.0, 1.0);
                 } else {
                     *b_vis = Visibility::Hidden;
+                }
+            }
+        }
+    }
+}
+
+/// [PHASE B] Locks autonomous ships to berth position throughout rotation
+pub fn docked_autonomous_ship_system(
+    mut ship_query: Query<(&AutonomousShip, &mut Transform, &DockedAt), (With<AutonomousShip>, Without<Ship>, Without<Station>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    berth_query: Query<&Berth>,
+    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+) {
+    for (ship, mut transform, docked_at) in ship_query.iter_mut() {
+        if ship.state == AutonomousShipState::Unloading || ship.state == AutonomousShipState::Holding {
+            let target_ent = docked_at.0;
+            if let Ok(berth) = berth_query.get(target_ent) {
+                if let Ok((station, s_transform)) = station_query.get_single() {
+                    let pos = berth_world_pos(
+                        s_transform.translation.truncate(),
+                        station.rotation,
+                        berth.arm_index,
+                    );
+                    transform.translation = pos.extend(Z_SHIP);
+                    
+                    // Rotate drone to match arm direction
+                    let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
+                    transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
                 }
             }
         }
