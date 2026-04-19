@@ -274,11 +274,13 @@ fn autopilot_system(
                                 match ship.cargo_type {
                                     OreType::Magnetite => {
                                         station.magnetite_reserves += ship.cargo;
-                                        add_log_entry(&mut station, format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, ship.power_cells));
+                                        let msg = format!("[STATION AI] Magnetite reserves: {}. Power Cells: {}.", station.magnetite_reserves as u32, ship.power_cells);
+                                        add_log_entry(&mut station, msg);
                                     }
                                     OreType::Carbon => {
                                         station.carbon_reserves += ship.cargo;
-                                        add_log_entry(&mut station, format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves));
+                                        let msg = format!("[STATION AI] Carbon reserves: {}. Hull Plates: {}.", station.carbon_reserves as u32, station.hull_plate_reserves);
+                                        add_log_entry(&mut station, msg);
                                         if station.hull_plate_reserves == 0 && station.carbon_reserves >= HULL_REFINERY_RATIO as f32 {
                                             add_log_entry(&mut station, "[STATION AI] Hull synthesis possible. Second AI Core required for autonomous operation.".to_string());
                                         }
@@ -609,8 +611,10 @@ fn autonomous_ship_system(
             }
             DroneState::Unloading => {
                 if let Ok(mut station) = station_query.get_single_mut() {
+                    // Autonomous ships currently mine Magnetite (Sector 1) only
                     station.magnetite_reserves += ship.cargo;
-                    add_log_entry(&mut station, format!("[STATION AI] Magnetite reserves: {}.", station.magnetite_reserves as u32));
+                    let msg = format!("[STATION AI] Magnetite reserves: {}.", station.magnetite_reserves as u32);
+                    add_log_entry(&mut station, msg);
                     ship.cargo = 0.0;
                     ship.state = DroneState::Outbound;
                 }
