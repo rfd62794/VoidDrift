@@ -56,7 +56,6 @@ pub fn hud_ui_system(
     mut contexts: EguiContexts,
     mut ship_query: Query<&mut Ship>,
     mut station_query: Query<(Entity, &mut Station)>,
-    auto_ship_query: Query<&AutonomousShip>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
@@ -195,8 +194,6 @@ pub fn hud_ui_system(
                         // SECTION 5: DEPLOYMENT ROW
                         ui.horizontal(|ui| {
                             let can_deploy = station.ship_hulls >= 1 && station.ai_cores >= 1;
-                            let auto_count = auto_ship_query.iter().count();
-                            
                             if ui.add_sized([320.0, 30.0], egui::Button::new("DEPLOYS AUTONOMOUS SHIP")).clicked() && can_deploy && !automation_suspended {
                                 station.ship_hulls -= 1;
                                 station.ai_cores -= 1;

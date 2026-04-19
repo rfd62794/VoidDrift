@@ -1,13 +1,8 @@
-// Voidrift — Phase 4: Station UI & Refinery (Final Gate 4 Build)
-// ============================================================================
-// Goal: Final Phase 4 closure. Opt-C: Logic verified, text deferred.
+// Voidrift — Phase 10: Documentation & Final Refactor
 // ============================================================================
 
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use rand::{Rng, SeedableRng};
 
 mod constants;
 pub use constants::*;
@@ -16,14 +11,6 @@ mod components;
 pub use components::*;
 
 pub mod systems;
-use crate::systems::setup::*;
-use crate::systems::visuals::*;
-use crate::systems::autopilot::*;
-use crate::systems::mining::*;
-use crate::systems::autonomous::*;
-use crate::systems::economy::*;
-use crate::systems::ui::*;
-use crate::systems::map::*;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -71,5 +58,3 @@ fn main() {
         .add_systems(Update, systems::map::handle_input)
         .run();
 }
-
-

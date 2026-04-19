@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use crate::add_log_entry;
+use crate::systems::ui::add_log_entry;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
