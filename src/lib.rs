@@ -457,18 +457,26 @@ fn hud_ui_system(
                         ui.horizontal(|ui| {
                             // Row 1: Production
                             let can_refine_mag = station.magnetite_reserves >= REFINERY_RATIO as f32;
-                            if ui.add_sized([100.0, 30.0], egui::Button::new("REFINE CELLS")).clicked() && can_refine_mag {
+                            let has_power_mag = station.power_cells >= POWER_COST_REFINERY;
+                            let label_mag = if has_power_mag { "REFINE CELLS" } else { "REFINERY OFFLINE" };
+                            
+                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_mag)).clicked() && can_refine_mag && has_power_mag {
                                 let cells = (station.magnetite_reserves as u32) / REFINERY_RATIO;
                                 station.magnetite_reserves -= (cells * REFINERY_RATIO) as f32;
                                 station.power_cells += cells;
+                                station.power_cells -= POWER_COST_REFINERY;
                                 add_log_entry(&mut station, format!("[STATION AI] Magnetite refined -> {} cells.", cells));
                             }
 
                             let can_refine_carb = station.carbon_reserves >= HULL_REFINERY_RATIO as f32;
-                            if ui.add_sized([100.0, 30.0], egui::Button::new("REFINE HULL")).clicked() && can_refine_carb {
+                            let has_power_hull = station.power_cells >= POWER_COST_HULL_FORGE;
+                            let label_hull = if has_power_hull { "REFINE HULL" } else { "FORGE OFFLINE" };
+
+                            if ui.add_sized([110.0, 30.0], egui::Button::new(label_hull)).clicked() && can_refine_carb && has_power_hull {
                                 let plates = (station.carbon_reserves as u32) / HULL_REFINERY_RATIO;
                                 station.carbon_reserves -= (plates * HULL_REFINERY_RATIO) as f32;
                                 station.hull_plate_reserves += plates;
+                                station.power_cells -= POWER_COST_HULL_FORGE;
                                 add_log_entry(&mut station, format!("[STATION AI] Hull synthesis complete: {} units.", plates));
                             }
                         });
