@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
@@ -59,32 +60,35 @@ pub fn autonomous_ship_cargo_display_system(
     }
 }
 
-pub fn hud_ui_system(
-    mut contexts: EguiContexts,
-    mut ship_query: Query<&mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
-    mut station_query: Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
-    state: Res<State<GameState>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    signal_log: Res<SignalLog>,
-    opening: Res<OpeningSequence>,
-    mut active_tab: ResMut<ActiveStationTab>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut expanded: ResMut<SignalStripExpanded>,
-    mut quest_log: ResMut<QuestLog>,
-    _forge_settings: Res<ForgeSettings>,
-    mut auto_dock_settings: ResMut<AutoDockSettings>,
-    mut tutorial: ResMut<TutorialState>,
-    mut pan_state: ResMut<MapPanState>,
-    mut cam_query: Query<&mut OrthographicProjection, With<MainCamera>>,
-) {
-    let mut ship = ship_query.single_mut();
-    let ctx = contexts.ctx_mut();
+#[derive(SystemParam)]
+pub struct HudParams<'w, 's> {
+    pub contexts: EguiContexts<'w, 's>,
+    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
+    pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    pub state: Res<'w, State<GameState>>,
+    pub next_state: ResMut<'w, NextState<GameState>>,
+    pub signal_log: Res<'w, SignalLog>,
+    pub opening: Res<'w, OpeningSequence>,
+    pub active_tab: ResMut<'w, ActiveStationTab>,
+    pub commands: Commands<'w, 's>,
+    pub meshes: ResMut<'w, Assets<Mesh>>,
+    pub materials: ResMut<'w, Assets<ColorMaterial>>,
+    pub expanded: ResMut<'w, SignalStripExpanded>,
+    pub quest_log: ResMut<'w, QuestLog>,
+    pub forge_settings: Res<'w, ForgeSettings>,
+    pub auto_dock_settings: ResMut<'w, AutoDockSettings>,
+    pub tutorial: ResMut<'w, TutorialState>,
+    pub pan_state: ResMut<'w, MapPanState>,
+    pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
+}
+
+pub fn hud_ui_system(mut params: HudParams) {
+    let mut ship = params.ship_query.single_mut();
+    let ctx = params.contexts.ctx_mut();
 
     // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
     
-    let strip_height = if expanded.0 { 180.0 } else { 60.0 };
+    let strip_height = if params.expanded.0 { 180.0 } else { 60.0 };
 
     egui::TopBottomPanel::bottom("signal_strip")
         .frame(egui::Frame::NONE
@@ -92,13 +96,13 @@ pub fn hud_ui_system(
             .inner_margin(4.0))
         .exact_height(strip_height)
         .show(ctx, |ui| {
-            let display_count = if expanded.0 { 20 } else { 3 };
-            let entries: Vec<&String> = signal_log.entries.iter().rev().take(display_count).collect();
+            let display_count = if params.expanded.0 { 20 } else { 3 };
+            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
             
             let rect = ui.available_rect_before_wrap();
             let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
             if response.clicked() {
-                expanded.0 = !expanded.0;
+                params.expanded.0 = !params.expanded.0;
             }
 
             egui::ScrollArea::vertical()
@@ -115,11 +119,11 @@ pub fn hud_ui_system(
                 });
         });
 
-    if opening.phase != OpeningPhase::Complete {
+    if params.opening.phase != OpeningPhase::Complete {
         return;
     }
 
-    if let Ok((_station_ent, mut station, mut queues)) = station_query.get_single_mut() {
+    if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
         // ── 2. LEFT PANEL (MAP + TABS) ──────────────────────────────────────────────
         egui::SidePanel::left("left_panel")
             .frame(egui::Frame::NONE)
@@ -127,23 +131,23 @@ pub fn hud_ui_system(
             .show(ctx, |ui| {
                 ui.add_space(16.0);
                 
-                let label = if *state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
+                let label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
                 if ui.add(egui::Button::new(label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    if *state.get() == GameState::SpaceView {
-                        next_state.set(GameState::MapView);
+                    if *params.state.get() == GameState::SpaceView {
+                        params.next_state.set(GameState::MapView);
                     } else {
-                        next_state.set(GameState::SpaceView);
+                        params.next_state.set(GameState::SpaceView);
                     }
-                    quest_log.panel_open = false;
+                    params.quest_log.panel_open = false;
                 }
 
                 ui.add_space(8.0);
 
-                let quest_label = if quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
+                let quest_label = if params.quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
                 if ui.add(egui::Button::new(quest_label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    quest_log.panel_open = !quest_log.panel_open;
-                    if quest_log.panel_open {
-                        next_state.set(GameState::SpaceView);
+                    params.quest_log.panel_open = !params.quest_log.panel_open;
+                    if params.quest_log.panel_open {
+                        params.next_state.set(GameState::SpaceView);
                     }
                 }
 
@@ -162,8 +166,8 @@ pub fn hud_ui_system(
                     ];
 
                     for (tab, label) in tabs {
-                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*active_tab == tab, label)).clicked() {
-                            *active_tab = tab;
+                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
+                            *params.active_tab = tab;
                         }
                         ui.add_space(8.0);
                     }
@@ -173,9 +177,9 @@ pub fn hud_ui_system(
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     ui.add_space(16.0);
                     if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 40.0))).clicked() {
-                        pan_state.is_focused = true;
-                        pan_state.cumulative_offset = Vec2::ZERO;
-                        if let Ok(mut proj) = cam_query.get_single_mut() {
+                        params.pan_state.is_focused = true;
+                        params.pan_state.cumulative_offset = Vec2::ZERO;
+                        if let Ok(mut proj) = params.cam_query.get_single_mut() {
                             proj.scale = 1.0;
                         }
                     }
@@ -183,7 +187,7 @@ pub fn hud_ui_system(
             });
 
         // ── 3. QUEST PANEL ────────────────────────────────────────────────────────
-        if quest_log.panel_open {
+        if params.quest_log.panel_open {
             egui::Window::new("OBJECTIVES")
                 .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10.0, 10.0))
                 .resizable(false)
@@ -192,7 +196,7 @@ pub fn hud_ui_system(
                     ui.set_min_height(300.0);
                     ui.heading(egui::RichText::new("ACTIVE").color(egui::Color32::WHITE));
                     ui.separator();
-                    for obj in quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Active) {
+                    for obj in params.quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Active) {
                         ui.horizontal(|ui| {
                             ui.label(egui::RichText::new("▶").color(egui::Color32::CYAN));
                             ui.label(egui::RichText::new(&obj.description).strong());
@@ -205,7 +209,7 @@ pub fn hud_ui_system(
                     ui.add_space(12.0);
                     ui.heading(egui::RichText::new("COMPLETED").color(egui::Color32::GRAY));
                     ui.separator();
-                    for obj in quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Complete) {
+                    for obj in params.quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Complete) {
                         ui.label(egui::RichText::new(format!("✓ {}", obj.description)).color(egui::Color32::from_gray(140)));
                     }
                 });
@@ -218,7 +222,7 @@ pub fn hud_ui_system(
                 .show(ctx, |ui| {
                     ui.add_space(8.0);
                     ui.vertical_centered(|ui| {
-                        match *active_tab {
+                        match *params.active_tab {
                             ActiveStationTab::Reserves => {
                                 ui.vertical(|ui| {
                                     ui.heading("STATION RESOURCES");
@@ -234,9 +238,9 @@ pub fn hud_ui_system(
                                     ui.add_space(16.0);
                                     ui.separator();
                                     ui.heading("AUTO-DOCK SETTINGS");
-                                    ui.checkbox(&mut auto_dock_settings.auto_unload, "Auto-Unload Cargo");
-                                    ui.checkbox(&mut auto_dock_settings.auto_smelt_magnetite, "Auto-Smelt Magnetite");
-                                    ui.checkbox(&mut auto_dock_settings.auto_smelt_carbon, "Auto-Smelt Carbon");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_unload, "Auto-Unload Cargo");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_magnetite, "Auto-Smelt Magnetite");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_carbon, "Auto-Smelt Carbon");
                                 });
                                 if !station.online {
                                     if ui.button(format!("REPAIR STATION [{} CELLS]", REPAIR_COST)).clicked() && station.power_cells >= REPAIR_COST {
@@ -272,13 +276,13 @@ pub fn hud_ui_system(
                                     if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
                                         station.ship_hulls -= 1; station.ai_cores -= 1;
                                         let (target_pos, ore, name) = if station.ai_cores >= 1 { (SECTOR_3_POS, OreType::Carbon, "Sector 3") } else { (SECTOR_1_POS, OreType::Magnetite, "Sector 1") };
-                                        commands.spawn((AutonomousShipTag, LastHeading(0.0), AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX }, AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() }, Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)))
+                                        params.commands.spawn((AutonomousShipTag, LastHeading(0.0), AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX }, AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() }, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)))
                                         .with_children(|parent| {
-                                            parent.spawn((ThrusterGlow, Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));
-                                            parent.spawn((MiningBeam, Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))), MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), Visibility::Hidden));
-                                            parent.spawn((Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))), Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)));
-                                            parent.spawn((ShipCargoBarFill, Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)));
-                                            parent.spawn((MapElement, Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), MeshMaterial2d(materials.add(ColorMaterial { color: Color::srgb(1.0, 0.5, 0.0), alpha_mode: bevy::sprite::AlphaMode2d::Opaque, ..default() })), Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), Visibility::Hidden));
+                                            parent.spawn((ThrusterGlow, Mesh2d(params.meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));
+                                            parent.spawn((MiningBeam, Mesh2d(params.meshes.add(Rectangle::new(2.0, 1.0))), MeshMaterial2d(params.materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), Visibility::Hidden));
+                                            parent.spawn((Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.2, 0.2, 0.2))), Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)));
+                                            parent.spawn((ShipCargoBarFill, Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)));
+                                            parent.spawn((MapElement, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), MeshMaterial2d(params.materials.add(ColorMaterial { color: Color::srgb(1.0, 0.5, 0.0), alpha_mode: bevy::sprite::AlphaMode2d::Opaque, ..default() })), Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), Visibility::Hidden));
                                         });
                                     }
                                     ui.separator();
@@ -296,7 +300,7 @@ pub fn hud_ui_system(
     }
 
     // ── 5. TUTORIAL POP-UP ───────────────────────────────────────────────────
-    if let Some(popup) = tutorial.active.clone() {
+    if let Some(popup) = params.tutorial.active.clone() {
         egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
             .id(egui::Id::new("tutorial_popup"))
             .collapsible(false)
@@ -313,16 +317,16 @@ pub fn hud_ui_system(
                     ui.label(egui::RichText::new(&popup.body).size(13.0).color(egui::Color32::WHITE));
                     ui.add_space(20.0);
                     if ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 40.0))).clicked() {
-                        tutorial.shown.insert(popup.id);
-                        tutorial.active = None;
+                        params.tutorial.shown.insert(popup.id);
+                        params.tutorial.active = None;
                     }
                 });
             });
 
         // Dismiss on tap anywhere else if not consumed by the window
         if ctx.input(|i| i.pointer.any_click()) && !ctx.is_pointer_over_area() {
-            tutorial.shown.insert(popup.id);
-            tutorial.active = None;
+            params.tutorial.shown.insert(popup.id);
+            params.tutorial.active = None;
         }
     }
 }
