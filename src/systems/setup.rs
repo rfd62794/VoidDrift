@@ -628,7 +628,7 @@ pub fn generate_tungsten_mesh(seed: u64) -> Mesh {
 pub fn generate_titanite_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let _rng = rand::rngs::StdRng::seed_from_u64(seed);
     let base_radius = ASTEROID_RADIUS_TITANITE;
     let vertex_count = 10;
     let mut vertices = vec![[0.0, 0.0, 0.0]];
@@ -653,7 +653,7 @@ pub fn generate_titanite_mesh(seed: u64) -> Mesh {
 pub fn generate_crystal_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let _rng = rand::rngs::StdRng::seed_from_u64(seed);
     let base_radius = ASTEROID_RADIUS_CRYSTAL;
     let vertex_count = 6; // hexagonal
     let mut vertices = vec![[0.0, 0.0, 0.0]];
