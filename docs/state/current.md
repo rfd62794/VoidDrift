@@ -1,74 +1,87 @@
-# Project State
-updated: 2026-04-19
-agent: Antigravity
+# Voidrift — Current State
+**Date:** April 2026
+**Build:** v0.4.x (post Phase B + Tutorial UX)
 
-## Status
-phase: Post-Phase 8 — Station Phase B Complete
-test_floor: Moto G 2025 (API 35) — Build verified clean.
-last_directive: Voidrift_Station_PhaseB_Directive.md
+## Test Floor
+[no automated tests; verified on Moto G 2025 (API 35)]
 
-## What Is Built
-Full production chain economy running on Moto G 2025 (API 35). Station 
-Architecture (Phase B) stabilized with rotation-sync arm docking via 
-`DockedAt`. Opening sequence and narrative signals hardened for mobile 
-performance. Universal Disjointness pattern enforced for Mali GPU stability. 
-Modularized codebase (8+ system files). 
+## Completed Systems
 
-## What Is Next
-- [x] Step 7: Narrative Signal (Opening Sequence, Scripted Telemetry)
-- [x] Step 8: Station Architecture (Rotation, Berths, Dual-Station model)
-- [ ] Step 8b: Quest Tracker & UI Alignment
-- [ ] Step 9: NPC Visitors (Traders, Wanderers, Berth 3 logic)
-- [ ] Step 10: Drone Depot Construction (Infrastructure expansion)
-After map polish: module-aware ADR documentation, then post-slice economy 
-expansion (five-ore mineral map, laser tiers, sector progression).
+### Gameplay & Logistics
+| Function | File | Description |
+| :--- | :--- | :--- |
+| `autopilot_system` | `autopilot.rs` | Interpolates ship position toward `AutopilotTarget`. |
+| `docked_ship_system` | `autopilot.rs` | Synchronizes docked ship transform with rotating berth position. |
+| `mining_system` | `mining.rs` | Extracts ore from asteroids based on laser tier gates. |
+| `autonomous_ship_system` | `autonomous.rs` | Finite state machine for AI mining drones. |
+| `autonomous_beam_system` | `autonomous.rs` | Controls visibility of mining beams for autonomous units. |
+| `docked_autonomous_ship_system` | `autonomous.rs` | specialized berth sync for AI units. |
+| `station_status_system` | `economy.rs` | Monitors station health and power reserves. |
+| `ship_self_preservation_system` | `economy.rs` | Handles emergency power recovery and return-to-base for player. |
+| `station_maintenance_system` | `economy.rs` | Ticks periodic power consumption for active station systems. |
+| `processing_queue_system` | `economy.rs` | Ticks four parallel production queues for refinement and assembly. |
+| `auto_dock_system` | `economy.rs` | Triggered auto-unload and auto-smelt logic upon arrival. |
+| `quest_update_system` | `quest.rs` | Updates objective progress based on game events. |
+
+### Station, Narrative & UI
+| Function | File | Description |
+| :--- | :--- | :--- |
+| `hud_ui_system` | `ui.rs` | Primary egui implementation for all tabs, signals, and popups. |
+| `station_visual_system` | `ui.rs` | Updates station hub color based on power status. |
+| `ship_cargo_display_system` | `ui.rs` | Manages world-space cargo bar and pulsing fullness feedback. |
+| `cargo_label_system` | `ui.rs` | Updates world-space text labels for ship cargo. |
+| `autonomous_ship_cargo_display_system` | `ui.rs` | Specialized cargo bar for AI units. |
+| `camera_follow_system` | `map.rs` | Manages camera constraints in Space vs Map view. |
+| `map_input_system` | `map.rs` | Handles touch navigation and tap-to-intercept logic. |
+| `pinch_zoom_system` | `map.rs` | Multi-touch zooming for strategic overview. |
+| `map_pan_system` | `map.rs` | Single-touch panning restricted to Map View. |
+| `opening_sequence_system` | `narrative.rs` | Cinematic intro orchestrator. |
+| `signal_system` | `narrative.rs` | Narrative telemetry logic across 30+ trigger IDs. |
+| `tutorial_system` | `narrative.rs` | Context-aware one-time instructional popups. |
+| `starfield_scroll_system` | `visuals.rs` | Parallax star rendering. |
+| `station_rotation_system` | `visuals.rs` | Physical rotation of the station hub and arm container. |
+| `ship_rotation_system` | `visuals.rs` | Rotates ship meshes toward travel velocity. |
+| `thruster_glow_system` | `visuals.rs` | State-based visibility for engine visual effects. |
+| `berth_occupancy_system` | `visuals.rs` | Toggles visual indicators for station berths. |
+| `setup_world` | `setup.rs` | Massive startup system for spawning all world entities. |
+
+## Active Resources
+*   **ClearColor**: Background clear color.
+*   **CameraDelta**: Per-tick world-space camera movement (used for parallax).
+*   **SignalLog**: Narrative history and fired ID tracking.
+*   **SignalStripExpanded**: UI toggle for the bottom message log.
+*   **OpeningSequence**: Cinematic phase and timer.
+*   **ActiveStationTab**: Currently selected docking screen.
+*   **ForgeSettings**: Settings for batch production.
+*   **AutoDockSettings**: User preferences for auto-unload/smelt.
+*   **QuestLog**: Objective list and progression state.
+*   **TutorialState**: Contextual guidance tracking (shown IDs + active popup).
+*   **MapPanState**: Persistent touch position for map dragging.
+
+## Active Components  
+*   **Ship**: Primary player state (cargo, power, laser tier).
+*   **Station**: Primary base state (reserves, rotation, dock state).
+*   **AsteroidField**: Ore type, deposit amount, and depletion status.
+*   **AutopilotTarget**: Navigation destination and target entity.
+*   **AutonomousShip**: State and assignment for AI units.
+*   **DockedAt**: Logical link between a ship and its berth entity.
+*   **Berth**: Station slot data (arm index, occupancy).
+*   **MapElement**: Marker for visibility toggling in map mode.
+*   **MainCamera**: Primary orthographic camera.
+*   **StationQueues**: Collection of four parallel industrial jobs.
+*   **PlayerShip**: Identity marker for disjointness filtering.
+*   **AutonomousShipTag**: Identity marker for AI units.
+*   **CargoBarFill / ShipCargoBarFill**: HUD scale indicators.
 
 ## Known Issues
-- Ship does not stop short of asteroid on arrival — overshoots slightly
+*   **Massive setup_world**: `setup.rs` lines 9-496 (487 lines) handles too many responsibilities.
+*   **Component Redundancy**: `CargoBarFill` and `ShipCargoBarFill` serve near-identical purposes and should be unified.
+*   **Oversized Files**: `ui.rs` (405), `narrative.rs` (407).
+*   **Universal Disjointness Verbosity**: System queries are becoming extremely long due to mandatory `Without<>` filters.
 
-## Open Questions
-- SECTOR_3_POS confirmed as (-200.0, 300.0)? Verify against autonomous logic
-- Refinery and power inline chunks in economy.rs — extraction named correctly?
+## Open Directives
+*   **Documentation Refactor (Part 1)**: [ACTIVE] Aligning docs with code.
 
-## Economy Constants (Locked)
-SHIP_SPEED: 180.0
-CARGO_CAPACITY: 100
-MINING_RATE: 20.0
-REFINERY_RATIO: 10
-HULL_REFINERY_RATIO: 5
-REPAIR_COST: 25
-AI_CORE_COST_CELLS: 50
-HULL_PLATE_COST_CARBON: 5
-SHIP_HULL_COST_PLATES: 3
-POWER_COST_CYCLE_TOTAL: 4
-POWER_COST_REFINERY: 1
-POWER_COST_HULL_FORGE: 2
-POWER_COST_SHIP_FORGE: 3
-POWER_COST_AI_FABRICATE: 5
-SHIP_POWER_MAX: 10.0
-SHIP_POWER_FLOOR: 3.0
-EGUI_SCALE: 3.0
-
-## Post-Slice Roadmap (Captured — Not Yet Scoped)
-Five-ore mineral map: Magnetite, Iron, Carbon, Tungsten, Titanite
-Laser tiers: Basic (Steel) → Tungsten → Composite (Crystal Matrix)
-Sector progression: Sectors 1-5, geographic gates
-Asteroid cores: Laser-gated deeper material in existing fields
-Crystal layer: TBD design session
-Power Core: Power Cells + Crystal Matrix (concept, not specced)
-Trader mechanic: First Tungsten Laser via trade (Autonomous Ship + Titanium Hull)
-Blueprint system: Discovered/purchased recipes
-Pause/Resume autonomous ships
-Ship ceiling review (3 ships?)
-Async background refinery
-Hex map / procedural system generation (long term)
-
-## Recent Decisions
-- ADR-001: PresentMode::Fifo mandatory on Mali GPU
-- ADR-002: Mesh2d for world-space primitives
-- ADR-003: bevy_egui for all HUD and UI, EGUI_SCALE=3.0
-- ADR-004: Bevy 0.15 pinned for Android stability
-- ADR-005: Autonomous agents use dedicated systems
-- ADR-006: Module structure — lib.rs split into systems/
-- MINING_RATE tuned to 20.0, SHIP_SPEED to 180.0 for mobile RTT
-- Five-ore economy design locked: Magnetite/Iron/Carbon/Tungsten/Titanite
+## Next Queued Work
+*   Code Refactor (Part 2): Component decomposition and file splitting.
+*   Directive B: Ship hull material upgrades and multi-device scaling pass.
