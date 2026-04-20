@@ -64,7 +64,7 @@ pub fn map_input_system(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
+    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MainCamera>, Without<AutonomousShip>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut ship_query: Query<(Entity, &mut Ship), (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     berth_query: Query<(Entity, &Berth), (Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<DestinationHighlight>, Without<StarLayer>)>,
     opening: Res<OpeningSequence>,
