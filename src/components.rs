@@ -365,8 +365,19 @@ pub struct TutorialPopup {
 #[derive(Component)] pub struct CargoOreLabel;
 #[derive(Component)] pub struct CargoCountLabel;
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct MapPanState {
     pub last_position: Option<Vec2>,
     pub cumulative_offset: Vec2,
+    pub is_focused: bool,
+}
+
+impl Default for MapPanState {
+    fn default() -> Self {
+        Self {
+            last_position: None,
+            cumulative_offset: Vec2::ZERO,
+            is_focused: true,
+        }
+    }
 }

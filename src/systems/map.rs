@@ -13,13 +13,17 @@ pub fn camera_follow_system(
     let mut ct = cam.single_mut();
     let old_pos = ct.translation.truncate();
     
-    let base_pos = if *state.get() == GameState::SpaceView {
-        st.translation.truncate()
+    let target_pos = if *state.get() == GameState::MapView {
+        STATION_POS + pan_state.cumulative_offset
     } else {
-        STATION_POS
+        // SpaceView
+        if pan_state.is_focused {
+            st.translation.truncate()
+        } else {
+            pan_state.cumulative_offset
+        }
     };
 
-    let target_pos = base_pos + pan_state.cumulative_offset;
     ct.translation.x = target_pos.x;
     ct.translation.y = target_pos.y;
 
@@ -156,6 +160,8 @@ pub fn map_pan_system(
     touches: Res<Touches>,
     mut pan_state: ResMut<MapPanState>,
     projection_query: Query<&OrthographicProjection, With<MainCamera>>,
+    state: Res<State<GameState>>,
+    ship_query: Query<&Transform, With<Ship>>,
     opening: Res<OpeningSequence>,
 ) {
     // Guard against panning during cinematic opening
@@ -174,6 +180,14 @@ pub fn map_pan_system(
             let delta = touch.position() - last_pos;
             let projection = projection_query.single();
             
+            // If dragging in SpaceView while focused, break focus and initialize offset to current ship position
+            if *state.get() == GameState::SpaceView && pan_state.is_focused {
+                pan_state.is_focused = false;
+                if let Ok(st) = ship_query.get_single() {
+                    pan_state.cumulative_offset = st.translation.truncate();
+                }
+            }
+
             // Adjust pan speed by current zoom level so it feels consistent
             pan_state.cumulative_offset.x -= delta.x * MAP_PAN_SPEED * projection.scale;
             pan_state.cumulative_offset.y += delta.y * MAP_PAN_SPEED * projection.scale;

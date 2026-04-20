@@ -169,10 +169,11 @@ pub fn hud_ui_system(
                     }
                 }
 
-                // [PHASE 11] CENTER BUTTON (Bottom Left)
+                // [PHASE 11] FOCUS BUTTON (Bottom Left)
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     ui.add_space(16.0);
-                    if ui.add(egui::Button::new("CENTER").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                    if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                        pan_state.is_focused = true;
                         pan_state.cumulative_offset = Vec2::ZERO;
                         if let Ok(mut proj) = cam_query.get_single_mut() {
                             proj.scale = 1.0;
