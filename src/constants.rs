@@ -35,7 +35,7 @@ pub const SECTOR_4_POS: Vec2     = Vec2::new(-520.0, -380.0); // Tungsten — Tu
 pub const SECTOR_5_POS: Vec2     = Vec2::new(680.0, 320.0);   // Titanite — Tungsten Laser gated
 pub const SECTOR_6_POS: Vec2     = Vec2::new(-650.0, 520.0);  // Crystal Core — Composite Laser gated
 
-pub const MAP_STRATEGIC_SCALE: f32 = 4.0;
+pub const MAP_STRATEGIC_SCALE: f32 = 8.0;
 pub const ZOOM_MIN: f32   = 0.3;   // most zoomed in
 pub const ZOOM_MAX: f32   = 8.0;   // most zoomed out
 pub const ZOOM_SPEED: f32 = 0.005;

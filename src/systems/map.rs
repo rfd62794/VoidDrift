@@ -7,17 +7,22 @@ pub fn camera_follow_system(
     ship: Query<&Transform, (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut cam: Query<&mut Transform, (With<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut cam_delta: ResMut<CameraDelta>,
+    pan_state: Res<MapPanState>,
 ) {
     let st = ship.single();
     let mut ct = cam.single_mut();
     let old_pos = ct.translation.truncate();
-    if *state.get() == GameState::SpaceView {
-        ct.translation.x = st.translation.x;
-        ct.translation.y = st.translation.y;
+    
+    let base_pos = if *state.get() == GameState::SpaceView {
+        st.translation.truncate()
     } else {
-        ct.translation.x = STATION_POS.x;
-        ct.translation.y = STATION_POS.y;
-    }
+        STATION_POS
+    };
+
+    let target_pos = base_pos + pan_state.cumulative_offset;
+    ct.translation.x = target_pos.x;
+    ct.translation.y = target_pos.y;
+
     // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
     cam_delta.0 = ct.translation.truncate() - old_pos;
 }
@@ -51,12 +56,12 @@ pub fn map_highlight_system(
     }
 }
 
-pub fn enter_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
-    cam.single_mut().scale = MAP_STRATEGIC_SCALE; 
+pub fn enter_map_view() { 
+    // Zoom persistence handled by pinch_zoom_system + removal of exit resets
 }
 
-pub fn exit_map_view(mut cam: Query<&mut OrthographicProjection, With<MainCamera>>) { 
-    cam.single_mut().scale = 1.0; 
+pub fn exit_map_view() { 
+    // Zoom persistence handled by pinch_zoom_system
 }
 
 pub fn map_input_system(
@@ -149,12 +154,12 @@ pub fn pinch_zoom_system(
 
 pub fn map_pan_system(
     touches: Res<Touches>,
-    state: Res<State<GameState>>,
-    mut camera_query: Query<&mut Transform, With<MainCamera>>,
     mut pan_state: ResMut<MapPanState>,
+    projection_query: Query<&OrthographicProjection, With<MainCamera>>,
+    opening: Res<OpeningSequence>,
 ) {
-    if *state.get() != GameState::MapView {
-        pan_state.last_position = None;
+    // Guard against panning during cinematic opening
+    if opening.phase != OpeningPhase::Complete {
         return;
     }
 
@@ -167,11 +172,11 @@ pub fn map_pan_system(
     if let Some(touch) = touches.iter().next() {
         if let Some(last_pos) = pan_state.last_position {
             let delta = touch.position() - last_pos;
+            let projection = projection_query.single();
             
-            let mut cam_transform = camera_query.single_mut();
-            // Pan speed multiplier. Panning is inverted (pulling map moves camera opposite)
-            cam_transform.translation.x -= delta.x * MAP_PAN_SPEED;
-            cam_transform.translation.y += delta.y * MAP_PAN_SPEED; // Y is inverted in viewport coords vs world
+            // Adjust pan speed by current zoom level so it feels consistent
+            pan_state.cumulative_offset.x -= delta.x * MAP_PAN_SPEED * projection.scale;
+            pan_state.cumulative_offset.y += delta.y * MAP_PAN_SPEED * projection.scale;
         }
         pan_state.last_position = Some(touch.position());
     } else {

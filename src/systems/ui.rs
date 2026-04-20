@@ -76,6 +76,8 @@ pub fn hud_ui_system(
     _forge_settings: Res<ForgeSettings>,
     mut auto_dock_settings: ResMut<AutoDockSettings>,
     mut tutorial: ResMut<TutorialState>,
+    mut pan_state: ResMut<MapPanState>,
+    mut cam_query: Query<&mut OrthographicProjection, With<MainCamera>>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
@@ -166,6 +168,17 @@ pub fn hud_ui_system(
                         ui.add_space(8.0);
                     }
                 }
+
+                // [PHASE 11] CENTER BUTTON (Bottom Left)
+                ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
+                    ui.add_space(16.0);
+                    if ui.add(egui::Button::new("CENTER").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                        pan_state.cumulative_offset = Vec2::ZERO;
+                        if let Ok(mut proj) = cam_query.get_single_mut() {
+                            proj.scale = 1.0;
+                        }
+                    }
+                });
             });
 
         // ── 3. QUEST PANEL ────────────────────────────────────────────────────────

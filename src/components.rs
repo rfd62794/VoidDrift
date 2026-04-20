@@ -368,4 +368,5 @@ pub struct TutorialPopup {
 #[derive(Resource, Default)]
 pub struct MapPanState {
     pub last_position: Option<Vec2>,
+    pub cumulative_offset: Vec2,
 }
