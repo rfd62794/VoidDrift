@@ -345,3 +345,27 @@ impl Default for AutoDockSettings {
         }
     }
 }
+
+// ── TUTORIAL & UX ────────────────────────────────────────────────────────────
+
+#[derive(Resource, Default)]
+pub struct TutorialState {
+    pub shown: HashSet<u32>,            // IDs of pop-ups already shown
+    pub active: Option<TutorialPopup>,  // currently visible pop-up
+}
+
+#[derive(Clone)]
+pub struct TutorialPopup {
+    pub id: u32,
+    pub title: String,
+    pub body: String,
+    pub button_label: String,
+}
+
+#[derive(Component)] pub struct CargoOreLabel;
+#[derive(Component)] pub struct CargoCountLabel;
+
+#[derive(Resource, Default)]
+pub struct MapPanState {
+    pub last_position: Option<Vec2>,
+}

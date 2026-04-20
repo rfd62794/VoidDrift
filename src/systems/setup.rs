@@ -185,6 +185,30 @@ pub fn setup_world(
             Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), 
             Visibility::Hidden,
         ));
+
+        // [STEP 10] WORLD-SPACE CARGO LABELS (Phase 10)
+        parent.spawn((
+            CargoOreLabel,
+            Text2d::new("EMPTY"),
+            TextFont {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 10.0,
+                ..default()
+            },
+            TextColor(Color::srgba(0.0, 1.0, 1.0, 0.8)),
+            Transform::from_xyz(0.0, 36.0, Z_HUD - Z_SHIP),
+        ));
+        parent.spawn((
+            CargoCountLabel,
+            Text2d::new("0 / 100"),
+            TextFont {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 10.0,
+                ..default()
+            },
+            TextColor(Color::srgba(1.0, 1.0, 1.0, 0.8)),
+            Transform::from_xyz(0.0, 12.0, Z_HUD - Z_SHIP),
+        ));
     });
 
     // STATION SPAWN (Restored)

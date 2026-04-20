@@ -41,6 +41,8 @@ fn main() {
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())
+        .insert_resource(TutorialState::default())
+        .insert_resource(MapPanState::default())
         .add_systems(Startup, systems::setup::setup_world)
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
@@ -63,24 +65,31 @@ fn main() {
             systems::map::hide_map_elements,
         ))
         .add_systems(Update, (
+            // --- Gameplay & Logistics ---
             systems::mining::mining_system, 
-            systems::ui::hud_ui_system,
-            systems::ui::station_visual_system,
+            systems::autopilot::autopilot_system,
             systems::autonomous::autonomous_ship_system,
             systems::autonomous::autonomous_beam_system.after(systems::autonomous::autonomous_ship_system),
             systems::ui::ship_cargo_display_system,
             systems::ui::autonomous_ship_cargo_display_system,
+            systems::ui::cargo_label_system,
+        ))
+        .add_systems(Update, (
+            // --- Station, Narrative & UI ---
+            systems::ui::hud_ui_system,
+            systems::ui::station_visual_system,
             systems::economy::station_status_system,
             systems::economy::station_maintenance_system,
             systems::economy::ship_self_preservation_system,
             systems::economy::processing_queue_system,
             systems::economy::auto_dock_system,
-            systems::autopilot::autopilot_system,
             systems::map::map_highlight_system,
-            systems::narrative::opening_sequence_system,
-            systems::narrative::signal_system,
             systems::map::map_input_system,
             systems::map::pinch_zoom_system,
+            systems::map::map_pan_system,
+            systems::narrative::opening_sequence_system,
+            systems::narrative::signal_system,
+            systems::narrative::tutorial_system,
         ))
         .run();
 }

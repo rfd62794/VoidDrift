@@ -146,3 +146,35 @@ pub fn pinch_zoom_system(
         *last_dist = None;
     }
 }
+
+pub fn map_pan_system(
+    touches: Res<Touches>,
+    state: Res<State<GameState>>,
+    mut camera_query: Query<&mut Transform, With<MainCamera>>,
+    mut pan_state: ResMut<MapPanState>,
+) {
+    if *state.get() != GameState::MapView {
+        pan_state.last_position = None;
+        return;
+    }
+
+    // Suppress panning if multi-touch (zooming) is active
+    if touches.iter().count() >= 2 {
+        pan_state.last_position = None;
+        return;
+    }
+
+    if let Some(touch) = touches.iter().next() {
+        if let Some(last_pos) = pan_state.last_position {
+            let delta = touch.position() - last_pos;
+            
+            let mut cam_transform = camera_query.single_mut();
+            // Pan speed multiplier. Panning is inverted (pulling map moves camera opposite)
+            cam_transform.translation.x -= delta.x * MAP_PAN_SPEED;
+            cam_transform.translation.y += delta.y * MAP_PAN_SPEED; // Y is inverted in viewport coords vs world
+        }
+        pan_state.last_position = Some(touch.position());
+    } else {
+        pan_state.last_position = None;
+    }
+}

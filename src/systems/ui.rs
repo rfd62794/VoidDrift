@@ -12,21 +12,29 @@ pub fn add_log_entry(station: &mut Station, entry: String) {
 }
 
 pub fn ship_cargo_display_system(
-    ship_query: Query<&Ship>, 
-    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<DestinationHighlight>)>, 
-    mut materials: ResMut<Assets<ColorMaterial>>
+    time: Res<Time>,
+    ship_query: Query<&Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
+    mut fill_query: Query<(&mut Transform, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    for (mut tr, parent, mat_handle) in fill_query.iter_mut() {
-        if let Ok(ship) = ship_query.get(**parent) {
-            let r = ship.cargo / ship.cargo_capacity as f32;
-            tr.scale.x = r.max(0.001);
-            tr.translation.x = -20.0 + (20.0 * r);
-            
+    if let Ok(ship) = ship_query.get_single() {
+        if let Ok((mut transform, mat_handle)) = fill_query.get_single_mut() {
+            let ratio = (ship.cargo / ship.cargo_capacity as f32).clamp(0.0, 1.0);
+            transform.scale.x = ratio;
+            transform.translation.x = -20.0 * (1.0 - ratio);
+
+            // Update color based on fullness + pulse
             if let Some(mat) = materials.get_mut(&mat_handle.0) {
-                mat.color = match ship.cargo_type {
-                    OreType::Magnetite => Color::srgb(0.8, 0.3, 0.3),
-                    OreType::Carbon => Color::srgb(0.3, 0.8, 0.3),
-                    OreType::Empty => Color::srgb(0.5, 0.5, 0.5),
+                mat.color = if ship.cargo >= ship.cargo_capacity as f32 * 0.95 {
+                    // Pulse Cyan when full
+                    let pulse = (time.elapsed_secs() * 10.0).sin() * 0.2 + 0.8;
+                    Color::srgba(0.0, pulse, pulse, 1.0)
+                } else {
+                    match ship.cargo_type {
+                        OreType::Magnetite => COLOR_MAGNETITE,
+                        OreType::Carbon    => COLOR_CARBON,
+                        _ => Color::srgb(0.0, 1.0, 1.0),
+                    }
                 };
             }
         }
@@ -67,6 +75,7 @@ pub fn hud_ui_system(
     mut quest_log: ResMut<QuestLog>,
     _forge_settings: Res<ForgeSettings>,
     mut auto_dock_settings: ResMut<AutoDockSettings>,
+    mut tutorial: ResMut<TutorialState>,
 ) {
     let mut ship = ship_query.single_mut();
     let ctx = contexts.ctx_mut();
@@ -271,6 +280,37 @@ pub fn hud_ui_system(
                 });
         }
     }
+
+    // ── 5. TUTORIAL POP-UP ───────────────────────────────────────────────────
+    if let Some(popup) = tutorial.active.clone() {
+        egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
+            .id(egui::Id::new("tutorial_popup"))
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .fixed_size([300.0, 180.0])
+            .frame(egui::Frame::window(&ctx.style())
+                .fill(egui::Color32::from_black_alpha(240))
+                .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
+                .inner_margin(16.0))
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(8.0);
+                    ui.label(egui::RichText::new(&popup.body).size(13.0).color(egui::Color32::WHITE));
+                    ui.add_space(20.0);
+                    if ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 40.0))).clicked() {
+                        tutorial.shown.insert(popup.id);
+                        tutorial.active = None;
+                    }
+                });
+            });
+
+        // Dismiss on tap anywhere else if not consumed by the window
+        if ctx.input(|i| i.pointer.any_click()) && !ctx.is_pointer_over_area() {
+            tutorial.shown.insert(popup.id);
+            tutorial.active = None;
+        }
+    }
 }
 
 pub fn station_visual_system(
@@ -297,18 +337,33 @@ fn render_queue_card(
     pwr_cost: f32,
     batch_time: f32,
 ) {
-    let title = match op {
-        ProcessingOperation::MagnetiteRefinery => "MAGNETITE → CELLS",
-        ProcessingOperation::CarbonRefinery => "CARBON → PLATES",
-        ProcessingOperation::HullForge => "PLATES → HULL",
-        ProcessingOperation::CoreFabricator => "CELLS → CORE",
+    let (input_name, output_name) = match op {
+        ProcessingOperation::MagnetiteRefinery => ("MAGNETITE", "POWER CELLS"),
+        ProcessingOperation::CarbonRefinery => ("CARBON", "HULL PLATES"),
+        ProcessingOperation::HullForge => ("PLATES", "SHIP HULL"),
+        ProcessingOperation::CoreFabricator => ("POWER CELLS", "AI CORE"),
     };
 
+    let max_possible = match op {
+        ProcessingOperation::MagnetiteRefinery => (station.magnetite_reserves / resource_cost).min(station.power / pwr_cost),
+        ProcessingOperation::CarbonRefinery => (station.carbon_reserves / resource_cost).min(station.power / pwr_cost),
+        ProcessingOperation::HullForge => (station.hull_plate_reserves as f32 / resource_cost).min(station.power / pwr_cost),
+        ProcessingOperation::CoreFabricator => (station.power_cells as f32 / resource_cost).min(station.power / pwr_cost),
+    }.floor() as u32;
+
     ui.group(|ui| {
-        ui.set_width(160.0);
+        ui.set_width(180.0);
         ui.vertical(|ui| {
-            ui.label(egui::RichText::new(title).strong().size(11.0));
-            ui.label(egui::RichText::new(format!("Cost: {}/batch", resource_cost)).size(9.0).italics());
+            // Header 1: Chain
+            ui.label(egui::RichText::new(format!("{} → {}", input_name, output_name)).strong().size(12.0));
+            
+            // Header 2: Ratio
+            ui.label(egui::RichText::new(format!("Ratio: {:.0} Mat + {:.0} Pwr", resource_cost, pwr_cost))
+                .size(9.0)
+                .italics()
+                .color(egui::Color32::from_gray(160)));
+
+            ui.add_space(4.0);
 
             if let Some(job) = queue {
                 let progress = 1.0 - (job.timer / batch_time);
@@ -318,8 +373,8 @@ fn render_queue_card(
                 } else {
                     ui.label(egui::RichText::new(format!("▶ PROCESSING... {:.0}s", job.timer)).color(egui::Color32::CYAN));
                 }
-                ui.add(egui::ProgressBar::new(progress).desired_width(140.0).fill(egui::Color32::CYAN));
-                ui.label(format!("Queued: {} batches", job.batches));
+                ui.add(egui::ProgressBar::new(progress).desired_width(160.0).fill(egui::Color32::CYAN));
+                ui.label(format!("Queued: {} / Total: {}", job.batches, job.completed + job.batches));
             } else {
                 ui.add_space(4.0);
                 ui.label(egui::RichText::new("STATUS: IDLE").color(egui::Color32::GRAY));
@@ -327,15 +382,17 @@ fn render_queue_card(
             }
 
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
-                let btn_size = egui::vec2(32.0, 32.0);
-                let max_possible = match op {
-                    ProcessingOperation::MagnetiteRefinery => (station.magnetite_reserves / resource_cost).min(station.power / pwr_cost),
-                    ProcessingOperation::CarbonRefinery => (station.carbon_reserves / resource_cost).min(station.power / pwr_cost),
-                    ProcessingOperation::HullForge => (station.hull_plate_reserves as f32 / resource_cost).min(station.power / pwr_cost),
-                    ProcessingOperation::CoreFabricator => (station.power_cells as f32 / resource_cost).min(station.power / pwr_cost),
-                }.floor() as u32;
+            
+            // FEEDBACK LINE
+            if max_possible > 0 {
+                ui.label(egui::RichText::new(format!("You can make: {} batches", max_possible)).color(egui::Color32::GREEN).size(10.0));
+            } else {
+                ui.label(egui::RichText::new("Insufficient materials/power").color(egui::Color32::LIGHT_RED).size(10.0));
+            }
 
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                let btn_size = egui::vec2(40.0, 32.0);
                 if ui.add_enabled(max_possible >= 1, egui::Button::new("+1").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, 1); }
                 if ui.add_enabled(max_possible >= 10, egui::Button::new("+10").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, 10); }
                 if ui.add_enabled(max_possible >= 1, egui::Button::new("MAX").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, max_possible); }
@@ -343,15 +400,36 @@ fn render_queue_card(
 
             ui.add_space(4.0);
             if let Some(job) = queue {
-                if ui.add(egui::Button::new("CLEAR").min_size(egui::vec2(140.0, 30.0))).clicked() {
+                if ui.add(egui::Button::new("CLEAR QUEUE").min_size(egui::vec2(160.0, 30.0))).clicked() {
                     job.batches = 1; job.clearing = true;
-                    add_log_entry(station, format!("> {:?} QUEUE CLEARED.", op).to_uppercase());
+                    add_log_entry(station, format!("> {} QUEUE CLEARED.", input_name));
                 }
             } else {
                 ui.add_space(34.0);
             }
             ui.add_space(4.0);
-            ui.label(egui::RichText::new("Non-refundable queue").size(8.0).color(egui::Color32::from_gray(120)));
+            ui.label(egui::RichText::new("Non-refundable queue").size(8.0).color(egui::Color32::from_gray(100)));
         });
     });
+}
+
+pub fn cargo_label_system(
+    ship_query: Query<(&Ship, &Children), (With<PlayerShip>, Without<Station>, Without<AsteroidField>)>,
+    mut ore_label_query: Query<&mut Text2d, (With<CargoOreLabel>, Without<CargoCountLabel>)>,
+    mut count_label_query: Query<&mut Text2d, (With<CargoCountLabel>, Without<CargoOreLabel>)>,
+) {
+    let Ok((ship, children)) = ship_query.get_single() else { return; };
+
+    for &child in children.iter() {
+        if let Ok(mut ore_text) = ore_label_query.get_mut(child) {
+            ore_text.0 = match ship.cargo_type {
+                OreType::Empty => "EMPTY".to_string(),
+                OreType::Magnetite => "MAGNETITE".to_string(),
+                OreType::Carbon => "CARBON".to_string(),
+            };
+        }
+        if let Ok(mut count_text) = count_label_query.get_mut(child) {
+            count_text.0 = format!("{:.0} / {}", ship.cargo, ship.cargo_capacity);
+        }
+    }
 }

@@ -125,3 +125,4 @@ pub const STATION_POWER_MAX: f32 = 50.0;
 pub const STATION_POWER_FLOOR: f32 = 10.0;
 pub const STATION_POWER_RESTORE_VALUE: f32 = 5.0;
 pub const EMERGENCY_REFINE_COST: f32 = 10.0;
+pub const MAP_PAN_SPEED: f32 = 1.5;
