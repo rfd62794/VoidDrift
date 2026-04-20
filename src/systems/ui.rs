@@ -63,8 +63,8 @@ pub fn autonomous_ship_cargo_display_system(
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
-    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
-    pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    pub ship_query: Query<'w, 's, &mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
+    pub station_query: Query<'w, 's, (Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
     pub signal_log: Res<'w, SignalLog>,
@@ -79,7 +79,7 @@ pub struct HudParams<'w, 's> {
     pub auto_dock_settings: ResMut<'w, AutoDockSettings>,
     pub tutorial: ResMut<'w, TutorialState>,
     pub pan_state: ResMut<'w, MapPanState>,
-    pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
+    pub cam_query: Query<'w, 's, &mut OrthographicProjection, With<MainCamera>>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
