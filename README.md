@@ -1,191 +1,105 @@
 # Voidrift
 
-A mobile-first space mining game built in Rust with Bevy 0.15, targeting Android (API 35).
+A mobile-first space mining and industrial management game built in Rust with Bevy 0.15, targeting Android hardware (API 35).
 
 You are adrift. You find a derelict station. You mine, refine, and repair — watching your ship work while you direct it from above.
 
-> **Status:** MVP Slice complete. Core loop proven on hardware. Active development.
+> **Status:** Core Gameplay Loop & Industrial Foundation Complete. Verified on Moto G 2024/2025.
 
 ---
 
-## What's Been Built
+## 🚀 The Gameplay Foundation
 
-The MVP slice is a fully playable, gated loop verified on a physical Moto G 2025 (API 35):
+Voidrift is built around a tight industrial loop directed by tactical input:
 
-- **Navigate** — tap destinations on a map overlay, autopilot executes
-- **Mine** — ship arrives at asteroid field, ore accumulates automatically
-- **Refine** — dock at station, convert ore to power cells at 10:1
-- **Repair** — spend 25 power cells to bring the derelict station online
-- **Slice complete** — station changes state, overlay confirms
-
-![Map View](screenshots/gate2_screenshot.png)
-![Mining / Refinery](screenshots/gate4_map.png)
-![Slice Complete](screenshots/p5_active.png)
-
-Five development phases, each gated by physical device evidence before proceeding.
+- **Command & Control** — Set navigation targets via a strategic map. Autopilots handle precise approach and docking.
+- **Extraction** — Reach asteroid fields and extract raw ores automatically. Advanced ores require upgraded mining lasers.
+- **Parallel Processing** — Utilize the station's refinery, hull forge, and fabrication lab. Manage four independent production queues simultaneously.
+- **Power Economy** — Maintain both ship and station power reserves. Use refined power cells to restore charge or complete massive structural repairs.
+- **Narrative Telemetry** — Stay oriented through "The Signal," a low-frequency character voice reporting critical events and guidance.
 
 ---
 
-## Technical Stack
+## 🛠️ Technical Architecture
+
+### Hardware-Hardened Design
+Voidrift's architecture is a direct response to constraints discovered on physical Mali-G57 GPU hardware. We follow **Universal Disjointness** (ADR-008) to prevent runtime crashes and use dedicated egui render passes (ADR-003) for UI stability.
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Language | Rust | Performance, safety, cross-platform target |
-| Engine | Bevy 0.15 | ECS architecture, 2D sprite rendering, Android support |
-| UI | bevy_egui 0.33 | Stable font rendering on Mali GPU — Text2d and camera-parented Mesh2d both proven unreliable on Android 15 |
-| Build | cargo-ndk + Gradle | Modern Android pipeline — cargo-apk is deprecated |
-| Activity | GameActivity | Bevy 0.15 default, requires API 31+ |
-| Target | aarch64-linux-android (API 35) | Moto G 2025 primary test device |
+| Language | Rust | Performance, memory safety, aarch64 target |
+| Engine | Bevy 0.15 | ECS-first architecture, partitioned update schedule |
+| UI | bevy_egui 0.33 | High-fidelity text/HUD rendering on mobile |
+| Build | cargo-ndk r29 | Native Android binary generation |
+| Target | API 35 | moto g play - 2024 (primary test device) |
+
+### Key ADRs
+Nine Architectural Decision Records govern the project. See [`docs/adr/`](docs/adr/) for detailed logic.
+
+- **ADR-003**: `bevy_egui` for all HUD elements (Mali GPU stabilization).
+- **ADR-007**: System Partitioning (bypassing Bevy's 20-tuple limit).
+- **ADR-008**: Universal Disjointness (Total Lockdown pattern for Transform queries).
+- **ADR-009**: Tutorial Trigger Pattern (one-time contextual instructional logic).
 
 ---
 
-## Architecture Decisions
-
-Four ADRs govern the build. Each was made in response to real hardware evidence, not assumption.
-
-**ADR-001 — PresentMode::Fifo is mandatory**  
-The Mali GPU on the Moto G 2025 causes buffer starvation (`Can't acquire next buffer`) with any other present mode. Fifo is a hard requirement, not a preference.
-
-**ADR-002 — Mesh2d for world-space primitives**  
-Sprite components trigger unsupported gralloc format errors (`0x38`, `0x3b`) on the Mali driver. All world-space entities use Mesh2d.
-
-**ADR-003 — bevy_egui for all HUD and UI**  
-Text2d and camera-parented Mesh2d both fail silently on this hardware — text renders invisible, panels clip out of existence. bevy_egui handles its own render pass and font atlas, bypassing the driver entirely. Scale factor: `EGUI_SCALE = 3.0` for the Moto G 2025 high-DPI display.
-
-**ADR-004 — Bevy 0.15 pinned, not latest**  
-0.15 has the most mature Android community documentation. The GameActivity + cargo-ndk pipeline was established at 0.15. Upgrading to a newer version is deferred until the slice is complete.
-
-Full ADR documents are in [`docs/adr/`](docs/adr/).
-
----
-
-## Key Constants
-
-```rust
-const SHIP_SPEED: f32       = 120.0;  // world units per second
-const CARGO_CAPACITY: u32   = 100;    // ore units
-const MINING_RATE: f32      = 8.0;    // ore per second
-const REFINERY_RATIO: u32   = 10;     // ore per power cell
-const REPAIR_COST: u32      = 25;     // power cells to complete slice
-const EGUI_SCALE: f32       = 3.0;    // Mali GPU / Moto G 2025
-```
-
----
-
-## Building for Android
-
-### Prerequisites
-
-- Rust (1.95.0+)
-- Android SDK with NDK r26+
-- `cargo-ndk` (`cargo install cargo-ndk`)
-- ADB with USB debugging enabled on target device
-
-### NDK Configuration
-
-`.cargo/config.toml` targets `aarch64-linux-android35-clang`. Update the linker path to match your NDK installation:
-
-```toml
-[target.aarch64-linux-android]
-linker = "path/to/ndk/toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android35-clang.cmd"
-rustflags = [
-    "-C", "link-arg=-lc++_shared",
-    "-C", "link-arg=-Wl,-z,max-page-size=16384",
-]
-```
-
-The `max-page-size=16384` flag is required for Android 15+ physical devices.
-
-### Build & Deploy
-
-```powershell
-.\build_android.ps1
-```
-
-The script runs: prerequisite check → cargo-ndk compile → Gradle package → ADB install → logcat.
-
-### Keystore
-
-A signing keystore is required for release builds. Generate one and update `build_android.ps1` with the path. Do not commit the keystore to the repository.
-
----
-
-## Project Structure
+## 📦 Project Structure
 
 ```
 VoidDrift/
 ├── src/
-│   ├── lib.rs              # App setup and plugin registration only
-│   ├── constants.rs        # All game constants
-│   ├── components.rs       # All ECS components and resources
-│   └── systems/
-│       ├── mod.rs          # Module declarations
-│       ├── setup.rs        # World setup and entity spawning
-│       ├── autopilot.rs    # Ship movement and docking
-│       ├── mining.rs       # Ore extraction and mining beam
-│       ├── economy.rs      # Refinery, forge, power economy
-│       ├── autonomous.rs   # Autonomous ship state machine
-│       ├── visuals.rs      # Starfield, thruster glow, effects
-│       ├── ui.rs           # egui HUD and docking panel
-│       └── map.rs          # Input, camera, map view transitions
-├── android/                # Gradle wrapper for Android APK
-├── assets/fonts/           # FiraSans-Bold.ttf
+│   ├── lib.rs              # App entry & system partitioning groups
+│   ├── constants.rs        # Centralized game & balance constants
+│   ├── components.rs       # ECS components & global resources
+│   └── systems/            # Modular logic by domain (mining, economy, etc.)
+├── android/                # Gradle wrapper for Android APK packaging
+├── assets/                 # Mesh data, materials, and fonts
 ├── docs/
-│   ├── adr/                # 6 Architectural Decision Records
-│   ├── phases/             # Phase summaries (archival)
-│   ├── state/current.md    # Always-current project state
-│   └── Voidrift_Signal_Narrative_Design.md # Narrative voice & opening sequence
-├── build_android.ps1       # Full build + deploy pipeline
+│   ├── adr/                # 9 Structural Architectural Decisions
+│   ├── directives/         # Past implementation blue-prints and SDDs
+│   ├── phases/             # Detailed archival summaries per phase
+│   ├── state/              # [current.md] Always-accurate codebase audit
+│   ├── ARCHITECTURE.md     # Deep technical dive into data flow
+│   └── CHANGELOG.md        # Reconstruction of all development cycles
+├── build_android.ps1       # One-click build + deploy + logs pipeline
 └── Cargo.toml
 ```
 
 ---
 
-## Narrative Design
+## 🚢 Development Roadmap
 
-Voidrift is driven by **The Signal** — a persistent, character-driven narrative voice that reports in telemetry. Every narrative event and opening sequence is governed by strict voice rules and trigger conditions.
+Voidrift is built in **Phases**, each gated by physical hardware verification.
 
-- [Signal Narrative Design](file:///c:/Github/VoidDrift/docs/Voidrift_Signal_Narrative_Design.md) — Voice rules, trigger table, and opening sequence scripting.
-- [Station Architecture Design](file:///c:/Github/VoidDrift/docs/Voidrift_Station_Architecture.md) — Visuals, physics-based rotation, and Berth occupancy systems.
-
----
-
-## Development Approach
-
-Voidrift is built using **Spec-Driven Development** — every phase is designed before implementation, gated by physical device evidence before proceeding.
-
-The phase structure:
-
-| Phase | Deliverable | Gate |
-|-------|------------|------|
-| 0 | Bevy hello world on Android | Screenshot + touch logcat on device |
-| 1 | Static scene — ship, asteroid, station | Three entities visible simultaneously |
-| 2 | Map + navigation | Ship navigates to tapped destination |
-| 3 | Mining system | Cargo fills, stops at capacity |
-| 4 | Station UI + refinery | Ore converts to power cells via egui |
-| 5 | Repair + slice complete | Station comes online, overlay confirms |
-
-The station system manages the structural health, inventory, and departmental logic of the player's base. It uses a **Berth-based Docking** model (Main Station) and a **Static Depot** model (Drone Depot) to manage ship capacity. See [Station Architecture](file:///c:/Github/VoidDrift/docs/Voidrift_Station_Architecture.md) for details on rotation and occupancy.
-
-Agent summaries are not accepted as gate evidence. Physical device screenshots and raw logcat output are required at every gate.
+| Phase | Milestone | Key Deliverable |
+|-------|-----------|-----------------|
+| 1-3 | Navigation | Touch destination input + Autopilot movement |
+| 4-5 | Loop Completion | Core refinery loop + Station repair gate |
+| 6-7 | Narrative | The Signal log + Cinematic opening sequence |
+| 8 | Industrial Core | Parallel processing queues + Power Cell restore |
+| 9 | Gated Galaxy | World-space text labels + Pinch zoom + 6 Ore Sectors |
+| 10 | Tutorial UX | Contextual popups + Gated progression guidance |
 
 ---
 
-## What This Demonstrates
+## 🏗️ Building for Android
 
-- **Rust + Bevy on Android** — a non-trivial pipeline involving NDK configuration, GameActivity, cargo-ndk, and Gradle, solved from scratch and documented
-- **Hardware-driven architecture** — three ADRs emerged from real device failures, not theory. The Mali GPU constraints are real and the solutions are proven
-- **ECS design discipline** — components, systems, and state machines designed before implementation
-- **Constraint-based scope management** — five explicit exclusion lists across five phases kept the slice from becoming six games at once
-- **Governance artifacts** — SDD, ADRs, and phase directives as a public engineering record
+### Prerequisites
+- Rust 1.95+
+- Android SDK/NDK r26+
+- `cargo-ndk` (`cargo install cargo-ndk`)
+
+### Execution
+Run the automated pipeline to compile, package, and deploy directly to a connected device:
+
+```powershell
+.\build_android.ps1
+```
+
+*Flags for Android 15+: The build automatically applies `max-page-size=16384` for 16kb page compatibility.*
 
 ---
 
-## License
-
-MIT — see [LICENSE](LICENSE).  
-Commercial rights retained by RFD IT Services Ltd.
-
----
-
+## ⚖️ License
+MIT — Dedicated to local mobile-first Rust engineering.  
 *Built by [RFD IT Services Ltd.](https://rfditservices.com) — April 2026*
