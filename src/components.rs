@@ -33,6 +33,7 @@ pub struct Ship {
     pub cargo_capacity: u32,
     pub power: f32,
     pub power_cells: u32,
+    pub laser_tier: LaserTier,
 }
 
 #[derive(Component)]
@@ -44,7 +45,47 @@ pub struct AutopilotTarget {
 #[derive(Component)]
 pub struct AsteroidField {
     pub ore_type: OreType,
+    pub ore_deposit: OreDeposit,
     pub depleted: bool,
+}
+
+#[derive(Component, Clone, Copy, PartialEq, Debug)]
+pub enum OreDeposit {
+    Magnetite,
+    Iron,
+    Carbon,
+    Tungsten,
+    Titanite,
+    CrystalCore,
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
+pub enum LaserTier {
+    Basic,
+    Tungsten,
+    Composite,
+}
+
+pub fn ore_name(ore: &OreDeposit) -> &'static str {
+    match ore {
+        OreDeposit::Magnetite  => "MAGNETITE",
+        OreDeposit::Iron       => "IRON",
+        OreDeposit::Carbon     => "CARBON",
+        OreDeposit::Tungsten   => "TUNGSTEN",
+        OreDeposit::Titanite   => "TITANITE",
+        OreDeposit::CrystalCore => "CRYSTAL",
+    }
+}
+
+pub fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
+    match ore {
+        OreDeposit::Magnetite  => LaserTier::Basic,
+        OreDeposit::Iron       => LaserTier::Basic,
+        OreDeposit::Carbon     => LaserTier::Basic,
+        OreDeposit::Tungsten   => LaserTier::Tungsten,
+        OreDeposit::Titanite   => LaserTier::Tungsten,
+        OreDeposit::CrystalCore => LaserTier::Composite,
+    }
 }
 
 #[derive(Component)]

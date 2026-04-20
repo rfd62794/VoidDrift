@@ -64,14 +64,19 @@ pub fn map_input_system(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>)>,
-    mut ship_query: Query<(Entity, &mut Ship), With<Ship>>,
-    berth_query: Query<(Entity, &Berth)>,
+    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
+    mut ship_query: Query<(Entity, &mut Ship), (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
+    berth_query: Query<(Entity, &Berth), (Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<DestinationHighlight>, Without<StarLayer>)>,
     opening: Res<OpeningSequence>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
 ) {
     if opening.phase != OpeningPhase::Complete {
+        return;
+    }
+
+    // Suppress single-touch input if multi-touch is active
+    if touches.iter().count() >= 2 {
         return;
     }
 
@@ -83,12 +88,10 @@ pub fn map_input_system(
                 if world_pos.distance(mp) < 80.0 {
                     let (ship_entity, mut ship) = ship_query.single_mut();
                     
-                    // Avoid docking redundancy
                     if ship.state == ShipState::Docked && mp.distance(STATION_POS) < 10.0 { 
                         continue; 
                     }
 
-                    // If it's a station marker, target Berth 1
                     let mut target_ent = me;
                     let mut destination = mp;
 
@@ -115,5 +118,31 @@ pub fn map_input_system(
                 }
             }
         }
+    }
+}
+
+pub fn pinch_zoom_system(
+    touches: Res<Touches>,
+    mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
+    mut last_dist: Local<Option<f32>>,
+) {
+    let mut projection = query.single_mut();
+    
+    // We only care about the distance between the first two touch points
+    let touch_points: Vec<Vec2> = touches.iter().map(|t| t.position()).take(2).collect();
+
+    if touch_points.len() == 2 {
+        let dist = touch_points[0].distance(touch_points[1]);
+        
+        if let Some(prev) = *last_dist {
+            let delta = prev - dist; // Positive if pinching (getting closer), negative if pulling (getting further)
+            
+            // Apply scale delta
+            let new_scale = (projection.scale + delta * ZOOM_SPEED).clamp(ZOOM_MIN, ZOOM_MAX);
+            projection.scale = new_scale;
+        }
+        *last_dist = Some(dist);
+    } else {
+        *last_dist = None;
     }
 }

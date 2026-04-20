@@ -27,12 +27,34 @@ pub const AI_CORE_COST: u32 = 55;
 
 use bevy::math::Vec2;
 use bevy::prelude::Color;
-pub const STATION_POS: Vec2 = Vec2::new(0.0, 0.0);
-pub const SECTOR_1_POS: Vec2 = Vec2::new(180.0, 80.0);
-pub const SECTOR_7_POS: Vec2 = Vec2::new(-280.0, -180.0);
-pub const SECTOR_3_POS: Vec2 = Vec2::new(-500.0, 400.0);
+pub const STATION_POS: Vec2      = Vec2::new(0.0, 0.0);
+pub const SECTOR_1_POS: Vec2     = Vec2::new(320.0, 140.0);   // Magnetite — basic
+pub const SECTOR_2_POS: Vec2     = Vec2::new(-220.0, 340.0);  // Iron — basic
+pub const SECTOR_3_POS: Vec2     = Vec2::new(380.0, -280.0);  // Carbon — basic
+pub const SECTOR_4_POS: Vec2     = Vec2::new(-520.0, -380.0); // Tungsten — Tungsten Laser gated
+pub const SECTOR_5_POS: Vec2     = Vec2::new(680.0, 320.0);   // Titanite — Tungsten Laser gated
+pub const SECTOR_6_POS: Vec2     = Vec2::new(-650.0, 520.0);  // Crystal Core — Composite Laser gated
 
 pub const MAP_STRATEGIC_SCALE: f32 = 4.0;
+pub const ZOOM_MIN: f32   = 0.3;   // most zoomed in
+pub const ZOOM_MAX: f32   = 8.0;   // most zoomed out
+pub const ZOOM_SPEED: f32 = 0.005;
+
+// ── ASTEROID SCALE & COLOR ───────────────────────────────────────────────────
+pub const ASTEROID_RADIUS_MAGNETITE: f32 = 26.0;
+pub const ASTEROID_RADIUS_IRON: f32      = 20.0;
+pub const ASTEROID_RADIUS_CARBON: f32    = 30.0;
+pub const ASTEROID_RADIUS_TUNGSTEN: f32  = 22.0;
+pub const ASTEROID_RADIUS_TITANITE: f32  = 28.0;
+pub const ASTEROID_RADIUS_CRYSTAL: f32   = 18.0;
+
+pub const COLOR_MAGNETITE: Color  = Color::srgb(0.55, 0.75, 1.0);   // Blue-white
+pub const COLOR_IRON: Color       = Color::srgb(0.75, 0.38, 0.15);  // Rust orange
+pub const COLOR_CARBON: Color     = Color::srgb(0.28, 0.28, 0.28);  // Dark grey
+pub const COLOR_TUNGSTEN: Color   = Color::srgb(0.72, 0.68, 0.35);  // Yellow-grey
+pub const COLOR_TITANITE: Color   = Color::srgb(0.72, 0.78, 0.82);  // Silver-blue
+pub const COLOR_CRYSTAL: Color    = Color::srgb(0.55, 1.0, 0.88);   // Cyan-green
+pub const COLOR_DEPLETED: Color   = Color::srgb(0.18, 0.18, 0.18);  // Very dark grey
 
 // ── Z-LAYER SYSTEM ───────────────────────────────────────────────────────────
 pub const Z_STARS_FAR: f32     = -100.0;
@@ -58,7 +80,7 @@ pub const STATION_BERTH_RADIUS: f32   = 22.0;
 pub const STATION_STUB_LENGTH: f32    = 60.0;
 pub const STATION_STUB_ALPHA: f32     = 0.3;
 pub const STATION_ROTATION_SPEED: f32 = std::f32::consts::TAU / 90.0;
-pub const STATION_BERTHS_INITIAL: u8  = 3;
+pub const STATION_BERTH_INITIAL: u8  = 3; // Fixed typo
 
 // STATION DOCKING (Phase B)
 pub const STATION_DOCK_SLOWDOWN_DISTANCE: f32 = 200.0; // Distance at which station begins slowing

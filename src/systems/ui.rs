@@ -248,7 +248,7 @@ pub fn hud_ui_system(
                                 ui.horizontal(|ui| {
                                     if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
                                         station.ship_hulls -= 1; station.ai_cores -= 1;
-                                        let (target_pos, ore, name) = if station.ai_cores >= 1 { (SECTOR_7_POS, OreType::Carbon, "Sector 7") } else { (SECTOR_1_POS, OreType::Magnetite, "Sector 1") };
+                                        let (target_pos, ore, name) = if station.ai_cores >= 1 { (SECTOR_3_POS, OreType::Carbon, "Sector 3") } else { (SECTOR_1_POS, OreType::Magnetite, "Sector 1") };
                                         commands.spawn((AutonomousShipTag, LastHeading(0.0), AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX }, AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() }, Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)))
                                         .with_children(|parent| {
                                             parent.spawn((ThrusterGlow, Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));

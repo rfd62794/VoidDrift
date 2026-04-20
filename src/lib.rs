@@ -80,6 +80,7 @@ fn main() {
             systems::narrative::opening_sequence_system,
             systems::narrative::signal_system,
             systems::map::map_input_system,
+            systems::map::pinch_zoom_system,
         ))
         .run();
 }
