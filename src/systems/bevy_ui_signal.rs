@@ -11,7 +11,12 @@ pub struct SignalEntryContainer;
 #[derive(Component)]
 pub struct SignalEntry;
 
-pub fn setup_signal_strip(mut commands: Commands) {
+pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalLog>) {
+    // Add test signals to verify text rendering
+    signal_log.entries.push_back("> SIGNAL SYSTEM ONLINE".to_string());
+    signal_log.entries.push_back("> Bevy UI rendering active".to_string());
+    signal_log.entries.push_back("> Terminal green text visible".to_string());
+    
     // FINAL SIGNAL STRIP SETUP - Fixed width issue
     commands.spawn((
         Node {
@@ -42,17 +47,7 @@ pub fn setup_signal_strip(mut commands: Commands) {
             SignalEntryContainer,
         ))
         .with_children(|parent| {
-            // Add test text to verify text rendering
-            let text_entity = parent.spawn((
-                Text::new("SIGNAL STRIP TEST - TEXT RENDERING".to_string()),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.0, 0.8, 0.4)), // explicit terminal green
-                SignalEntry,
-            )).id();
-            println!("[Bevy UI] Created test text entity: {:?}", text_entity);
+            // Container for signal entries - no initial test text
         });
     });
 }
