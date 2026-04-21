@@ -42,13 +42,17 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     
     var stars = 0.0;
     // Far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam, 120.0, 0.96, 0.4);
+    stars += star_layer(uv, cam, 240.0, 0.96, 0.4);
+    // Mid-far layer - very dense, dim, minimal parallax
+    stars += star_layer(uv, cam * 1.5, 160.0, 0.94, 0.5);
     // Mid layer - dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 1.5, 80.0, 0.94, 0.5);
-    // Near layer - dense, medium, minimal parallax
-    stars += star_layer(uv, cam * 2.0, 50.0, 0.92, 0.6);
-    // Close layer - sparse, bright, minimal parallax
+    stars += star_layer(uv, cam * 2.0, 100.0, 0.92, 0.6);
+    // Mid-near layer - dense, medium, minimal parallax
+    stars += star_layer(uv, cam * 2.5, 50.0, 0.90, 0.7);
+    // Near layer - medium, bright, minimal parallax
     stars += star_layer(uv, cam * 3.0, 25.0, 0.88, 0.8);
+    // Close layer - sparse, bright, minimal parallax
+    stars += star_layer(uv, cam * 4.0, 12.0, 0.85, 1.0);
     
     stars = clamp(stars, 0.0, 1.0);
     
