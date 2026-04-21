@@ -335,20 +335,17 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 });
                             }
                             ActiveStationTab::Smelter => {
-                                println!("DEBUG: Smelter tab available_width = {:.1}", ui.available_width());
                                 ui.set_max_width(ui.available_width());
-                                ui.horizontal(|ui| {
-                                    render_queue_card(ui, &layout, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
-                                    ui.add_space(layout.card_gap);
-                                    render_queue_card(ui, &layout, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
+                                ui.columns(2, |cols| {
+                                    render_queue_card(&mut cols[0], &layout, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
+                                    render_queue_card(&mut cols[1], &layout, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
                                 });
                             }
                             ActiveStationTab::Forge => {
                                 ui.set_max_width(ui.available_width());
-                                ui.horizontal(|ui| {
-                                    render_queue_card(ui, &layout, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
-                                    ui.add_space(layout.card_gap);
-                                    render_queue_card(ui, &layout, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
+                                ui.columns(2, |cols| {
+                                    render_queue_card(&mut cols[0], &layout, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
+                                    render_queue_card(&mut cols[1], &layout, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
                                 });
                             }
                             ActiveStationTab::ShipPort => {
