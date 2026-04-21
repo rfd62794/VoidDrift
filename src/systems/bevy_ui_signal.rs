@@ -21,9 +21,9 @@ pub fn setup_signal_strip(mut commands: Commands) {
                 height: Val::Px(60.0),
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(4.0)),
-                background_color: Color::srgba(0.0, 0.0, 0.0, 0.78).into(),
                 ..default()
             },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)),
             SignalStripRoot,
         ))
         .with_children(|parent| {
@@ -75,7 +75,7 @@ pub fn signal_strip_system(
         commands.entity(container_entity).with_children(|parent| {
             for line in entries.iter().rev() {
                 parent.spawn((
-                    Text::new(line.clone()),
+                    Text::new((*line).clone()),
                     TextFont {
                         font_size: 11.0,
                         ..default()
