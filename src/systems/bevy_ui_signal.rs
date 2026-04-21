@@ -71,16 +71,22 @@ pub fn signal_strip_system(
     entry_query: Query<Entity, With<SignalEntry>>,
     mut commands: Commands,
 ) {
+    println!("=== SIGNAL STRIP SYSTEM CALLED ===");
+
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
         node.height = if expanded.0 { Val::Px(180.0) } else { Val::Px(60.0) };
+        println!("[Bevy UI] Strip height updated to: {:?}", node.height);
     } else {
+        println!("[Bevy UI] ERROR: No signal strip root found!");
         return;
     }
 
     // Only update text if signal log has entries and we don't already have text entities
     let entry_count = entry_query.iter().count();
     let signal_count = signal_log.entries.len();
+    
+    println!("[Bevy UI] Text entities: {}, Signal entries: {}", entry_count, signal_count);
     
     if signal_count > 0 && entry_count == 0 {
         // Create initial text entities
