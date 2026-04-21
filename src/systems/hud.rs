@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::render::camera::Viewport;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::systems::station_tabs::render_queue_card;
@@ -44,6 +45,51 @@ pub fn ui_layout_system(
         font_size_label: if landscape { 11.0 } else { 10.0 },
         font_size_title: if landscape { 15.0 } else { 14.0 },
     };
+}
+
+pub fn world_view_rect_system(
+    layout: Res<UiLayout>,
+    drawer: Res<DrawerState>,
+    mut rect: ResMut<WorldViewRect>,
+    windows: Query<&Window>,
+) {
+    let Ok(window) = windows.get_single() else { return };
+    let scale = window.scale_factor();
+    
+    let drawer_height = match *drawer {
+        DrawerState::Collapsed => layout.handle_height + layout.signal_strip_height,
+        DrawerState::TabsOnly => layout.handle_height + layout.tab_bar_height + layout.signal_strip_height,
+        DrawerState::Expanded => {
+            let content_height = layout.screen_height - layout.handle_height - layout.tab_bar_height 
+                - layout.signal_strip_height - layout.world_view_min_height;
+            layout.handle_height + layout.tab_bar_height + content_height + layout.signal_strip_height
+        }
+    };
+    
+    rect.height = layout.screen_height - drawer_height;
+    rect.width = layout.screen_width;
+    rect.y_offset = 0.0;
+    rect.scale_factor = scale;
+}
+
+pub fn camera_viewport_system(
+    rect: Res<WorldViewRect>,
+    mut cameras: Query<&mut Camera, With<MainCamera>>,
+) {
+    let Ok(mut camera) = cameras.get_single_mut() else { return };
+    
+    camera.viewport = Some(Viewport {
+        physical_position: UVec2::new(0, 0),
+        physical_size: UVec2::new(
+            (rect.width * rect.scale_factor) as u32,
+            (rect.height * rect.scale_factor) as u32,
+        ),
+        depth: 0.0..1.0,
+    });
+}
+
+fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
+    touch_pos.y < rect.height  // Touch is above the drawer area
 }
 
 pub fn ship_cargo_display_system(

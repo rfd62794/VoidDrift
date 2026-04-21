@@ -38,6 +38,7 @@ fn main() {
         .insert_resource(SignalStripExpanded(false))
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
         .insert_resource(DrawerState::default())
+        .insert_resource(WorldViewRect::default())
         .insert_resource(ActiveStationTab::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
@@ -46,6 +47,8 @@ fn main() {
         .insert_resource(MapPanState::default())
         .insert_resource(UiLayout::default())
         .add_systems(PreUpdate, systems::hud::ui_layout_system)
+        .add_systems(PreUpdate, systems::hud::world_view_rect_system)
+        .add_systems(PreUpdate, systems::hud::camera_viewport_system)
         .add_systems(Startup, (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,

@@ -388,6 +388,14 @@ pub enum DrawerState {
 }
 
 #[derive(Resource, Default)]
+pub struct WorldViewRect {
+    pub y_offset: f32,      // pixels from top (always 0)
+    pub height: f32,        // pixels tall (actual visible world)
+    pub width: f32,         // pixels wide (full screen)
+    pub scale_factor: f32,  // window scale factor for physical pixels
+}
+
+#[derive(Resource, Default)]
 pub struct UiLayout {
     // Screen dimensions (logical pixels, post-scale-factor)
     pub screen_width: f32,

@@ -2,6 +2,10 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
 
+fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
+    touch_pos.y < rect.height  // Touch is above the drawer area
+}
+
 pub fn camera_follow_system(
     state: Res<State<GameState>>,
     ship: Query<&Transform, (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
@@ -79,6 +83,7 @@ pub fn map_input_system(
     opening: Res<OpeningSequence>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut drawer_state: ResMut<DrawerState>,
+    world_view_rect: Res<WorldViewRect>,
     mut commands: Commands,
 ) {
     if opening.phase != OpeningPhase::Complete {
@@ -92,6 +97,11 @@ pub fn map_input_system(
 
     let (camera, camera_transform) = camera_query.single();
     for touch in touches.iter_just_pressed() {
+        // Only process world navigation taps when touch is in world view
+        if !is_touch_in_world_view(touch.position(), &world_view_rect) {
+            continue; // touch is in drawer - egui handles it
+        }
+        
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
             for (mt, me) in marker_query.iter() {
                 let mp = mt.translation.truncate();
