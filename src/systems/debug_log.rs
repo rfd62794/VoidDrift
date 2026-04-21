@@ -19,12 +19,13 @@ pub struct DebugLogSystem {
 
 impl Default for DebugLogSystem {
     fn default() -> Self {
-        // Create timestamped filename
+        // Create timestamped filename in Android accessible directory
         let now = std::time::SystemTime::now();
         let timestamp = now.duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        let filename = format!("voidrift_debug_{}.log", timestamp);
+        // Use /sdcard/Download which is accessible on Android
+        let filename = format!("/sdcard/Download/voidrift_debug_{}.log", timestamp);
         
         Self {
             max_entries: 1000,

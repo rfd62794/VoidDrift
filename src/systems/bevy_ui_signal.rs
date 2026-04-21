@@ -43,7 +43,7 @@ pub fn setup_signal_strip(mut commands: Commands) {
         ))
         .with_children(|parent| {
             // Add test text to verify text rendering
-            parent.spawn((
+            let text_entity = parent.spawn((
                 Text::new("SIGNAL STRIP TEST - TEXT RENDERING".to_string()),
                 TextFont {
                     font_size: 14.0,
@@ -51,7 +51,8 @@ pub fn setup_signal_strip(mut commands: Commands) {
                 },
                 TextColor(Color::srgb(1.0, 1.0, 1.0)), // White text
                 SignalEntry,
-            ));
+            )).id();
+            println!("[Bevy UI] Created test text entity: {:?}", text_entity);
         });
     });
 }
@@ -86,8 +87,12 @@ pub fn signal_strip_system(
     let display_count = if expanded.0 { 20 } else { 3 };
     let entries: Vec<&String> = signal_log.entries.iter().rev().take(display_count).collect();
 
+    // Debug: Check text entities
+    println!("[Bevy UI] Text entities found: {}, Signal log entries: {}", entry_query.iter().count(), signal_log.entries.len());
+
     // Clear existing entries
     for entry_entity in &entry_query {
+        println!("[Bevy UI] Despawning text entity: {:?}", entry_entity);
         commands.entity(entry_entity).despawn_recursive();
     }
 
