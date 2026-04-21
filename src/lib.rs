@@ -31,7 +31,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((EguiPlugin, UiPlugin::default()))
+        .add_plugins(EguiPlugin) // UiPlugin temporarily disabled
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
@@ -46,7 +46,7 @@ fn main() {
         .insert_resource(MapPanState::default())
         .add_systems(Startup, (
             systems::setup::setup_world,
-            systems::bevy_ui_signal::setup_signal_strip,
+            // systems::bevy_ui_signal::setup_signal_strip, // Temporarily disabled
         ))
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
@@ -79,7 +79,7 @@ fn main() {
         ))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
-            systems::bevy_ui_signal::signal_strip_system,
+            // systems::bevy_ui_signal::signal_strip_system, // Temporarily disabled
             systems::ui::hud_ui_system,
             systems::ui::station_visual_system,
             systems::economy::station_status_system,

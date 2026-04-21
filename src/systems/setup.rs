@@ -127,11 +127,6 @@ fn spawn_starfield(
 fn spawn_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
-        Camera {
-            // UI camera setup
-            order: 0,
-            ..default()
-        },
         OrthographicProjection {
             far: 1200.0, // Headroom for Z_STARS_FAR (-100) from Z=1000
             ..OrthographicProjection::default_2d()
