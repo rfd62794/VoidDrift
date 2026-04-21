@@ -137,6 +137,7 @@ fn spawn_camera(commands: &mut Commands) {
         Transform::from_xyz(0.0, 0.0, 1000.0),
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
+            run_manually: true,
             ..default()
         },
     ));
