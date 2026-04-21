@@ -289,9 +289,12 @@ pub fn hud_ui_system(mut params: HudParams) {
         // ── 4. TAB DETAIL PANEL ───────────────────────────────────────────────────
         if ship.state == ShipState::Docked {
             egui::TopBottomPanel::bottom("tab_detail_panel")
-                .frame(egui::Frame::NONE)
+                .resizable(false)
                 .exact_height(layout.context_panel_height)
+                .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
+                    ui.set_width(layout.content_width);
+                    ui.set_height(layout.context_panel_height);
                     ui.add_space(8.0);
                     ui.vertical_centered(|ui| {
                         match *params.active_tab {
@@ -332,6 +335,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 });
                             }
                             ActiveStationTab::Smelter => {
+                                println!("DEBUG: Smelter tab available_width = {:.1}", ui.available_width());
                                 ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     render_queue_card(ui, &layout, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
