@@ -131,13 +131,14 @@ pub fn station_visual_system(
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
-    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
+    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
     pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
     pub signal_log: Res<'w, SignalLog>,
     pub opening: Res<'w, OpeningSequence>,
     pub active_tab: ResMut<'w, ActiveStationTab>,
+    pub layout: Res<'w, UiLayout>,
     pub commands: Commands<'w, 's>,
     pub meshes: ResMut<'w, Assets<Mesh>>,
     pub materials: ResMut<'w, Assets<ColorMaterial>>,
@@ -153,6 +154,7 @@ pub struct HudParams<'w, 's> {
 pub fn hud_ui_system(mut params: HudParams) {
     let mut ship = params.ship_query.single_mut();
     let ctx = params.contexts.ctx_mut();
+    let layout = params.layout.into_inner();
 
     // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
 // [PHASE B] SIGNAL STRIP (Bottom) - MIGRATED TO BEVY UI
@@ -331,17 +333,17 @@ pub fn hud_ui_system(mut params: HudParams) {
                             ActiveStationTab::Smelter => {
                                 ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
-                                    render_queue_card(ui, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
-                                    ui.add_space(16.0);
-                                    render_queue_card(ui, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
+                                    render_queue_card(ui, &layout, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
+                                    ui.add_space(layout.card_gap);
+                                    render_queue_card(ui, &layout, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
                                 });
                             }
                             ActiveStationTab::Forge => {
                                 ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
-                                    render_queue_card(ui, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
-                                    ui.add_space(16.0);
-                                    render_queue_card(ui, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
+                                    render_queue_card(ui, &layout, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
+                                    ui.add_space(layout.card_gap);
+                                    render_queue_card(ui, &layout, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
                                 });
                             }
                             ActiveStationTab::ShipPort => {

@@ -13,6 +13,7 @@ pub fn add_log_entry(station: &mut Station, entry: String) {
 
 pub fn render_queue_card(
     ui: &mut egui::Ui,
+    layout: &UiLayout,
     station: &mut Station,
     queue: &mut Option<ProcessingJob>,
     op: ProcessingOperation,
