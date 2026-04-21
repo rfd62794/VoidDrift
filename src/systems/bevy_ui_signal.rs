@@ -26,6 +26,7 @@ pub fn setup_signal_strip(mut commands: Commands) {
             ..default()
         },
         BackgroundColor(Color::srgb(1.0, 0.0, 0.0)), // Bright red for visibility testing
+        ZIndex(1000), // High z-index to render over egui
         Interaction::None, // Enable click interaction
         SignalStripRoot,
     ))
@@ -39,7 +40,19 @@ pub fn setup_signal_strip(mut commands: Commands) {
                 ..default()
             },
             SignalEntryContainer,
-        ));
+        ))
+        .with_children(|parent| {
+            // Add test text to verify text rendering
+            parent.spawn((
+                Text::new("SIGNAL STRIP TEST - TEXT RENDERING".to_string()),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(1.0, 1.0, 1.0)), // White text
+                SignalEntry,
+            ));
+        });
     });
 }
 
