@@ -279,13 +279,13 @@ pub enum OpeningPhase {
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
 pub enum ActiveStationTab {
     #[default]
+    Routes,
+    Quest,
     Reserves,
     Power,
-    Smelter,
+    Refinery,    // Renamed from Smelter
     Forge,
     ShipPort,
-    Market, // Added back for future parity
-    Fleet,  // Added back for future parity
 }
 
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
@@ -379,6 +379,14 @@ impl Default for MapPanState {
     }
 }
 
+#[derive(Resource, PartialEq, Clone, Default)]
+pub enum DrawerState {
+    #[default]
+    Collapsed,   // handle bar only - world view dominant
+    TabsOnly,    // handle + tab bar - intermediate
+    Expanded,    // handle + tabs + content - full access
+}
+
 #[derive(Resource, Default)]
 pub struct UiLayout {
     // Screen dimensions (logical pixels, post-scale-factor)
@@ -386,15 +394,15 @@ pub struct UiLayout {
     pub screen_height: f32,
     pub is_landscape: bool,
 
-    // Panel dimensions
-    pub left_panel_width: f32,
-    pub signal_strip_height: f32,
-    pub context_panel_height: f32,
+    // Bottom drawer dimensions
+    pub handle_height: f32,           // 32.0
+    pub tab_bar_height: f32,          // 48.0
+    pub content_area_height: f32,      // computed
+    pub signal_strip_height: f32,      // 64.0
+    pub world_view_min_height: f32,   // screen_height * 0.45
 
     // Content dimensions (derived)
-    pub content_width: f32,      // screen_width - left_panel_width
-    pub card_width: f32,         // (content_width - card_gap) / 2
-    pub card_gap: f32,           // space between two side-by-side cards
+    pub content_width: f32,           // screen_width (full width, no side panel)
 
     // Touch targets
     pub button_height: f32,
@@ -404,7 +412,4 @@ pub struct UiLayout {
     pub font_size_body: f32,
     pub font_size_label: f32,
     pub font_size_title: f32,
-
-    // Queue card internals
-    pub queue_button_width: f32, // (card_width - gaps) / 4 for +1/+10/MAX/CLEAR
 }

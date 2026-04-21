@@ -37,6 +37,7 @@ fn main() {
         .insert_resource(SignalLog::default())
         .insert_resource(SignalStripExpanded(false))
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
+        .insert_resource(DrawerState::default())
         .insert_resource(ActiveStationTab::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
