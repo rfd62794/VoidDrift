@@ -11,7 +11,7 @@ pub struct SignalEntryContainer;
 pub struct SignalEntry;
 
 pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalLog>) {
-    // TEST 1: Force visible content
+    println!("[Bevy UI] setup_signal_strip called!");
     signal_log.entries.push_back("> SIGNAL STRIP TEST".to_string());
     
     // Restore original signal strip setup
@@ -52,14 +52,7 @@ pub fn signal_strip_system(
     entry_query: Query<Entity, With<SignalEntry>>,
     mut commands: Commands,
 ) {
-    // Debug: Check if system is running
-    static mut FRAME_COUNT: u32 = 0;
-    unsafe { 
-        FRAME_COUNT += 1;
-        if FRAME_COUNT % 300 == 0 { // Every ~5 seconds at 60 FPS
-            println!("[Bevy UI] Signal strip system running, entries: {}", signal_log.entries.len());
-        }
-    }
+    println!("[Bevy UI] signal_strip_system called! entries: {}", signal_log.entries.len());
 
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
