@@ -36,7 +36,7 @@ pub fn ui_layout_system(
         world_view_min_height: world_view_min,
         
         // Content dimensions (full width, no side panel)
-        content_width: w,
+        content_width: w - 8.0, // 4px each side for egui internal spacing
         
         button_height: 44.0,
         tab_button_height: 44.0,
@@ -195,9 +195,10 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .exact_height(layout.content_area_height)
                 .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
+                    let available = ui.available_width(); // READ ACTUAL AVAILABLE WIDTH
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| {
-                            ui.set_width(layout.content_width);
+                            ui.set_width(available); // USE ACTUAL, NOT layout.content_width
                             ui.add_space(8.0);
                             
                             // Render RESERVES and REFINERY tabs for now
@@ -270,6 +271,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Magnetite -> Power Cells queue card
                                     render_queue_card(
                                         ui, 
+                                        available, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.magnetite_refinery, 
@@ -286,6 +288,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Carbon -> Hull Plates queue card
                                     render_queue_card(
                                         ui, 
+                                        available, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.carbon_refinery, 
@@ -328,6 +331,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Hull Plates -> Ship Hull queue card
                                     render_queue_card(
                                         ui, 
+                                        available, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.hull_forge, 
@@ -344,6 +348,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Power Cells -> AI Core queue card
                                     render_queue_card(
                                         ui, 
+                                        available, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.core_fabricator, 

@@ -13,6 +13,7 @@ pub fn add_log_entry(station: &mut Station, entry: String) {
 
 pub fn render_queue_card(
     ui: &mut egui::Ui,
+    available_width: f32,  // NEW - passed from panel
     layout: &UiLayout,
     station: &mut Station,
     queue: &mut Option<ProcessingJob>,
@@ -35,10 +36,9 @@ pub fn render_queue_card(
         ProcessingOperation::CoreFabricator => (station.power_cells as f32 / resource_cost).min(station.power / pwr_cost),
     }.floor() as u32;
 
-    let card_width = layout.content_width;
-    let btn_width = (card_width - 8.0) / 3.0;  // 3 add buttons
+    let btn_width = (available_width - 8.0) / 3.0;  // 3 add buttons
 
-    ui.set_width(card_width);
+    ui.set_width(available_width);
 
     // Header
     ui.label(egui::RichText::new(format!("{} -> {}", input_name, output_name))
@@ -54,7 +54,7 @@ pub fn render_queue_card(
     if let Some(job) = queue {
         let fraction = job.timer / batch_time;
         ui.add(egui::ProgressBar::new(1.0 - fraction)
-            .desired_width(card_width)
+            .desired_width(available_width)
             .desired_height(16.0));
 
         // Status
@@ -93,7 +93,7 @@ pub fn render_queue_card(
     });
 
     // Clear button - full width
-    let clear_size = egui::vec2(card_width, layout.button_height);
+    let clear_size = egui::vec2(available_width, layout.button_height);
     if let Some(job) = queue {
         if ui.add(egui::Button::new("CLEAR QUEUE").min_size(clear_size)).clicked() {
             job.batches = 1; 
