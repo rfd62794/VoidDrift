@@ -57,7 +57,8 @@ fn main() {
         ))
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
-            systems::map::camera_follow_system,                
+            systems::map::camera_follow_system,
+            systems::map::camera_focus_system,                
             systems::starfield::update_starfield,
             systems::visuals::station_rotation_system,
             systems::autopilot::docked_ship_system,

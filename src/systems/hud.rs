@@ -209,6 +209,7 @@ pub struct HudParams<'w, 's> {
     pub tutorial: ResMut<'w, TutorialState>,
     pub pan_state: ResMut<'w, MapPanState>,
     pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
+    pub world: &'w World,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -609,6 +610,56 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     ui.label("Tap sectors to navigate");
                                     ui.label("Use pinch to zoom on map");
                                 }
+                                ActiveStationTab::Focus => {
+                                    ui.heading("CAMERA FOCUS");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.label("Camera focus mode:");
+                                    ui.add_space(4.0);
+                                    
+                                    // Show current focus state
+                                    let is_focused = params.pan_state.is_focused;
+                                    if is_focused {
+                                        ui.label(egui::RichText::new("FOCUSED ON SHIP")
+                                            .color(egui::Color32::GREEN));
+                                        ui.add_space(8.0);
+                                        
+                                        if ui.button("UNFOCUS CAMERA").clicked() {
+                                            params.pan_state.is_focused = false;
+                                            // Initialize offset to current ship position when unfocusing
+                                            // This will be handled by the existing camera system
+                                        }
+                                    } else {
+                                        ui.label(egui::RichText::new("FREE CAMERA")
+                                            .color(egui::Color32::YELLOW));
+                                        ui.add_space(8.0);
+                                        
+                                        if ui.button("FOCUS ON SHIP").clicked() {
+                                            params.pan_state.is_focused = true;
+                                        }
+                                    }
+                                    
+                                    ui.add_space(16.0);
+                                    ui.label("Camera Controls:");
+                                    ui.add_space(4.0);
+                                    
+                                    // Show current camera state
+                                    if let Ok(mut cam) = params.cam_query.get_single_mut() {
+                                        ui.label(format!("Current Zoom: {:.1}x", cam.scale));
+                                        ui.add_space(4.0);
+                                        
+                                        if ui.button("RESET ZOOM").clicked() {
+                                            cam.scale = 1.0;
+                                        }
+                                    }
+                                    
+                                    ui.add_space(16.0);
+                                    ui.label("Tips:");
+                                    ui.add_space(4.0);
+                                    ui.label("Toggle focus to follow ship or free camera");
+                                    ui.label("Use pinch gestures to zoom in/out");
+                                    ui.label("Drag to pan when unfocused");
+                                }
                                 _ => {
                                     ui.label("Content not implemented yet.");
                                 }
@@ -628,15 +679,16 @@ pub fn hud_ui_system(mut params: HudParams) {
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
                 ui.set_max_width(layout.screen_width);
-                // ROUTES | QUEST - each 50% width, account for internal spacing
+                // QUEST | FOCUS | ROUTES - each 33% width, account for internal spacing
                 let available_w = ui.available_width();
-                let tab_w = (available_w - 20.0) / 2.0; // 10px margin each side
+                let tab_w = (available_w - 30.0) / 3.0; // 10px margin each side
                 
                 ui.horizontal(|ui| {
                     ui.set_max_width(available_w);
                     for (tab, label) in [
-                        (ActiveStationTab::Routes, "ROUTES"),
                         (ActiveStationTab::Quest, "QUEST"),
+                        (ActiveStationTab::Focus, "FOCUS"),
+                        (ActiveStationTab::Routes, "ROUTES"),
                     ] {
                         let selected = *params.active_tab == tab;
                         let button = egui::Button::new(label)
@@ -673,7 +725,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
                     ui.set_max_width(layout.screen_width);
-                    // RES | PWR | RFNY | FORGE | PORT - each 20% width, account for internal spacing
+                    // RES | PWR | RFNY | FORGE | PORT - 5 tabs
                     let available_w = ui.available_width();
                     let tab_w = (available_w - 20.0) / 5.0; // 10px margin each side
                     

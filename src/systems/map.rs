@@ -2,6 +2,29 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
 
+pub fn camera_focus_system(
+    mut commands: Commands,
+    focus_targets: Query<(Entity, &Transform), With<CameraFocusTarget>>,
+    mut cam: Query<&mut Transform, With<MainCamera>>,
+    mut pan_state: ResMut<MapPanState>,
+) {
+    if let Ok((target_entity, target_transform)) = focus_targets.get_single() {
+        if let Ok(mut cam_transform) = cam.get_single_mut() {
+            // Focus camera on the target
+            let target_pos = target_transform.translation.truncate();
+            cam_transform.translation.x = target_pos.x;
+            cam_transform.translation.y = target_pos.y;
+            
+            // Update pan state to reflect the focused position
+            pan_state.cumulative_offset = target_pos;
+            pan_state.is_focused = true;
+            
+            // Remove the focus target component after processing
+            commands.entity(target_entity).remove::<CameraFocusTarget>();
+        }
+    }
+}
+
 fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
     touch_pos.y < rect.height  // Touch is above the drawer area
 }

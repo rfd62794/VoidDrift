@@ -43,6 +43,9 @@ pub struct AutopilotTarget {
 }
 
 #[derive(Component)]
+pub struct CameraFocusTarget;
+
+#[derive(Component)]
 pub struct AsteroidField {
     pub ore_type: OreType,
     pub ore_deposit: OreDeposit,
@@ -281,6 +284,7 @@ pub enum ActiveStationTab {
     #[default]
     Routes,
     Quest,
+    Focus,
     Reserves,
     Power,
     Refinery,    // Renamed from Smelter
