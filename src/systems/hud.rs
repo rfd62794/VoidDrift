@@ -79,17 +79,23 @@ pub fn world_view_rect_system(
 pub fn camera_viewport_system(
     rect: Res<WorldViewRect>,
     mut cameras: Query<&mut Camera, With<MainCamera>>,
+    windows: Query<&Window>,
 ) {
     let Ok(mut camera) = cameras.get_single_mut() else { return };
+    let Ok(window) = windows.get_single() else { return };
     
-    camera.viewport = Some(Viewport {
-        physical_position: UVec2::new(0, 0),
-        physical_size: UVec2::new(
-            (rect.width * rect.scale_factor) as u32,
-            (rect.height * rect.scale_factor) as u32,
-        ),
-        depth: 0.0..1.0,
-    });
+    // Calculate viewport dimensions, ensuring they don't exceed screen size
+    let viewport_width = ((rect.width * rect.scale_factor) as u32).min(window.physical_width());
+    let viewport_height = ((rect.height * rect.scale_factor) as u32).min(window.physical_height());
+    
+    // Only set viewport if dimensions are valid
+    if viewport_width > 0 && viewport_height > 0 {
+        camera.viewport = Some(Viewport {
+            physical_position: UVec2::new(0, 0),
+            physical_size: UVec2::new(viewport_width, viewport_height),
+            depth: 0.0..1.0,
+        });
+    }
 }
 
 fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
