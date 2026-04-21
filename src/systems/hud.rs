@@ -194,69 +194,6 @@ pub fn hud_ui_system(mut params: HudParams) {
     }
 
     if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
-        // ── 2. LEFT PANEL (MAP + TABS) ──────────────────────────────────────────────
-        egui::SidePanel::left("left_panel")
-            .exact_width(layout.left_panel_width)
-            .frame(egui::Frame::NONE)
-            .show_separator_line(false)
-            .show(ctx, |ui| {
-                ui.add_space(16.0);
-                
-                let label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
-                if ui.add(egui::Button::new(label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    if *params.state.get() == GameState::SpaceView {
-                        params.next_state.set(GameState::MapView);
-                    } else {
-                        params.next_state.set(GameState::SpaceView);
-                    }
-                    params.quest_log.panel_open = false;
-                }
-
-                ui.add_space(8.0);
-
-                let quest_label = if params.quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
-                if ui.add(egui::Button::new(quest_label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    params.quest_log.panel_open = !params.quest_log.panel_open;
-                    if params.quest_log.panel_open {
-                        params.next_state.set(GameState::SpaceView);
-                    }
-                }
-
-                if ship.state == ShipState::Docked {
-                    ui.add_space(8.0);
-                    ui.separator();
-                    ui.add_space(8.0);
-
-                    let tab_size = egui::vec2(80.0, 44.0);
-                    let tabs = [
-                        (ActiveStationTab::Reserves, "RESERVES"),
-                        (ActiveStationTab::Power, "POWER"),
-                        (ActiveStationTab::Smelter, "REFINERY"),
-                        (ActiveStationTab::Forge, "FORGE"),
-                        (ActiveStationTab::ShipPort, "SHIP PORT"),
-                    ];
-
-                    for (tab, label) in tabs {
-                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
-                            *params.active_tab = tab;
-                        }
-                        ui.add_space(8.0);
-                    }
-                }
-
-                // FOCUS BUTTON (Bottom Left)
-                ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                    ui.add_space(16.0);
-                    if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 40.0))).clicked() {
-                        params.pan_state.is_focused = true;
-                        params.pan_state.cumulative_offset = Vec2::ZERO;
-                        if let Ok(mut proj) = params.cam_query.get_single_mut() {
-                            proj.scale = 1.0;
-                        }
-                    }
-                });
-            });
-
         // ── 3. QUEST PANEL ────────────────────────────────────────────────────────
         if params.quest_log.panel_open {
             egui::Window::new("OBJECTIVES")
@@ -375,9 +312,64 @@ pub fn hud_ui_system(mut params: HudParams) {
                     ui.add_space(8.0);
                 });
         }
+
+    // ---- 4. LEFT PANEL (MAP + TABS) ----
+    egui::SidePanel::left("left_panel")
+        .resizable(false)
+        .exact_width(layout.left_panel_width)
+        .show_separator_line(false)
+        .show(ctx, |ui| {
+            ui.add_space(16.0);
+            
+            let label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
+            if ui.add(egui::Button::new(label).min_size(egui::vec2(80.0, 40.0))).clicked() {
+                if *params.state.get() == GameState::SpaceView {
+                    params.next_state.set(GameState::MapView);
+                } else {
+                    params.next_state.set(GameState::SpaceView);
+                }
+            }
+
+            ui.add_space(8.0);
+
+            // ---- TABS ----
+            let tab_size = egui::vec2(80.0, 44.0);
+            let tabs = [
+                (ActiveStationTab::Reserves, "RESERVES"),
+                (ActiveStationTab::Power, "POWER"),
+                (ActiveStationTab::Smelter, "REFINERY"),
+                (ActiveStationTab::Forge, "FORGE"),
+                (ActiveStationTab::ShipPort, "SHIP PORT"),
+            ];
+
+            for (tab, label) in tabs {
+                let selected = *params.active_tab == tab;
+                let button = egui::Button::new(label)
+                    .fill(if selected { egui::Color32::from_rgb(40, 40, 60) } else { egui::Color32::from_rgb(20, 20, 40) })
+                    .stroke(if selected { egui::Stroke::new(2.0, egui::Color32::CYAN) } else { egui::Stroke::new(1.0, egui::Color32::from_gray(60)) });
+                
+                if ui.add_sized(tab_size, button).clicked() {
+                    *params.active_tab = tab;
+                }
+            }
+
+            ui.add_space(8.0);
+            ui.separator();
+            ui.add_space(8.0);
+
+            // ---- MAP ----
+            if let Ok(mut map_cam) = params.cam_query.get_single_mut() {
+                let zoom = map_cam.scale;
+                ui.label(format!("Zoom: {:.1}x", zoom));
+                ui.add_space(4.0);
+                if ui.button("RESET").clicked() {
+                    map_cam.scale = MAP_OVERVIEW_SCALE;
+                }
+            }
+        });
     }
 
-    // ── 5. TUTORIAL POP-UP ───────────────────────────────────────────────────
+    // ---- 5. TUTORIAL POP-UP ----───────────────────────────────────────────────────
     if let Some(popup) = params.tutorial.active.clone() {
         egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
             .id(egui::Id::new("tutorial_popup"))
