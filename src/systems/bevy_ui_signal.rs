@@ -54,18 +54,21 @@ pub fn signal_strip_system(
 ) {
     println!("[Bevy UI] signal_strip_system called! entries: {}", signal_log.entries.len());
 
+    // ENTITY DEBUG: Check what entities actually exist
+    let strip_count = strip_query.iter().count();
+    let container_count = container_query.iter().count();
+    let entry_count = entry_query.iter().count();
+    
+    println!("[Bevy UI] ENTITY DEBUG - Strip entities: {}, Container entities: {}, Entry entities: {}", 
+             strip_count, container_count, entry_count);
+
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
+        println!("[Bevy UI] Found strip node, height: {:?}", node.height);
         node.height = if expanded.0 { Val::Px(180.0) } else { Val::Px(60.0) };
+        println!("[Bevy UI] Updated strip height to: {:?}", node.height);
     } else {
-        // Debug: Check if signal strip root exists
-        static mut LAST_WARNING: u32 = 0;
-        unsafe {
-            LAST_WARNING += 1;
-            if LAST_WARNING % 300 == 0 {
-                println!("[Bevy UI] Signal strip root not found - setup may have failed");
-            }
-        }
+        println!("[Bevy UI] ERROR: Signal strip root not found - setup may have failed");
         return;
     }
 
