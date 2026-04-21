@@ -11,36 +11,17 @@ pub struct SignalEntryContainer;
 pub struct SignalEntry;
 
 pub fn setup_signal_strip(mut commands: Commands) {
-    println!("[Bevy UI] Setting up signal strip");
-    let entity = commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(0.0),
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                height: Val::Px(60.0),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(4.0)),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)),
-            SignalStripRoot,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    flex_direction: FlexDirection::Column,
-                    overflow: Overflow::clip_y(),
-                    ..default()
-                },
-                SignalEntryContainer,
-            ));
-        })
-        .id();
-    println!("[Bevy UI] Signal strip root entity: {:?}", entity);
+    // DIAGNOSTIC: Full-screen red panel to test Bevy UI rendering
+    commands.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            position_type: PositionType::Absolute,
+            ..default()
+        },
+        BackgroundColor(Color::srgb(1.0, 0.0, 0.0)),
+        ZIndex(100),
+    ));
 }
 
 pub fn signal_strip_system(
