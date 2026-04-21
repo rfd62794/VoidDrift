@@ -8,6 +8,7 @@ use crate::constants::*;
 
 pub fn ui_layout_system(
     windows: Query<&Window>,
+    ship_query: Query<(Entity, &Ship), (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
     mut layout: ResMut<UiLayout>,
 ) {
     let Ok(window) = windows.get_single() else { return };
@@ -21,7 +22,10 @@ pub fn ui_layout_system(
     let handle_height = 32.0;
     let signal_strip_height = if landscape { 56.0 } else { 64.0 };
     let world_view_min = h * 0.45;
-    let tab_bar_height = 48.0; // Default for ui_layout_system
+    
+    // Tab bar height depends on dock state (1 row vs 2 rows)
+    let is_docked = ship_query.single().1.state == ShipState::Docked;
+    let tab_bar_height = if is_docked { 96.0 } else { 48.0 }; // 48px per row
     let content_area_height = h - handle_height - tab_bar_height - signal_strip_height - world_view_min;
 
     *layout = UiLayout {
@@ -92,24 +96,6 @@ fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
     touch_pos.y < rect.height  // Touch is above the drawer area
 }
 
-pub fn update_tab_bar_height_system(
-    layout: Res<UiLayout>,
-    ship_query: Query<(Entity, &Ship), (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
-    drawer: Res<DrawerState>,
-    mut layout_res: ResMut<UiLayout>,
-) {
-    let is_docked = ship_query.single().1.state == ShipState::Docked;
-    let new_tab_bar_height = if is_docked { 96.0 } else { 48.0 };
-    
-    if layout.tab_bar_height != new_tab_bar_height {
-        layout_res.tab_bar_height = new_tab_bar_height;
-        
-        // Recalculate content area height
-        let new_content_height = layout.screen_height - layout.handle_height 
-            - new_tab_bar_height - layout.signal_strip_height - layout.world_view_min_height;
-        layout_res.content_area_height = new_content_height;
-    }
-}
 
 pub fn ship_cargo_display_system(
     time: Res<Time>,
