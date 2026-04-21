@@ -127,6 +127,7 @@ fn spawn_starfield(
 fn spawn_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
+        IsDefaultUiCamera, // Critical: Makes this camera render Bevy UI
         OrthographicProjection {
             far: 1200.0, // Headroom for Z_STARS_FAR (-100) from Z=1000
             ..OrthographicProjection::default_2d()
