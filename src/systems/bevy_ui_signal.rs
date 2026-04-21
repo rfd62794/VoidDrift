@@ -27,6 +27,7 @@ pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalL
             ..default()
         },
         BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)),
+        ZIndex(100), // TEST 3: Increase Z-index
         SignalStripRoot,
     ))
     .with_children(|parent| {
