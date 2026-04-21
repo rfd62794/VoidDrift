@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
+use crate::systems::station_tabs::render_queue_card;
 use crate::components::*;
 use crate::constants::*;
 
@@ -186,6 +187,270 @@ pub fn hud_ui_system(mut params: HudParams) {
                 });
         });
 
+    // ---- 2. CONTENT AREA (Bottom) ----
+    if *params.drawer_state == DrawerState::Expanded {
+        if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
+            egui::TopBottomPanel::bottom("content_area")
+                .resizable(false)
+                .exact_height(layout.content_area_height)
+                .frame(egui::Frame::NONE)
+                .show(ctx, |ui| {
+                    egui::ScrollArea::vertical()
+                        .show(ui, |ui| {
+                            ui.set_width(layout.content_width);
+                            ui.add_space(8.0);
+                            
+                            // Render RESERVES and REFINERY tabs for now
+                            match *params.active_tab {
+                                ActiveStationTab::Reserves => {
+                                    ui.heading("STATION RESOURCES");
+                                    ui.add_space(8.0);
+                                    
+                                    // Resource grid in pairs
+                                    ui.horizontal(|ui| {
+                                        ui.vertical(|ui| {
+                                            ui.label("MAGNETITE:");
+                                            ui.label(egui::RichText::new(format!("{:.1}", station.magnetite_reserves)).color(egui::Color32::WHITE));
+                                        });
+                                        ui.add_space(20.0);
+                                        ui.vertical(|ui| {
+                                            ui.label("CARBON:");
+                                            ui.label(egui::RichText::new(format!("{:.1}", station.carbon_reserves)).color(egui::Color32::WHITE));
+                                        });
+                                    });
+                                    ui.add_space(8.0);
+                                    ui.horizontal(|ui| {
+                                        ui.vertical(|ui| {
+                                            ui.label("HULL PLATES:");
+                                            ui.label(egui::RichText::new(format!("{}", station.hull_plate_reserves)).color(egui::Color32::WHITE));
+                                        });
+                                        ui.add_space(20.0);
+                                        ui.vertical(|ui| {
+                                            ui.label("POWER CELLS:");
+                                            ui.label(egui::RichText::new(format!("{}", station.power_cells)).color(egui::Color32::GREEN));
+                                        });
+                                    });
+                                    ui.add_space(8.0);
+                                    ui.horizontal(|ui| {
+                                        ui.vertical(|ui| {
+                                            ui.label("AI CORES:");
+                                            ui.label(egui::RichText::new(format!("{}", station.ai_cores)).color(egui::Color32::CYAN));
+                                        });
+                                        ui.add_space(20.0);
+                                        ui.vertical(|ui| {
+                                            ui.label("SHIP HULLS:");
+                                            ui.label(egui::RichText::new(format!("{}", station.ship_hulls)).color(egui::Color32::GOLD));
+                                        });
+                                    });
+                                    ui.add_space(8.0);
+                                    ui.vertical(|ui| {
+                                        ui.label("HELIUM:");
+                                        ui.label(egui::RichText::new(format!("{}", station.power)).color(egui::Color32::WHITE));
+                                    });
+                                    
+                                    ui.add_space(16.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    ui.heading("AUTO-DOCK SETTINGS");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_unload, "Auto-Unload Cargo");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_magnetite, "Auto-Smelt Magnetite");
+                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_carbon, "Auto-Smelt Carbon");
+                                    
+                                    if !station.online {
+                                        ui.add_space(16.0);
+                                        if ui.button(format!("REPAIR STATION [{} CELLS]", REPAIR_COST)).clicked() && station.power_cells >= REPAIR_COST {
+                                            station.power_cells -= REPAIR_COST; 
+                                            station.repair_progress = 1.0; 
+                                            station.online = true;
+                                        }
+                                    }
+                                }
+                                ActiveStationTab::Refinery => {
+                                    // Magnetite -> Power Cells queue card
+                                    render_queue_card(
+                                        ui, 
+                                        &layout, 
+                                        &mut station, 
+                                        &mut queues.magnetite_refinery, 
+                                        ProcessingOperation::MagnetiteRefinery, 
+                                        REFINERY_RATIO as f32, 
+                                        POWER_COST_REFINERY as f32, 
+                                        REFINERY_MAGNETITE_TIME
+                                    );
+                                    
+                                    ui.add_space(8.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    // Carbon -> Hull Plates queue card
+                                    render_queue_card(
+                                        ui, 
+                                        &layout, 
+                                        &mut station, 
+                                        &mut queues.carbon_refinery, 
+                                        ProcessingOperation::CarbonRefinery, 
+                                        HULL_PLATE_COST_CARBON as f32, 
+                                        POWER_COST_HULL_FORGE as f32, 
+                                        REFINERY_CARBON_TIME
+                                    );
+                                }
+                                ActiveStationTab::Power => {
+                                    ui.heading("STATION POWER STATUS");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!("STATION POWER: {:.1}/{:.0}", station.power, STATION_POWER_MAX));
+                                        ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0));
+                                    });
+                                    ui.add_space(8.0);
+                                    
+                                    let ship = params.ship_query.single_mut();
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!("SHIP POWER: {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
+                                        ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
+                                    });
+                                    
+                                    ui.add_space(16.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    ui.heading("POWER CONSUMPTION");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.label("Station Systems:");
+                                    ui.label("  - Life Support: 10.0 PWR/s");
+                                    ui.label("  - Communications: 5.0 PWR/s");
+                                    ui.label("  - Docking Systems: 15.0 PWR/s");
+                                    ui.label("  - Processing: 25.0 PWR/s");
+                                }
+                                ActiveStationTab::Forge => {
+                                    // Hull Plates -> Ship Hull queue card
+                                    render_queue_card(
+                                        ui, 
+                                        &layout, 
+                                        &mut station, 
+                                        &mut queues.hull_forge, 
+                                        ProcessingOperation::HullForge, 
+                                        SHIP_HULL_COST_PLATES as f32, 
+                                        POWER_COST_SHIP_FORGE as f32, 
+                                        FORGE_HULL_TIME
+                                    );
+                                    
+                                    ui.add_space(8.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    // Power Cells -> AI Core queue card
+                                    render_queue_card(
+                                        ui, 
+                                        &layout, 
+                                        &mut station, 
+                                        &mut queues.core_fabricator, 
+                                        ProcessingOperation::CoreFabricator, 
+                                        AI_CORE_COST_CELLS as f32, 
+                                        POWER_COST_AI_FABRICATE as f32, 
+                                        FORGE_CORE_TIME
+                                    );
+                                }
+                                ActiveStationTab::ShipPort => {
+                                    ui.heading("FLEET ASSEMBLY");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.horizontal(|ui| {
+                                        if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
+                                            station.ship_hulls -= 1; 
+                                            station.ai_cores -= 1;
+                                            let (target_pos, ore, name) = if station.ai_cores >= 1 { 
+                                                (SECTOR_3_POS, OreType::Carbon, "Sector 3") 
+                                            } else { 
+                                                (SECTOR_1_POS, OreType::Magnetite, "Sector 1") 
+                                            };
+                                            params.commands.spawn((
+                                                AutonomousShipTag, 
+                                                LastHeading(0.0), 
+                                                AutonomousShip { 
+                                                    state: AutonomousShipState::Holding, 
+                                                    cargo: 0.0, 
+                                                    cargo_type: ore, 
+                                                    power: SHIP_POWER_MAX 
+                                                }, 
+                                                AutonomousAssignment { 
+                                                    target_pos, 
+                                                    ore_type: ore, 
+                                                    sector_name: name.to_string() 
+                                                }, 
+                                                Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), 
+                                                MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), 
+                                                Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)
+                                            ))
+                                            .with_children(|parent| {
+                                                parent.spawn((
+                                                    ThrusterGlow, 
+                                                    Mesh2d(params.meshes.add(Rectangle::new(6.0, 8.0))), 
+                                                    MeshMaterial2d(params.materials.add(Color::srgb(0.0, 1.0, 1.0))), 
+                                                    Transform::from_xyz(0.0, -18.0, 0.1), 
+                                                    Visibility::Hidden
+                                                ));
+                                                parent.spawn((
+                                                    MiningBeam, 
+                                                    Mesh2d(params.meshes.add(Rectangle::new(2.0, 1.0))), 
+                                                    MeshMaterial2d(params.materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), 
+                                                    Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), 
+                                                    Visibility::Hidden
+                                                ));
+                                                parent.spawn((
+                                                    Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), 
+                                                    MeshMaterial2d(params.materials.add(Color::srgb(0.2, 0.2, 0.2))), 
+                                                    Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)
+                                                ));
+                                                parent.spawn((
+                                                    ShipCargoBarFill, 
+                                                    Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), 
+                                                    MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), 
+                                                    Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)
+                                                ));
+                                                parent.spawn((
+                                                    MapElement, 
+                                                    Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), 
+                                                    MeshMaterial2d(params.materials.add(ColorMaterial { 
+                                                        color: Color::srgb(1.0, 0.5, 0.0), 
+                                                        alpha_mode: bevy::sprite::AlphaMode2d::Opaque, 
+                                                        ..default() 
+                                                    })), 
+                                                    Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), 
+                                                    Visibility::Hidden
+                                                ));
+                                            });
+                                        }
+                                        ui.separator();
+                                        let mut ship = params.ship_query.single_mut();
+                                        if ui.button("TOP UP SHIP [3 CELLS]").clicked() && station.power_cells >= 3 && ship.power_cells < 5 {
+                                            station.power_cells -= 3; 
+                                            ship.power_cells = (ship.power_cells + 3).min(5);
+                                        }
+                                    });
+                                    
+                                    ui.add_space(16.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    ui.heading("FLEET STATUS");
+                                    ui.add_space(8.0);
+                                    ui.label("Autonomous Ships: 1 deployed");
+                                    ui.label("Status: Active mining operations");
+                                }
+                                _ => {
+                                    ui.label("Content not implemented yet.");
+                                }
+                            }
+                            
+                            ui.add_space(8.0);
+                        });
+                });
+        }
+    }
+
     // ---- 3. TAB BAR (Bottom) ----
     if *params.drawer_state != DrawerState::Collapsed {
         egui::TopBottomPanel::bottom("tab_bar")
@@ -195,10 +460,15 @@ pub fn hud_ui_system(mut params: HudParams) {
             .show(ctx, |ui| {
                 let is_docked = params.ship_query.single().state == ShipState::Docked;
                 
-                // Only show ROUTES and QUEST tabs for now
+                // Show all tabs for Step 7
                 let tabs = [
                     (ActiveStationTab::Routes, "ROUTES"),
                     (ActiveStationTab::Quest, "QUEST"),
+                    (ActiveStationTab::Reserves, "RESERVES"),
+                    (ActiveStationTab::Power, "POWER"),
+                    (ActiveStationTab::Refinery, "REFINERY"),
+                    (ActiveStationTab::Forge, "FORGE"),
+                    (ActiveStationTab::ShipPort, "SHIP PORT"),
                 ];
                 
                 let tab_width = layout.screen_width / tabs.len() as f32;
