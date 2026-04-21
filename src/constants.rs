@@ -8,6 +8,10 @@ pub const MAP_OVERVIEW_SCALE: f32 = 1.5;
 // [PHASE 4] EGUI CONFIG 
 pub const EGUI_SCALE: f32 = 3.0;
 
+// [PHASE A] UI PANEL WIDTHS
+pub const UI_LEFT_PANEL_WIDTH: f32 = 216.0;        // 30% of 720px portrait width
+pub const UI_LEFT_PANEL_WIDTH_LANDSCAPE: f32 = 240.0; // 20% of 1200px landscape width
+
 pub const CARGO_CAPACITY: u32 = 100;
 pub const MINING_RATE: f32 = 20.0;
 

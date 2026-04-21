@@ -155,6 +155,7 @@ pub fn hud_ui_system(mut params: HudParams) {
     if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
         // ── 2. LEFT PANEL (MAP + TABS) ──────────────────────────────────────────────
         egui::SidePanel::left("left_panel")
+            .exact_width(crate::constants::UI_LEFT_PANEL_WIDTH)
             .frame(egui::Frame::NONE)
             .show_separator_line(false)
             .show(ctx, |ui| {
@@ -253,6 +254,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                     ui.vertical_centered(|ui| {
                         match *params.active_tab {
                             ActiveStationTab::Reserves => {
+                                ui.set_max_width(ui.available_width());
                                 ui.vertical(|ui| {
                                     ui.heading("STATION RESOURCES");
                                     ui.add_space(8.0);
@@ -278,15 +280,17 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 }
                             }
                             ActiveStationTab::Power => {
+                                ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     ui.label(format!("STATION POWER: {:.1}/{:.0}", station.power, STATION_POWER_MAX));
-                                    ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0));
+                                    ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0)));
                                     ui.separator();
                                     ui.label(format!("SHIP POWER: {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
                                     ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
                                 });
                             }
                             ActiveStationTab::Smelter => {
+                                ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     render_queue_card(ui, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
                                     ui.add_space(16.0);
@@ -294,6 +298,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 });
                             }
                             ActiveStationTab::Forge => {
+                                ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     render_queue_card(ui, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
                                     ui.add_space(16.0);
@@ -301,6 +306,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 });
                             }
                             ActiveStationTab::ShipPort => {
+                                ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
                                         station.ship_hulls -= 1; station.ai_cores -= 1;
