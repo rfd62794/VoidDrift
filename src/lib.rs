@@ -79,6 +79,7 @@ fn main() {
         ))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
+            systems::bevy_ui_signal::signal_strip_interaction,
             systems::bevy_ui_signal::signal_strip_system,
             systems::ui::hud_ui_system,
             // --- Debug Logging ---

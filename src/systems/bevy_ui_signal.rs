@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::ui::Interaction;
 use crate::components::*;
 
 #[derive(Component)]
@@ -24,7 +25,8 @@ pub fn setup_signal_strip(mut commands: Commands) {
             padding: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)), // Match egui black with 200 alpha
+        BackgroundColor(Color::srgb(1.0, 0.0, 0.0)), // Bright red for visibility testing
+        Interaction::None, // Enable click interaction
         SignalStripRoot,
     ))
     .with_children(|parent| {
@@ -39,6 +41,17 @@ pub fn setup_signal_strip(mut commands: Commands) {
             SignalEntryContainer,
         ));
     });
+}
+
+pub fn signal_strip_interaction(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<SignalStripRoot>)>,
+    mut expanded: ResMut<SignalStripExpanded>,
+) {
+    for interaction in &mut interaction_query {
+        if *interaction == Interaction::Pressed {
+            expanded.0 = !expanded.0;
+        }
+    }
 }
 
 pub fn signal_strip_system(
