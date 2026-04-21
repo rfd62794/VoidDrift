@@ -164,7 +164,7 @@ pub fn hud_ui_system(mut params: HudParams) {
         .frame(egui::Frame::NONE
             .fill(egui::Color32::from_black_alpha(200))
             .inner_margin(4.0))
-        .exact_height(strip_height)
+        .exact_height(layout.signal_strip_height)
         .show(ctx, |ui| {
             let display_count = if params.expanded.0 { 20 } else { 3 };
             let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
@@ -196,7 +196,7 @@ pub fn hud_ui_system(mut params: HudParams) {
     if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
         // ── 2. LEFT PANEL (MAP + TABS) ──────────────────────────────────────────────
         egui::SidePanel::left("left_panel")
-            .exact_width(crate::constants::UI_LEFT_PANEL_WIDTH)
+            .exact_width(layout.left_panel_width)
             .frame(egui::Frame::NONE)
             .show_separator_line(false)
             .show(ctx, |ui| {
@@ -290,6 +290,7 @@ pub fn hud_ui_system(mut params: HudParams) {
         if ship.state == ShipState::Docked {
             egui::TopBottomPanel::bottom("tab_detail_panel")
                 .frame(egui::Frame::NONE)
+                .exact_height(layout.context_panel_height)
                 .show(ctx, |ui| {
                     ui.add_space(8.0);
                     ui.vertical_centered(|ui| {
