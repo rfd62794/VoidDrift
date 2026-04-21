@@ -14,7 +14,18 @@ pub fn setup_world(
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
-    // [QUEST TRACKER] Initialization
+    init_quest_log(&mut commands);
+    spawn_starfield(&mut commands, &mut meshes, &mut materials);
+    spawn_camera(&mut commands);
+    spawn_player_ship(&mut commands, &mut meshes, &mut materials, &asset_server);
+    spawn_station(&mut commands, &mut meshes, &mut materials);
+    spawn_berths(&mut commands);
+    spawn_sectors(&mut commands, &mut meshes, &mut materials, &asset_server);
+    spawn_map_connectors(&mut commands, &mut meshes, &mut materials);
+    spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
+}
+
+fn init_quest_log(commands: &mut Commands) {
     commands.insert_resource(QuestLog {
         panel_open: false,
         objectives: vec![
@@ -69,50 +80,51 @@ pub fn setup_world(
             },
         ],
     });
+}
 
-    // ── STARFIELD ────────────────────────────────────────────────────────────
-    {
-        let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
-        let far_mat  = materials.add(ColorMaterial {
-            color: Color::srgba(1.0, 1.0, 1.0, 1.0),
-            alpha_mode: AlphaMode2d::Opaque,
-            ..default()
-        });
-        let near_mat = materials.add(ColorMaterial {
-            color: Color::srgba(1.0, 1.0, 1.0, 1.0),
-            alpha_mode: AlphaMode2d::Opaque,
-            ..default()
-        });
-        
-        // Stars are fully opaque and pushed far back to ensure Opaque2d phase
-        // and avoid Z-fighting/shimmering on mobile hardware.
-        let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
-        let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
-
-        for _ in 0..150 {
-            let x: f32 = rng.gen_range(-700.0..700.0);
-            let y: f32 = rng.gen_range(-500.0..500.0);
-            commands.spawn((
-                StarLayer(0.05),
-                Mesh2d(star_sm.clone()),
-                MeshMaterial2d(far_mat.clone()),
-                Transform::from_xyz(x, y, Z_STARS_FAR), 
-            ));
-        }
-        for _ in 0..50 {
-            let x: f32 = rng.gen_range(-700.0..700.0);
-            let y: f32 = rng.gen_range(-500.0..500.0);
-            commands.spawn((
-                StarLayer(0.15),
-                Mesh2d(star_lg.clone()),
-                MeshMaterial2d(near_mat.clone()),
-                Transform::from_xyz(x, y, Z_STARS_NEAR), 
-            ));
-        }
+fn spawn_starfield(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
+    let far_mat  = materials.add(ColorMaterial {
+        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
+        alpha_mode: AlphaMode2d::Opaque,
+        ..default()
+    });
+    let near_mat = materials.add(ColorMaterial {
+        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
+        alpha_mode: AlphaMode2d::Opaque,
+        ..default()
+    });
+    // Stars are fully opaque and pushed far back to ensure Opaque2d phase
+    // and avoid Z-fighting/shimmering on mobile hardware.
+    let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
+    let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
+    for _ in 0..150 {
+        let x: f32 = rng.gen_range(-700.0..700.0);
+        let y: f32 = rng.gen_range(-500.0..500.0);
+        commands.spawn((
+            StarLayer(0.05),
+            Mesh2d(star_sm.clone()),
+            MeshMaterial2d(far_mat.clone()),
+            Transform::from_xyz(x, y, Z_STARS_FAR),
+        ));
     }
-    // ─────────────────────────────────────────────────────────────────────────
+    for _ in 0..50 {
+        let x: f32 = rng.gen_range(-700.0..700.0);
+        let y: f32 = rng.gen_range(-500.0..500.0);
+        commands.spawn((
+            StarLayer(0.15),
+            Mesh2d(star_lg.clone()),
+            MeshMaterial2d(near_mat.clone()),
+            Transform::from_xyz(x, y, Z_STARS_NEAR),
+        ));
+    }
+}
 
-    // 1. CAMERA
+fn spawn_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
         OrthographicProjection {
@@ -120,19 +132,25 @@ pub fn setup_world(
             ..OrthographicProjection::default_2d()
         },
         MainCamera,
-        Transform::from_xyz(0.0, 0.0, 1000.0), 
+        Transform::from_xyz(0.0, 0.0, 1000.0),
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
             ..default()
         },
     ));
+}
 
-    // 2. SHIP
+fn spawn_player_ship(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    asset_server: &AssetServer,
+) {
     commands.spawn((
         PlayerShip,
         LastHeading(0.0),
-        Ship { 
-            state: ShipState::Idle, 
+        Ship {
+            state: ShipState::Idle,
             speed: SHIP_SPEED,
             cargo: 0.0,
             cargo_type: OreType::Empty,
@@ -150,14 +168,14 @@ pub fn setup_world(
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), 
+            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
             Transform::from_xyz(0.0, -18.0, 0.1), // Global 1.1
             Visibility::Hidden,
         ));
         parent.spawn((
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))), 
+            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))),
             Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), // Global Z_BEAM (0.8)
             Visibility::Hidden,
         ));
@@ -172,7 +190,6 @@ pub fn setup_world(
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
             Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05), // Slightly above bar back
         ));
-
         // [STEP 6] SHIP MAP MARKER
         parent.spawn((
             MapElement,
@@ -182,10 +199,9 @@ pub fn setup_world(
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),
-            Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), 
+            Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)),
             Visibility::Hidden,
         ));
-
         // [STEP 10] WORLD-SPACE CARGO LABELS (Phase 10)
         parent.spawn((
             CargoOreLabel,
@@ -210,9 +226,14 @@ pub fn setup_world(
             Transform::from_xyz(0.0, 12.0, Z_HUD - Z_SHIP),
         ));
     });
+}
 
-    // STATION SPAWN (Restored)
-    let _station_ent = commands.spawn((
+fn spawn_station(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    commands.spawn((
         MapMarker,
         Station {
             repair_progress: 1.0,
@@ -297,36 +318,47 @@ pub fn setup_world(
             Transform::from_xyz(0.0, -40.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
             Visibility::Hidden,
         ));
-    }).id();
+    });
+}
 
-    // LOGICAL BERTH ENTITIES
+fn spawn_berths(commands: &mut Commands) {
     commands.spawn((Berth { arm_index: BERTH_1_ARM_INDEX, occupied_by: None, berth_type: BerthType::Player }, Name::new("Berth1")));
     commands.spawn((Berth { arm_index: BERTH_2_ARM_INDEX, occupied_by: None, berth_type: BerthType::Drone }, Name::new("Berth2")));
     commands.spawn((Berth { arm_index: BERTH_3_ARM_INDEX, occupied_by: None, berth_type: BerthType::Open }, Name::new("Berth3")));
+}
 
-    // SECTOR SPAWNS (World Expansion)
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_1_POS, OreDeposit::Magnetite, 1234, "S1");
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_2_POS, OreDeposit::Iron, 2345, "S2");
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_3_POS, OreDeposit::Carbon, 3456, "S3");
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_4_POS, OreDeposit::Tungsten, 4567, "S4");
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_5_POS, OreDeposit::Titanite, 5678, "S5");
-    spawn_asteroid_field(&mut commands, &mut meshes, &mut materials, &asset_server,
-        SECTOR_6_POS, OreDeposit::CrystalCore, 6789, "S6");
+fn spawn_sectors(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    asset_server: &AssetServer,
+) {
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_1_POS, OreDeposit::Magnetite, 1234, "S1");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_2_POS, OreDeposit::Iron, 2345, "S2");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_3_POS, OreDeposit::Carbon, 3456, "S3");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_4_POS, OreDeposit::Tungsten, 4567, "S4");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_5_POS, OreDeposit::Titanite, 5678, "S5");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_6_POS, OreDeposit::CrystalCore, 6789, "S6");
+}
 
-    // MAP CONNECTORS (Hub Topology Expansion)
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_1_POS);
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_2_POS);
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_3_POS);
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_4_POS);
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_5_POS);
-    spawn_map_connector(&mut commands, &mut meshes, &mut materials, STATION_POS, SECTOR_6_POS);
+fn spawn_map_connectors(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_1_POS);
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_2_POS);
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_3_POS);
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_4_POS);
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_5_POS);
+    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_6_POS);
+}
 
-    // DESTINATION HIGHLIGHT
+fn spawn_destination_highlight(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
     commands.spawn((
         MapElement,
         DestinationHighlight,

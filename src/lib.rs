@@ -67,7 +67,6 @@ fn main() {
         .add_systems(Update, (
             // --- Gameplay & Logistics ---
             systems::mining::mining_system, 
-            systems::autopilot::autopilot_system,
             systems::autonomous::autonomous_ship_system,
             systems::autonomous::autonomous_beam_system.after(systems::autonomous::autonomous_ship_system),
             systems::ui::ship_cargo_display_system,
@@ -90,6 +89,7 @@ fn main() {
             systems::narrative::opening_sequence_system,
             systems::narrative::signal_system,
             systems::narrative::tutorial_system,
+            systems::quest::quest_update_system,
         ))
         .run();
 }
