@@ -78,6 +78,7 @@ pub fn map_input_system(
     berth_query: Query<(Entity, &Berth), (Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<DestinationHighlight>, Without<StarLayer>)>,
     opening: Res<OpeningSequence>,
     mut active_tab: ResMut<ActiveStationTab>,
+    mut drawer_state: ResMut<DrawerState>,
     mut commands: Commands,
 ) {
     if opening.phase != OpeningPhase::Complete {
@@ -113,6 +114,7 @@ pub fn map_input_system(
 
                     ship.state = ShipState::Navigating;
                     *active_tab = ActiveStationTab::Reserves;
+                    *drawer_state = DrawerState::Collapsed;  // Auto-collapse on undock
                     ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     commands.entity(ship_entity).remove::<DockedAt>();
                     commands.entity(ship_entity).insert(AutopilotTarget { 

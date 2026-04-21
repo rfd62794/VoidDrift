@@ -37,6 +37,7 @@ pub fn station_status_system(
 pub fn ship_self_preservation_system(
     mut ship_query: Query<(Entity, &mut Ship)>,
     mut station_query: Query<&mut Station>,
+    mut drawer_state: ResMut<DrawerState>,
     mut commands: Commands,
 ) {
     if let Ok((ship_entity, mut ship)) = ship_query.get_single_mut() {
@@ -60,6 +61,7 @@ pub fn ship_self_preservation_system(
             // 3. Force Return
             else if ship.state != ShipState::Navigating {
                 ship.state = ShipState::Navigating;
+                *drawer_state = DrawerState::Collapsed;  // Auto-collapse on undock
                 commands.entity(ship_entity).remove::<DockedAt>();
                 commands.spawn(AutopilotTarget {
                     destination: STATION_POS,

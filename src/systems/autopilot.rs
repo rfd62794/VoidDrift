@@ -9,6 +9,7 @@ pub fn autopilot_system(
     asteroid_query: Query<&AsteroidField>,
     mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     mut active_tab: ResMut<ActiveStationTab>,
+    mut drawer_state: ResMut<DrawerState>,
     mut commands: Commands,
 ) {
     for (mut ship, mut transform, mut target, entity) in query.iter_mut() {
@@ -42,6 +43,7 @@ pub fn autopilot_system(
                         if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
                             ship.state = ShipState::Docked; 
                             *active_tab = ActiveStationTab::Reserves;
+                            *drawer_state = DrawerState::Expanded;  // Auto-expand on dock
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
                             // [PHASE B] Docking Sequence Trigger
@@ -64,6 +66,7 @@ pub fn autopilot_system(
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
                         // NO BERTH? Dock at center (Initial / Opening Sequence)
                         ship.state = ShipState::Docked; 
+                        *drawer_state = DrawerState::Expanded;  // Auto-expand on dock
                         station.dock_state = StationDockState::Resuming;
                         station.resume_timer = STATION_RESUME_DELAY;
                         
