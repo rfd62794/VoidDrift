@@ -43,7 +43,10 @@ fn main() {
         .insert_resource(QuestLog::default())
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
-        .add_systems(Startup, systems::setup::setup_world)
+        .add_systems(Startup, (
+            systems::setup::setup_world,
+            systems::bevy_ui_signal::setup_signal_strip,
+        ))
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
             systems::map::camera_follow_system,                
@@ -75,6 +78,7 @@ fn main() {
         ))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
+            systems::bevy_ui_signal::signal_strip_system,
             systems::ui::hud_ui_system,
             systems::ui::station_visual_system,
             systems::economy::station_status_system,

@@ -8,6 +8,7 @@ pub mod economy;
 pub mod ui;
 pub mod hud;
 pub mod station_tabs;
+pub mod bevy_ui_signal;
 pub mod map;
 pub mod narrative;
 pub mod opening_sequence;
