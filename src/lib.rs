@@ -3,7 +3,6 @@
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy::ui::UiPlugin;
 
 mod constants;
 pub use constants::*;
@@ -31,7 +30,7 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins((EguiPlugin, UiPlugin::default()))
+        .add_plugins(EguiPlugin) // UiPlugin automatically included via bevy_ui feature
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
