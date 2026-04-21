@@ -1,18 +1,21 @@
+// ui.rs — re-export module. Logic lives in hud.rs and station_tabs.rs.
+pub use crate::systems::hud::{
+    hud_ui_system,
+    ship_cargo_display_system,
+    autonomous_ship_cargo_display_system,
+    cargo_label_system,
+    station_visual_system,
+};
+pub use crate::systems::station_tabs::add_log_entry;
+
 use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
 
-pub fn add_log_entry(station: &mut Station, entry: String) {
-    if station.log.back() == Some(&entry) { return; }
-    station.log.push_back(entry);
-    if station.log.len() > LOG_MAX_LINES {
-        station.log.pop_front();
-    }
-}
-
-pub fn ship_cargo_display_system(
+#[allow(dead_code)]
+pub fn _ship_cargo_display_system_dead(
     time: Res<Time>,
     ship_query: Query<&Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
     mut fill_query: Query<(&mut Transform, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
