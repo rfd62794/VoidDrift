@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
+use bevy::ui::IsDefaultUiCamera;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::constants::*;
