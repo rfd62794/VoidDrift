@@ -27,8 +27,9 @@ fn star_layer(uv: vec2<f32>, cam: vec2<f32>, scale: f32, threshold: f32, brightn
             if h > threshold {
                 let star_pos = vec2<f32>(hash(neighbor + 0.1), hash(neighbor + 0.2));
                 let dist = length(local - vec2<f32>(f32(x), f32(y)) - star_pos);
-                let twinkle = 0.85 + 0.15 * sin(material.time * (2.0 + h * 3.0) + h * 6.28);
-                result += brightness * twinkle * smoothstep(0.02, 0.0, dist);
+                // Enhanced twinkling with more variation
+                let twinkle = 0.70 + 0.30 * sin(material.time * (4.0 + h * 6.0) + h * 12.56);
+                result += brightness * twinkle * smoothstep(0.025, 0.0, dist);
             }
         }
     }
@@ -42,13 +43,13 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     
     var stars = 0.0;
     // Far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam, 480.0, 0.94, 0.3);
+    stars += star_layer(uv, cam, 480.0, 0.88, 0.3);
     // Mid-far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 2.0, 240.0, 0.92, 0.5);
+    stars += star_layer(uv, cam * 2.0, 240.0, 0.85, 0.5);
     // Mid-near layer - dense, medium, minimal parallax
-    stars += star_layer(uv, cam * 4.0, 80.0, 0.88, 0.7);
+    stars += star_layer(uv, cam * 4.0, 80.0, 0.80, 0.7);
     // Close layer - dense, bright, minimal parallax
-    stars += star_layer(uv, cam * 6.0, 30.0, 0.85, 0.9);
+    stars += star_layer(uv, cam * 6.0, 30.0, 0.75, 0.9);
     
     stars = clamp(stars, 0.0, 1.0);
     
