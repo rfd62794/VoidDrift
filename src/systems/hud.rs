@@ -567,16 +567,25 @@ pub fn hud_ui_system(mut params: HudParams) {
             .show(ctx, |ui| {
                 let is_docked = params.ship_query.single().1.state == ShipState::Docked;
                 
-                // Show all tabs for Step 7
-                let tabs = [
-                    (ActiveStationTab::Routes, "ROUTES"),
-                    (ActiveStationTab::Quest, "QUEST"),
-                    (ActiveStationTab::Reserves, "RESERVES"),
-                    (ActiveStationTab::Power, "POWER"),
-                    (ActiveStationTab::Refinery, "REFINERY"),
-                    (ActiveStationTab::Forge, "FORGE"),
-                    (ActiveStationTab::ShipPort, "SHIP PORT"),
-                ];
+                // Show different tabs based on dock state
+                let tabs: Vec<(ActiveStationTab, &str)> = if is_docked {
+                    // All tabs when docked
+                    vec![
+                        (ActiveStationTab::Routes, "ROUTES"),
+                        (ActiveStationTab::Quest, "QUEST"),
+                        (ActiveStationTab::Reserves, "RES"),
+                        (ActiveStationTab::Power, "PWR"),
+                        (ActiveStationTab::Refinery, "RFNY"),
+                        (ActiveStationTab::Forge, "FORGE"),
+                        (ActiveStationTab::ShipPort, "PORT"),
+                    ]
+                } else {
+                    // Only ROUTES and QUEST when flying
+                    vec![
+                        (ActiveStationTab::Routes, "ROUTES"),
+                        (ActiveStationTab::Quest, "QUEST"),
+                    ]
+                };
                 
                 let tab_width = layout.screen_width / tabs.len() as f32;
                 
