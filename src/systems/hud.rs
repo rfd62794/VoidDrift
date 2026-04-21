@@ -133,7 +133,7 @@ pub fn station_visual_system(
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
-    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
+    pub ship_query: Query<'w, 's, (Entity, &'static mut Ship), (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
     pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
@@ -305,7 +305,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     });
                                     ui.add_space(8.0);
                                     
-                                    let ship = params.ship_query.single_mut();
+                                    let (_, ship) = params.ship_query.single_mut();
                                     ui.horizontal(|ui| {
                                         ui.label(format!("SHIP POWER: {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
                                         ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
@@ -424,7 +424,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                             });
                                         }
                                         ui.separator();
-                                        let mut ship = params.ship_query.single_mut();
+                                        let (_, mut ship) = params.ship_query.single_mut();
                                         if ui.button("TOP UP SHIP [3 CELLS]").clicked() && station.power_cells >= 3 && ship.power_cells < 5 {
                                             station.power_cells -= 3; 
                                             ship.power_cells = (ship.power_cells + 3).min(5);
@@ -439,6 +439,113 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     ui.add_space(8.0);
                                     ui.label("Autonomous Ships: 1 deployed");
                                     ui.label("Status: Active mining operations");
+                                }
+                                ActiveStationTab::Quest => {
+                                    ui.heading("QUEST LOG");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.heading(egui::RichText::new("ACTIVE").color(egui::Color32::WHITE));
+                                    ui.separator();
+                                    for obj in params.quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Active) {
+                                        ui.horizontal(|ui| {
+                                            ui.label(egui::RichText::new(">").color(egui::Color32::CYAN));
+                                            ui.label(egui::RichText::new(&obj.description).strong());
+                                        });
+                                        if let (Some(curr), Some(target)) = (obj.progress_current, obj.progress_target) {
+                                            ui.add(egui::ProgressBar::new(curr as f32 / target as f32).text(format!("{}/{}", curr, target)));
+                                        }
+                                        ui.add_space(8.0);
+                                    }
+                                    ui.add_space(12.0);
+                                    
+                                    ui.heading(egui::RichText::new("COMPLETED").color(egui::Color32::GRAY));
+                                    ui.separator();
+                                    for obj in params.quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Complete) {
+                                        ui.label(egui::RichText::new(format!(" {}", obj.description)).color(egui::Color32::from_gray(140)));
+                                    }
+                                    ui.add_space(12.0);
+                                    
+                                    ui.heading(egui::RichText::new("UPCOMING").color(egui::Color32::from_gray(120)));
+                                    ui.separator();
+                                    for obj in params.quest_log.objectives.iter().filter(|o| o.state == ObjectiveState::Locked) {
+                                        ui.label(egui::RichText::new(format!(" {}", obj.description)).color(egui::Color32::from_gray(100)));
+                                    }
+                                }
+                                ActiveStationTab::Routes => {
+                                    ui.heading("NAVIGATION MAP");
+                                    ui.add_space(8.0);
+                                    
+                                    // Map toggle button
+                                    let map_label = if *params.state.get() == GameState::SpaceView { "OPEN MAP" } else { "CLOSE MAP" };
+                                    if ui.button(map_label).clicked() {
+                                        if *params.state.get() == GameState::SpaceView {
+                                            params.next_state.set(GameState::MapView);
+                                        } else {
+                                            params.next_state.set(GameState::SpaceView);
+                                        }
+                                    }
+                                    
+                                    ui.add_space(16.0);
+                                    
+                                    // Navigation targets
+                                    ui.heading("SECTORS");
+                                    ui.add_space(8.0);
+                                    
+                                    ui.horizontal(|ui| {
+                                        if ui.button("SECTOR 1").clicked() {
+                                            let (ship_entity, _) = params.ship_query.single_mut();
+                                            params.commands.entity(ship_entity).insert(AutopilotTarget {
+                                                destination: SECTOR_1_POS,
+                                                target_entity: None,
+                                            });
+                                        }
+                                        ui.separator();
+                                        if ui.button("SECTOR 2").clicked() {
+                                            let (ship_entity, _) = params.ship_query.single_mut();
+                                            params.commands.entity(ship_entity).insert(AutopilotTarget {
+                                                destination: SECTOR_2_POS,
+                                                target_entity: None,
+                                            });
+                                        }
+                                    });
+                                    ui.add_space(8.0);
+                                    ui.horizontal(|ui| {
+                                        if ui.button("SECTOR 3").clicked() {
+                                            let (ship_entity, _) = params.ship_query.single_mut();
+                                            params.commands.entity(ship_entity).insert(AutopilotTarget {
+                                                destination: SECTOR_3_POS,
+                                                target_entity: None,
+                                            });
+                                        }
+                                        ui.separator();
+                                        if ui.button("STATION").clicked() {
+                                            let (ship_entity, _) = params.ship_query.single_mut();
+                                            params.commands.entity(ship_entity).insert(AutopilotTarget {
+                                                destination: STATION_POS,
+                                                target_entity: None,
+                                            });
+                                        }
+                                    });
+                                    
+                                    ui.add_space(16.0);
+                                    ui.separator();
+                                    ui.add_space(8.0);
+                                    
+                                    // Map controls
+                                    ui.heading("MAP CONTROLS");
+                                    ui.add_space(8.0);
+                                    
+                                    if let Ok(mut map_cam) = params.cam_query.get_single_mut() {
+                                        ui.label(format!("Zoom: {:.1}x", map_cam.scale));
+                                        ui.add_space(4.0);
+                                        if ui.button("RESET ZOOM").clicked() {
+                                            map_cam.scale = MAP_OVERVIEW_SCALE;
+                                        }
+                                    }
+                                    
+                                    ui.add_space(8.0);
+                                    ui.label("Tap sectors to navigate");
+                                    ui.label("Use pinch to zoom on map");
                                 }
                                 _ => {
                                     ui.label("Content not implemented yet.");
@@ -458,7 +565,7 @@ pub fn hud_ui_system(mut params: HudParams) {
             .exact_height(layout.tab_bar_height)
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
-                let is_docked = params.ship_query.single().state == ShipState::Docked;
+                let is_docked = params.ship_query.single().1.state == ShipState::Docked;
                 
                 // Show all tabs for Step 7
                 let tabs = [
