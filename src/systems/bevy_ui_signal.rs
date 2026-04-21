@@ -17,6 +17,23 @@ pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalL
     signal_log.entries.push_back("> Bevy UI rendering active".to_string());
     signal_log.entries.push_back("> Terminal green text visible".to_string());
     
+    // STANDALONE TEXT TEST - Separate from signal strip hierarchy
+    commands.spawn((
+        Text::new("> TEST"),
+        TextFont {
+            font_size: 80.0,
+            ..default()
+        },
+        TextColor(Color::srgb(1.0, 0.0, 0.0)),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(100.0),
+            left: Val::Px(10.0),
+            ..default()
+        },
+        ZIndex(9999),
+    ));
+    
     // FINAL SIGNAL STRIP SETUP - Fixed width issue
     commands.spawn((
         Node {
