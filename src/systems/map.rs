@@ -5,7 +5,7 @@ use crate::constants::*;
 pub fn camera_focus_system(
     mut commands: Commands,
     focus_targets: Query<(Entity, &Transform), With<CameraFocusTarget>>,
-    mut cam: Query<&mut Transform, With<MainCamera>>,
+    mut cam: Query<&mut Transform, (With<MainCamera>, Without<CameraFocusTarget>)>,
     mut pan_state: ResMut<MapPanState>,
 ) {
     if let Ok((target_entity, target_transform)) = focus_targets.get_single() {
