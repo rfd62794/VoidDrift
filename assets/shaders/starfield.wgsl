@@ -41,26 +41,14 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let cam = material.camera_pos * 0.0002;  // Much less movement
     
     var stars = 0.0;
-    // Ultra-ultra-far layer - extremely dense, very dim, minimal parallax
-    stars += star_layer(uv, cam, 960.0, 0.98, 0.2);
-    // Ultra-far layer - extremely dense, very dim, minimal parallax
-    stars += star_layer(uv, cam * 1.5, 640.0, 0.97, 0.3);
-    // Far-far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 2.0, 480.0, 0.96, 0.4);
     // Far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 2.5, 320.0, 0.95, 0.5);
+    stars += star_layer(uv, cam, 480.0, 0.94, 0.3);
     // Mid-far layer - very dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 3.0, 240.0, 0.94, 0.6);
-    // Mid layer - dense, dim, minimal parallax
-    stars += star_layer(uv, cam * 3.5, 160.0, 0.92, 0.7);
+    stars += star_layer(uv, cam * 2.0, 240.0, 0.92, 0.5);
     // Mid-near layer - dense, medium, minimal parallax
-    stars += star_layer(uv, cam * 4.0, 100.0, 0.90, 0.8);
-    // Near layer - medium, bright, minimal parallax
-    stars += star_layer(uv, cam * 4.5, 50.0, 0.88, 0.9);
-    // Near-close layer - medium, bright, minimal parallax
-    stars += star_layer(uv, cam * 5.0, 25.0, 0.86, 0.95);
-    // Close layer - sparse, bright, minimal parallax
-    stars += star_layer(uv, cam * 6.0, 12.0, 0.85, 1.0);
+    stars += star_layer(uv, cam * 4.0, 80.0, 0.88, 0.7);
+    // Close layer - dense, bright, minimal parallax
+    stars += star_layer(uv, cam * 6.0, 30.0, 0.85, 0.9);
     
     stars = clamp(stars, 0.0, 1.0);
     
