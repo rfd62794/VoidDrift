@@ -283,7 +283,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                 ui.set_max_width(ui.available_width());
                                 ui.horizontal(|ui| {
                                     ui.label(format!("STATION POWER: {:.1}/{:.0}", station.power, STATION_POWER_MAX));
-                                    ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0)));
+                                    ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0));
                                     ui.separator();
                                     ui.label(format!("SHIP POWER: {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
                                     ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
