@@ -623,7 +623,7 @@ pub fn hud_ui_system(mut params: HudParams) {
             .show(ctx, |ui| {
                 // ROUTES | QUEST - each 50% width, account for internal spacing
                 let available_w = ui.available_width();
-                let tab_w = (available_w - 16.0) / 2.0; // 8px margin each side
+                let tab_w = (available_w - 20.0) / 2.0; // 10px margin each side
                 
                 ui.horizontal(|ui| {
                     ui.set_max_width(available_w);
@@ -667,7 +667,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .show(ctx, |ui| {
                     // RES | PWR | RFNY | FORGE | PORT - each 20% width, account for internal spacing
                     let available_w = ui.available_width();
-                    let tab_w = (available_w - 16.0) / 5.0; // 8px margin each side
+                    let tab_w = (available_w - 20.0) / 5.0; // 10px margin each side
                     
                     ui.horizontal(|ui| {
                         ui.set_max_width(available_w);

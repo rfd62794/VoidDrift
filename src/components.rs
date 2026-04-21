@@ -337,8 +337,8 @@ impl Default for AutoDockSettings {
     fn default() -> Self {
         Self {
             auto_unload: true,
-            auto_smelt_magnetite: false,
-            auto_smelt_carbon: false,
+            auto_smelt_magnetite: true,  // changed from false
+            auto_smelt_carbon: true,     // changed from false
         }
     }
 }
