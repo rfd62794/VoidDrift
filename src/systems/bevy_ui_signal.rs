@@ -25,7 +25,7 @@ pub fn setup_signal_strip(mut commands: Commands) {
             padding: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        BackgroundColor(Color::srgb(1.0, 0.0, 0.0)), // Bright red for visibility testing
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)), // Match egui black with 200 alpha
         ZIndex(1000), // High z-index to render over egui
         Interaction::None, // Enable click interaction
         SignalStripRoot,
@@ -49,7 +49,7 @@ pub fn setup_signal_strip(mut commands: Commands) {
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(1.0, 1.0, 1.0)), // White text
+                TextColor(Color::srgb(0.0, 0.8, 0.4)), // explicit terminal green
                 SignalEntry,
             )).id();
             println!("[Bevy UI] Created test text entity: {:?}", text_entity);
@@ -83,37 +83,39 @@ pub fn signal_strip_system(
         return;
     }
 
-    // Update signal entries
-    let display_count = if expanded.0 { 20 } else { 3 };
-    let entries: Vec<&String> = signal_log.entries.iter().rev().take(display_count).collect();
+    // Only update text if signal log has entries and we don't already have text entities
+    let entry_count = entry_query.iter().count();
+    let signal_count = signal_log.entries.len();
+    
+    if signal_count > 0 && entry_count == 0 {
+        // Create initial text entities
+        let display_count = if expanded.0 { 20 } else { 3 };
+        let entries: Vec<&String> = signal_log.entries.iter().rev().take(display_count).collect();
 
-    // Debug: Check text entities
-    println!("[Bevy UI] Text entities found: {}, Signal log entries: {}", entry_query.iter().count(), signal_log.entries.len());
+        println!("[Bevy UI] Creating {} text entities from {} signal entries", entries.len(), signal_count);
 
-    // Clear existing entries
-    for entry_entity in &entry_query {
-        println!("[Bevy UI] Despawning text entity: {:?}", entry_entity);
-        commands.entity(entry_entity).despawn_recursive();
+        // Spawn new entries
+        if let Ok(container_entity) = container_query.get_single() {
+            commands.entity(container_entity).with_children(|parent| {
+                for line in entries.iter().rev() {
+                    parent.spawn((
+                        Text::new((*line).clone()),
+                        TextFont {
+                            font_size: 14.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.0, 0.8, 0.4)), // explicit terminal green
+                        SignalEntry,
+                    ));
+                }
+            });
+        }
+    } else if signal_count == 0 && entry_count > 0 {
+        // Clear text if signal log is empty
+        println!("[Bevy UI] Clearing {} text entities - signal log empty", entry_count);
+        for entry_entity in &entry_query {
+            commands.entity(entry_entity).despawn_recursive();
+        }
     }
-
-    // Spawn new entries
-    if let Ok(container_entity) = container_query.get_single() {
-        commands.entity(container_entity).with_children(|parent| {
-            for line in entries.iter().rev() {
-                parent.spawn((
-                    Text::new((*line).clone()),
-                    TextFont {
-                        font_size: 11.0,
-                        ..default()
-                    },
-                    TextColor::from(Color::srgb(0.0, 1.0, 0.5)),
-                    Node {
-                        margin: UiRect::vertical(Val::Px(2.0)),
-                        ..default()
-                    },
-                    SignalEntry,
-                ));
-            }
-        });
-    }
+    // Otherwise, leave existing text entities alone to prevent respawning every frame
 }
