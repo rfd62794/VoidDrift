@@ -71,7 +71,7 @@ pub fn signal_strip_system(
     entry_query: Query<Entity, With<SignalEntry>>,
     mut commands: Commands,
 ) {
-    println!("=== SIGNAL STRIP SYSTEM CALLED ===");
+    eprintln!("SIGNAL_STRIP_SYSTEM_RUNNING");
 
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
