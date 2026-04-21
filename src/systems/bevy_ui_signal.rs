@@ -17,23 +17,6 @@ pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalL
     signal_log.entries.push_back("> Bevy UI rendering active".to_string());
     signal_log.entries.push_back("> Terminal green text visible".to_string());
     
-    // STANDALONE TEXT TEST - Separate from signal strip hierarchy
-    commands.spawn((
-        Text::new("> TEST"),
-        TextFont {
-            font_size: 80.0,
-            ..default()
-        },
-        TextColor(Color::srgb(1.0, 0.0, 0.0)),
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(100.0),
-            left: Val::Px(10.0),
-            ..default()
-        },
-        ZIndex(9999),
-    ));
-    
     // FINAL SIGNAL STRIP SETUP - Fixed width issue
     commands.spawn((
         Node {
@@ -99,14 +82,10 @@ pub fn signal_strip_system(
     mut entry_query: Query<&mut Text, With<SignalEntry>>,
     _commands: Commands,
 ) {
-    eprintln!("SIGNAL_STRIP_SYSTEM_RUNNING");
-
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
         node.height = if expanded.0 { Val::Px(180.0) } else { Val::Px(60.0) };
-        println!("[Bevy UI] Strip height updated to: {:?}", node.height);
     } else {
-        println!("[Bevy UI] ERROR: No signal strip root found!");
         return;
     }
 
