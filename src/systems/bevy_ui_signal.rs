@@ -10,24 +10,21 @@ pub struct SignalEntryContainer;
 #[derive(Component)]
 pub struct SignalEntry;
 
-pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalLog>) {
-    println!("[Bevy UI] setup_signal_strip called!");
-    signal_log.entries.push_back("> SIGNAL STRIP TEST".to_string());
-    
-    // Restore original signal strip setup
+pub fn setup_signal_strip(mut commands: Commands) {
+    // FINAL SIGNAL STRIP SETUP - Fixed width issue
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
-            bottom: Val::Px(0.0), // Fix: Use bottom positioning like egui version
+            bottom: Val::Px(0.0),
             left: Val::Px(0.0),
             right: Val::Px(0.0),
-            height: Val::Px(200.0), // Keep large size for visibility
+            width: Val::Percent(100.0), // CRITICAL FIX: Explicit width makes strip visible
+            height: Val::Px(60.0), // Revert to proper collapsed height
             flex_direction: FlexDirection::Column,
             padding: UiRect::all(Val::Px(4.0)),
             ..default()
         },
         BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)), // Match egui black with 200 alpha
-        ZIndex(100), // TEST 3: Increase Z-index
         SignalStripRoot,
     ))
     .with_children(|parent| {
@@ -52,23 +49,10 @@ pub fn signal_strip_system(
     entry_query: Query<Entity, With<SignalEntry>>,
     mut commands: Commands,
 ) {
-    println!("[Bevy UI] signal_strip_system called! entries: {}", signal_log.entries.len());
-
-    // ENTITY DEBUG: Check what entities actually exist
-    let strip_count = strip_query.iter().count();
-    let container_count = container_query.iter().count();
-    let entry_count = entry_query.iter().count();
-    
-    println!("[Bevy UI] ENTITY DEBUG - Strip entities: {}, Container entities: {}, Entry entities: {}", 
-             strip_count, container_count, entry_count);
-
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
-        println!("[Bevy UI] Found strip node, height: {:?}", node.height);
         node.height = if expanded.0 { Val::Px(180.0) } else { Val::Px(60.0) };
-        println!("[Bevy UI] Updated strip height to: {:?}", node.height);
     } else {
-        println!("[Bevy UI] ERROR: Signal strip root not found - setup may have failed");
         return;
     }
 

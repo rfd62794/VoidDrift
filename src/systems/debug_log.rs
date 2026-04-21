@@ -2,6 +2,9 @@ use bevy::prelude::*;
 use bevy::ui::IsDefaultUiCamera;
 use std::collections::VecDeque;
 use std::sync::Mutex;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use crate::components::*;
 use crate::systems::bevy_ui_signal::{SignalStripRoot, SignalEntryContainer, SignalEntry};
 
@@ -11,19 +14,42 @@ static DEBUG_LOG: Mutex<VecDeque<String>> = Mutex::new(VecDeque::new());
 #[derive(Resource)]
 pub struct DebugLogSystem {
     max_entries: usize,
+    log_file_path: String,
 }
 
 impl Default for DebugLogSystem {
     fn default() -> Self {
+        // Create timestamped filename
+        let now = std::time::SystemTime::now();
+        let timestamp = now.duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let filename = format!("voidrift_debug_{}.log", timestamp);
+        
         Self {
             max_entries: 1000,
+            log_file_path: filename,
         }
     }
 }
 
 pub fn setup_debug_log_system(mut commands: Commands) {
-    commands.insert_resource(DebugLogSystem::default());
-    println!("[DEBUG LOG] Debug logging system initialized");
+    let debug_system = DebugLogSystem::default();
+    let log_path = debug_system.log_file_path.clone();
+    
+    commands.insert_resource(debug_system);
+    
+    // Create initial log file
+    if let Ok(mut file) = File::create(&log_path) {
+        let _ = writeln!(file, "=== VOIDRIFT DEBUG LOG STARTED ===");
+        let _ = writeln!(file, "Timestamp: {}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs());
+        let _ = writeln!(file, "Log file: {}", log_path);
+        let _ = writeln!(file, "=== LOG ENTRIES ===");
+        let _ = file.flush();
+        println!("[DEBUG LOG] Debug logging system initialized - writing to: {}", log_path);
+    } else {
+        println!("[DEBUG LOG] WARNING: Could not create log file: {}", log_path);
+    }
 }
 
 pub fn log_debug_info(message: String) {
@@ -31,18 +57,54 @@ pub fn log_debug_info(message: String) {
         if log.len() >= 1000 {
             log.pop_front();
         }
-        log.push_back(format!("[{:?}] {}", std::thread::current().id(), message));
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis();
+        log.push_back(format!("[{}] {}", timestamp, message));
     }
 }
 
+fn write_log_to_file(log_path: &str, entries: &[String]) -> Result<(), std::io::Error> {
+    let mut file = File::create(log_path)?;
+    
+    // Write header
+    writeln!(file, "=== VOIDRIFT DEBUG LOG ===")?;
+    writeln!(file, "Generated: {}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs())?;
+    writeln!(file, "Total entries: {}", entries.len())?;
+    writeln!(file, "=== LOG ENTRIES ===")?;
+    
+    // Write all entries
+    for entry in entries {
+        writeln!(file, "{}", entry)?;
+    }
+    
+    writeln!(file, "=== END LOG ===")?;
+    file.flush()?;
+    Ok(())
+}
+
 pub fn flush_debug_log_system(
-    _debug_log: Res<DebugLogSystem>,
+    debug_log: Res<DebugLogSystem>,
     // Add any other queries you want to monitor
 ) {
     if let Ok(log) = DEBUG_LOG.lock() {
-        println!("[DEBUG LOG] === FLUSHING {} ENTRIES ===", log.len());
-        for entry in log.iter() {
-            println!("{}", entry);
+        // Write to console (for immediate feedback)
+        println!("[DEBUG LOG] === FLUSHING {} ENTRIES TO FILE ===", log.len());
+        
+        // Write to file
+        let log_entries: Vec<String> = log.iter().cloned().collect();
+        match write_log_to_file(&debug_log.log_file_path, &log_entries) {
+            Ok(()) => {
+                println!("[DEBUG LOG] Successfully wrote {} entries to: {}", log.len(), debug_log.log_file_path);
+            }
+            Err(e) => {
+                println!("[DEBUG LOG] ERROR writing to file {}: {}", debug_log.log_file_path, e);
+                // Fallback to console output
+                for entry in log.iter() {
+                    println!("{}", entry);
+                }
+            }
         }
         println!("[DEBUG LOG] === END FLUSH ===");
     }
@@ -88,9 +150,27 @@ pub fn log_camera_ui_state(
     }
 }
 
+// Periodic flush system - runs every 5 seconds
+pub fn periodic_flush_debug_log_system(debug_log: Res<DebugLogSystem>) {
+    static mut LAST_FLUSH: u64 = 0;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    
+    unsafe {
+        if now - LAST_FLUSH >= 5 {
+            LAST_FLUSH = now;
+            log_debug_info("=== PERIODIC FLUSH TRIGGERED ===".to_string());
+            flush_debug_log_system(debug_log);
+        }
+    }
+}
+
 // System registration debug logging
 pub fn log_system_registration() {
     log_debug_info("Bevy UI signal strip system registered".to_string());
     log_debug_info("Camera debug system registered".to_string());
     log_debug_info("Debug log flush system registered".to_string());
+    log_debug_info("Periodic debug log flush system registered".to_string());
 }

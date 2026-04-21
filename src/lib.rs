@@ -84,7 +84,7 @@ fn main() {
             // --- Debug Logging ---
             systems::debug_log::log_bevy_ui_state,
             systems::debug_log::log_camera_ui_state,
-            systems::debug_log::flush_debug_log_system,
+            systems::debug_log::periodic_flush_debug_log_system,
             systems::ui::station_visual_system,
             systems::economy::station_status_system,
             systems::economy::station_maintenance_system,
