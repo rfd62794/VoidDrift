@@ -18,15 +18,15 @@ pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalL
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(0.0), // TEST 2: Change to top positioning
+            bottom: Val::Px(0.0), // Fix: Use bottom positioning like egui version
             left: Val::Px(0.0),
             right: Val::Px(0.0),
-            height: Val::Px(60.0),
+            height: Val::Px(200.0), // Keep large size for visibility
             flex_direction: FlexDirection::Column,
             padding: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)),
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)), // Match egui black with 200 alpha
         ZIndex(100), // TEST 3: Increase Z-index
         SignalStripRoot,
     ))
