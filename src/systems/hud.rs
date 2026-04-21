@@ -621,9 +621,9 @@ pub fn hud_ui_system(mut params: HudParams) {
             .exact_height(48.0)
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
-                // ROUTES | QUEST - each 50% width, always
+                // ROUTES | QUEST - each 50% width, account for internal spacing
                 let available_w = ui.available_width();
-                let tab_w = available_w / 2.0;
+                let tab_w = (available_w - 8.0) / 2.0; // 4px margin each side
                 
                 ui.horizontal(|ui| {
                     ui.set_max_width(available_w);
@@ -665,9 +665,9 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .exact_height(48.0)
                 .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
-                    // RES | PWR | RFNY | FORGE | PORT - each 20% width
+                    // RES | PWR | RFNY | FORGE | PORT - each 20% width, account for internal spacing
                     let available_w = ui.available_width();
-                    let tab_w = available_w / 5.0;
+                    let tab_w = (available_w - 8.0) / 5.0; // 4px margin each side
                     
                     ui.horizontal(|ui| {
                         ui.set_max_width(available_w);
