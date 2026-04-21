@@ -117,8 +117,6 @@ pub fn hud_ui_system(mut params: HudParams) {
 
     // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
 // [PHASE B] SIGNAL STRIP (Bottom) - MIGRATED TO BEVY UI
-    // egui version disabled during migration
-    /*
     let strip_height = if params.expanded.0 { 180.0 } else { 60.0 };
 
     egui::TopBottomPanel::bottom("signal_strip")
@@ -149,7 +147,6 @@ pub fn hud_ui_system(mut params: HudParams) {
                     });
                 });
         });
-    */
 
     if params.opening.phase != OpeningPhase::Complete {
         return;

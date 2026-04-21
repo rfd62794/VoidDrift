@@ -45,7 +45,6 @@ fn main() {
         .insert_resource(MapPanState::default())
         .add_systems(Startup, (
             systems::setup::setup_world,
-            systems::bevy_ui_signal::setup_signal_strip,
             systems::debug_log::setup_debug_log_system,
         ))
         .add_systems(Update, (
@@ -79,13 +78,7 @@ fn main() {
         ))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
-            systems::bevy_ui_signal::signal_strip_interaction,
-            systems::bevy_ui_signal::signal_strip_system,
             systems::ui::hud_ui_system,
-            // --- Debug Logging ---
-            systems::debug_log::log_bevy_ui_state,
-            systems::debug_log::log_camera_ui_state,
-            systems::debug_log::periodic_flush_debug_log_system,
             systems::ui::station_visual_system,
             systems::economy::station_status_system,
             systems::economy::station_maintenance_system,

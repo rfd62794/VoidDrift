@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
-use bevy::ui::IsDefaultUiCamera;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::constants::*;
@@ -128,7 +127,6 @@ fn spawn_starfield(
 fn spawn_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
-        IsDefaultUiCamera, // Critical: Makes this camera render Bevy UI
         OrthographicProjection {
             far: 1200.0, // Headroom for Z_STARS_FAR (-100) from Z=1000
             ..OrthographicProjection::default_2d()
@@ -137,7 +135,6 @@ fn spawn_camera(commands: &mut Commands) {
         Transform::from_xyz(0.0, 0.0, 1000.0),
         EguiContextSettings {
             scale_factor: EGUI_SCALE,
-            run_manually: true,
             ..default()
         },
     ));
