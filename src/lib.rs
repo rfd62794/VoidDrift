@@ -49,6 +49,7 @@ fn main() {
         .add_systems(PreUpdate, systems::hud::ui_layout_system)
         .add_systems(PreUpdate, systems::hud::world_view_rect_system)
         .add_systems(PreUpdate, systems::hud::camera_viewport_system)
+        .add_systems(PreUpdate, systems::hud::update_tab_bar_height_system)
         .add_systems(Startup, (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,

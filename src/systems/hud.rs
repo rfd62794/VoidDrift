@@ -19,9 +19,9 @@ pub fn ui_layout_system(
 
     // Bottom drawer dimensions
     let handle_height = 32.0;
-    let tab_bar_height = 48.0;
     let signal_strip_height = if landscape { 56.0 } else { 64.0 };
     let world_view_min = h * 0.45;
+    let tab_bar_height = 48.0; // Default for ui_layout_system
     let content_area_height = h - handle_height - tab_bar_height - signal_strip_height - world_view_min;
 
     *layout = UiLayout {
@@ -90,6 +90,25 @@ pub fn camera_viewport_system(
 
 fn is_touch_in_world_view(touch_pos: Vec2, rect: &WorldViewRect) -> bool {
     touch_pos.y < rect.height  // Touch is above the drawer area
+}
+
+pub fn update_tab_bar_height_system(
+    layout: Res<UiLayout>,
+    ship_query: Query<(Entity, &Ship), (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
+    drawer: Res<DrawerState>,
+    mut layout_res: ResMut<UiLayout>,
+) {
+    let is_docked = ship_query.single().1.state == ShipState::Docked;
+    let new_tab_bar_height = if is_docked { 96.0 } else { 48.0 };
+    
+    if layout.tab_bar_height != new_tab_bar_height {
+        layout_res.tab_bar_height = new_tab_bar_height;
+        
+        // Recalculate content area height
+        let new_content_height = layout.screen_height - layout.handle_height 
+            - new_tab_bar_height - layout.signal_strip_height - layout.world_view_min_height;
+        layout_res.content_area_height = new_content_height;
+    }
 }
 
 pub fn ship_cargo_display_system(
@@ -241,10 +260,10 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .exact_height(layout.content_area_height)
                 .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
-                    let available = ui.available_width(); // READ ACTUAL AVAILABLE WIDTH
+                    let available_w = ui.available_width(); // read HERE, before ScrollArea
                     egui::ScrollArea::vertical()
                         .show(ui, |ui| {
-                            ui.set_width(available); // USE ACTUAL, NOT layout.content_width
+                            ui.set_max_width(available_w); // cap at available, don't expand
                             ui.add_space(8.0);
                             
                             // Render RESERVES and REFINERY tabs for now
@@ -317,7 +336,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Magnetite -> Power Cells queue card
                                     render_queue_card(
                                         ui, 
-                                        available, 
+                                        available_w, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.magnetite_refinery, 
@@ -334,7 +353,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Carbon -> Hull Plates queue card
                                     render_queue_card(
                                         ui, 
-                                        available, 
+                                        available_w, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.carbon_refinery, 
@@ -377,7 +396,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Hull Plates -> Ship Hull queue card
                                     render_queue_card(
                                         ui, 
-                                        available, 
+                                        available_w, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.hull_forge, 
@@ -394,7 +413,7 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     // Power Cells -> AI Core queue card
                                     render_queue_card(
                                         ui, 
-                                        available, 
+                                        available_w, 
                                         &layout, 
                                         &mut station, 
                                         &mut queues.core_fabricator, 
@@ -609,42 +628,24 @@ pub fn hud_ui_system(mut params: HudParams) {
         }
     }
 
-    // ---- 3. TAB BAR (Bottom) ----
+    // ---- 3. PRIMARY TAB BAR (Bottom) - Always visible when drawer not collapsed ----
     if *params.drawer_state != DrawerState::Collapsed {
-        egui::TopBottomPanel::bottom("tab_bar")
+        egui::TopBottomPanel::bottom("tab_bar_primary")
             .resizable(false)
-            .exact_height(layout.tab_bar_height)
+            .exact_height(48.0)
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
-                let is_docked = params.ship_query.single().1.state == ShipState::Docked;
-                
-                // Show different tabs based on dock state
-                let tabs: Vec<(ActiveStationTab, &str)> = if is_docked {
-                    // All tabs when docked
-                    vec![
-                        (ActiveStationTab::Routes, "ROUTES"),
-                        (ActiveStationTab::Quest, "QUEST"),
-                        (ActiveStationTab::Reserves, "RES"),
-                        (ActiveStationTab::Power, "PWR"),
-                        (ActiveStationTab::Refinery, "RFNY"),
-                        (ActiveStationTab::Forge, "FORGE"),
-                        (ActiveStationTab::ShipPort, "PORT"),
-                    ]
-                } else {
-                    // Only ROUTES and QUEST when flying
-                    vec![
-                        (ActiveStationTab::Routes, "ROUTES"),
-                        (ActiveStationTab::Quest, "QUEST"),
-                    ]
-                };
-                
-                let tab_width = layout.screen_width / tabs.len() as f32;
+                // ROUTES | QUEST - each 50% width, always
+                let tab_w = ui.available_width() / 2.0;
                 
                 ui.horizontal(|ui| {
-                    for (tab, label) in tabs {
+                    for (tab, label) in [
+                        (ActiveStationTab::Routes, "ROUTES"),
+                        (ActiveStationTab::Quest, "QUEST"),
+                    ] {
                         let selected = *params.active_tab == tab;
                         let button = egui::Button::new(label)
-                            .min_size(egui::vec2(tab_width, layout.tab_bar_height))
+                            .min_size(egui::vec2(tab_w, 48.0))
                             .fill(if selected { 
                                 egui::Color32::from_rgb(40, 40, 60) 
                             } else { 
@@ -667,7 +668,53 @@ pub fn hud_ui_system(mut params: HudParams) {
             });
     }
 
-    // ---- 4. HANDLE BAR (Bottom) ----
+    // ---- 4. SECONDARY TAB BAR (Bottom) - Only when docked ----
+    if *params.drawer_state != DrawerState::Collapsed {
+        let is_docked = params.ship_query.single().1.state == ShipState::Docked;
+        if is_docked {
+            egui::TopBottomPanel::bottom("tab_bar_secondary")
+                .resizable(false)
+                .exact_height(48.0)
+                .frame(egui::Frame::NONE)
+                .show(ctx, |ui| {
+                    // RES | PWR | RFNY | FORGE | PORT - each 20% width
+                    let tab_w = ui.available_width() / 5.0;
+                    
+                    ui.horizontal(|ui| {
+                        for (tab, label) in [
+                            (ActiveStationTab::Reserves, "RES"),
+                            (ActiveStationTab::Power, "PWR"),
+                            (ActiveStationTab::Refinery, "RFNY"),
+                            (ActiveStationTab::Forge, "FORGE"),
+                            (ActiveStationTab::ShipPort, "PORT"),
+                        ] {
+                            let selected = *params.active_tab == tab;
+                            let button = egui::Button::new(label)
+                                .min_size(egui::vec2(tab_w, 48.0))
+                                .fill(if selected { 
+                                    egui::Color32::from_rgb(40, 40, 60) 
+                                } else { 
+                                    egui::Color32::from_rgb(20, 20, 40) 
+                                })
+                                .stroke(if selected { 
+                                    egui::Stroke::new(2.0, egui::Color32::CYAN) 
+                                } else { 
+                                    egui::Stroke::new(1.0, egui::Color32::from_gray(60)) 
+                                });
+                            
+                            if ui.add(button).clicked() {
+                                if *params.drawer_state == DrawerState::TabsOnly {
+                                    *params.drawer_state = DrawerState::Expanded;
+                                }
+                                *params.active_tab = tab;
+                            }
+                        }
+                    });
+                });
+        }
+    }
+
+    // ---- 5. HANDLE BAR (Bottom) ----
     egui::TopBottomPanel::bottom("drawer_handle")
         .resizable(false)
         .exact_height(layout.handle_height)
@@ -709,14 +756,14 @@ pub fn hud_ui_system(mut params: HudParams) {
             });
         });
 
-    // ---- 5. CENTRAL PANEL (World View) ----
+    // ---- 6. CENTRAL PANEL (World View) ----
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |_ui| {
             // World rendered by Bevy, not egui
         });
 
-    // ---- 6. TUTORIAL POP-UP ----
+    // ---- 7. TUTORIAL POP-UP ----
     if let Some(popup) = params.tutorial.active.clone() {
         egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
             .id(egui::Id::new("tutorial_popup"))
