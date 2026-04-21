@@ -11,7 +11,8 @@ pub struct SignalEntryContainer;
 pub struct SignalEntry;
 
 pub fn setup_signal_strip(mut commands: Commands) {
-    commands
+    println!("[Bevy UI] Setting up signal strip");
+    let entity = commands
         .spawn((
             Node {
                 position_type: PositionType::Absolute,
@@ -37,7 +38,9 @@ pub fn setup_signal_strip(mut commands: Commands) {
                 },
                 SignalEntryContainer,
             ));
-        });
+        })
+        .id();
+    println!("[Bevy UI] Signal strip root entity: {:?}", entity);
 }
 
 pub fn signal_strip_system(
@@ -48,10 +51,27 @@ pub fn signal_strip_system(
     entry_query: Query<Entity, With<SignalEntry>>,
     mut commands: Commands,
 ) {
+    // Debug: Check if system is running
+    static mut FRAME_COUNT: u32 = 0;
+    unsafe { 
+        FRAME_COUNT += 1;
+        if FRAME_COUNT % 300 == 0 { // Every ~5 seconds at 60 FPS
+            println!("[Bevy UI] Signal strip system running, entries: {}", signal_log.entries.len());
+        }
+    }
+
     // Update strip height based on expanded state
     if let Ok(mut node) = strip_query.get_single_mut() {
         node.height = if expanded.0 { Val::Px(180.0) } else { Val::Px(60.0) };
     } else {
+        // Debug: Check if signal strip root exists
+        static mut LAST_WARNING: u32 = 0;
+        unsafe {
+            LAST_WARNING += 1;
+            if LAST_WARNING % 300 == 0 {
+                println!("[Bevy UI] Signal strip root not found - setup may have failed");
+            }
+        }
         return;
     }
 
