@@ -15,7 +15,6 @@ pub fn setup_world(
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     init_quest_log(&mut commands);
-    spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
     spawn_player_ship(&mut commands, &mut meshes, &mut materials, &asset_server);
     spawn_station(&mut commands, &mut meshes, &mut materials);
@@ -83,47 +82,6 @@ fn init_quest_log(commands: &mut Commands) {
     });
 }
 
-fn spawn_starfield(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-) {
-    let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
-    let far_mat  = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
-        alpha_mode: AlphaMode2d::Opaque,
-        ..default()
-    });
-    let near_mat = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
-        alpha_mode: AlphaMode2d::Opaque,
-        ..default()
-    });
-    // Stars are fully opaque and pushed far back to ensure Opaque2d phase
-    // and avoid Z-fighting/shimmering on mobile hardware.
-    let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
-    let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
-    for _ in 0..150 {
-        let x: f32 = rng.gen_range(-700.0..700.0);
-        let y: f32 = rng.gen_range(-500.0..500.0);
-        commands.spawn((
-            StarLayer(0.05),
-            Mesh2d(star_sm.clone()),
-            MeshMaterial2d(far_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_FAR),
-        ));
-    }
-    for _ in 0..50 {
-        let x: f32 = rng.gen_range(-700.0..700.0);
-        let y: f32 = rng.gen_range(-500.0..500.0);
-        commands.spawn((
-            StarLayer(0.15),
-            Mesh2d(star_lg.clone()),
-            MeshMaterial2d(near_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_NEAR),
-        ));
-    }
-}
 
 fn spawn_camera(commands: &mut Commands) {
     commands.spawn((

@@ -69,38 +69,6 @@ pub fn ship_rotation_system(
     }
 }
 
-/// Scrolls all star entities at their layer's parallax speed and wraps them at screen edges.
-/// Stars track camera movement at (1 - parallax_factor) speed, creating the illusion
-/// that far stars (factor=0.05) barely drift while near stars (0.15) move slightly more.
-pub fn starfield_scroll_system(
-    cam_query: Query<&Transform, (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
-    mut star_query: Query<(&StarLayer, &mut Transform), (Without<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
-    cam_delta: Res<CameraDelta>,
-) {
-    // DEVICE-CALIBRATED: These bounds are tuned for the Moto G 2025 screen
-    // (≈393×851 logical px at scale 1.0). If the game targets other screen sizes,
-    // revisit these values — too small causes star pop-in at screen edges,
-    // too large wastes update budget on off-screen entities.
-    const WRAP_X: f32 = 700.0;
-    const WRAP_Y: f32 = 500.0;
-    let cam_pos = cam_query.single().translation.truncate();
-
-    for (layer, mut transform) in star_query.iter_mut() {
-        // Stars advance by (1 - parallax) of camera delta → they appear to drift
-        // backward at parallax-factor speed relative to camera.
-        transform.translation.x += cam_delta.0.x * (1.0 - layer.0);
-        transform.translation.y += cam_delta.0.y * (1.0 - layer.0);
-
-        // Wrap when the star exits the ±WRAP window around camera.
-        let rel_x = transform.translation.x - cam_pos.x;
-        let rel_y = transform.translation.y - cam_pos.y;
-        if      rel_x >  WRAP_X { transform.translation.x -= WRAP_X * 2.0; }
-        else if rel_x < -WRAP_X { transform.translation.x += WRAP_X * 2.0; }
-        if      rel_y >  WRAP_Y { transform.translation.y -= WRAP_Y * 2.0; }
-        else if rel_y < -WRAP_Y { transform.translation.y += WRAP_Y * 2.0; }
-    }
-}
-
 pub fn station_rotation_system(
     time: Res<Time>,
     mut station_query: Query<(&mut Station, &Transform), (Without<Ship>, Without<AutonomousShip>, Without<StationVisualsContainer>, Without<AsteroidField>, Without<Berth>)>,

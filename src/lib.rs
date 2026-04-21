@@ -31,6 +31,7 @@ fn main() {
             ..default()
         }))
         .add_plugins(EguiPlugin) // UiPlugin automatically included via bevy_ui feature
+        .add_plugins(bevy::sprite::Material2dPlugin::<systems::starfield::StarfieldMaterial>::default())
         .init_state::<GameState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
@@ -51,12 +52,13 @@ fn main() {
         .add_systems(PreUpdate, systems::hud::camera_viewport_system)
         .add_systems(Startup, (
             systems::setup::setup_world,
+            systems::starfield::setup_starfield,
             systems::debug_log::setup_debug_log_system,
         ))
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
             systems::map::camera_follow_system,                
-            systems::visuals::starfield_scroll_system,
+            systems::starfield::update_starfield,
             systems::visuals::station_rotation_system,
             systems::autopilot::docked_ship_system,
             systems::autonomous::docked_autonomous_ship_system, // Chain after rotation to avoid jitter
