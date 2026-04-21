@@ -209,7 +209,6 @@ pub struct HudParams<'w, 's> {
     pub tutorial: ResMut<'w, TutorialState>,
     pub pan_state: ResMut<'w, MapPanState>,
     pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
-    pub world: &'w World,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -626,8 +625,6 @@ pub fn hud_ui_system(mut params: HudParams) {
                                         
                                         if ui.button("UNFOCUS CAMERA").clicked() {
                                             params.pan_state.is_focused = false;
-                                            // Initialize offset to current ship position when unfocusing
-                                            // This will be handled by the existing camera system
                                         }
                                     } else {
                                         ui.label(egui::RichText::new("FREE CAMERA")
@@ -644,13 +641,8 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     ui.add_space(4.0);
                                     
                                     // Show current camera state
-                                    if let Ok(mut cam) = params.cam_query.get_single_mut() {
+                                    if let Ok(cam) = params.cam_query.get_single() {
                                         ui.label(format!("Current Zoom: {:.1}x", cam.scale));
-                                        ui.add_space(4.0);
-                                        
-                                        if ui.button("RESET ZOOM").clicked() {
-                                            cam.scale = 1.0;
-                                        }
                                     }
                                     
                                     ui.add_space(16.0);
