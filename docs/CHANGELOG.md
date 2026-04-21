@@ -60,6 +60,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Bevy UI Migration + Code Refactor] — Planned — NOT YET IMPLEMENTED
+### Planned
+- Replace all bevy_egui panels with native Bevy UI nodes (flexbox layout)
+- Add `bevy_ui`, `bevy_picking`, `bevy_ui_picking_backend` feature flags to Cargo.toml
+- Percentage-based layout for portrait (720×1604) and landscape (1200×2000)
+- Signal strip as persistent bottom panel (64px, always visible)
+- Left nav (30% portrait / 20% landscape) and context panel
+- `Pointer<Click>` observers replacing deprecated `Interaction` component
+- Split `setup.rs` (676 lines) into focused spawn modules
+- Split `narrative.rs` (450 lines) into opening_sequence, signal, tutorial
+- Split `ui.rs` (454 lines) into hud, station_tabs, quest
+- Remove `CargoBarFill` dead component (never queried)
+- Fix `quest_update_system` not registered in Update schedule
+- Fix `autopilot_system` double-registration
+### Architecture
+- Portrait and landscape handled by single layout system with orientation check
+- egui removed entirely after all panels migrated and verified on device
+
+## [Economy Redesign] — Planned — NOT YET IMPLEMENTED
+### Planned
+- Three resource tracks: Metal (Magnetite/Iron/Carbon/Tungsten/Titanite), Gas (Helium), Crystal
+- FORGE department (replaces SMELTER/REFINERY) — ore to ingots, five parallel queues
+- CRAFTER department (replaces FORGE) — ingots to components and composites
+- Repair Kit as opening repair resource (5 kits, replaces 25 Power Cells)
+- Power Cells moved to Crystal track (mid-game resource)
+- Helium as passive secondary yield from all asteroid mining
+- Engine tier system: Mk I (180.0) through Mk V (500.0), permanent upgrades
+- Fuel Boost system: optional consumable speed burst (×1.8 Fuel Cell / ×2.4 Plasma Cell)
+- Void Core as three-material MacGuffin requiring all three resource tracks
+- Stargate as Precursor artifact requiring Void Core to activate
+- Orbital stations above planetary bodies; player never lands
+- Revised 10-objective quest chain teaching resource tracks sequentially
+### Design Canon
+- Full specification in `docs/design/ECONOMY.md`
+- Stargate and galaxy design in `docs/design/STARGATE.md`
+
+---
+
 ## [0.1.0] — 2026-04-18
 Initial Prototype pass. Features navigation, basic mining, egui HUD, and repair loop.
 ### Technical
