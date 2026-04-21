@@ -23,6 +23,7 @@ pub fn setup_world(
     spawn_sectors(&mut commands, &mut meshes, &mut materials, &asset_server);
     spawn_map_connectors(&mut commands, &mut meshes, &mut materials);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
+    spawn_uncharted_regions(commands, &mut meshes, &mut materials);
 }
 
 fn init_quest_log(commands: &mut Commands) {
@@ -161,7 +162,7 @@ fn spawn_player_ship(
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-        Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
+        Transform::from_xyz(OPENING_START_POS.x, OPENING_START_POS.y, Z_SHIP),
     ))
     .with_children(|parent| {
         // [Z SYSTEM] Parent Z_SHIP (1.0) + local offsets
@@ -704,4 +705,35 @@ pub fn generate_crystal_mesh(seed: u64) -> Mesh {
     for i in 1..vertex_count { indices.extend_from_slice(&[0, i, i + 1]); }
     indices.extend_from_slice(&[0, vertex_count, 1]);
     Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
+}
+
+pub fn spawn_uncharted_regions(
+    mut commands: Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    for (position, label) in UNCHARTED_REGIONS {
+        commands.spawn((
+            MapMarker,
+            MapElement,
+            Mesh2d(meshes.add(Circle::new(8.0))),
+            MeshMaterial2d(materials.add(ColorMaterial {
+                color: Color::srgba(100.0, 100.0, 120.0, 0.3), // Dim, semi-transparent
+                alpha_mode: AlphaMode2d::Blend,
+                ..default()
+            })),
+            Transform::from_xyz(position.x, position.y, Z_MAP_MARKERS),
+            Visibility::Hidden,
+        ));
+        
+        // Add label for uncharted region
+        commands.spawn((
+            MapElement,
+            Text2d::new("?"),
+            TextFont { font_size: 16.0, ..default() },
+            TextColor(Color::srgba(150.0, 150.0, 170.0, 0.6)),
+            Transform::from_xyz(position.x, position.y - 20.0, Z_MAP_MARKERS + 0.1),
+            Visibility::Hidden,
+        ));
+    }
 }
