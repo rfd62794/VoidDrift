@@ -718,7 +718,7 @@ pub fn spawn_uncharted_regions(
             MapElement,
             Mesh2d(meshes.add(Circle::new(8.0))),
             MeshMaterial2d(materials.add(ColorMaterial {
-                color: Color::srgba(100.0, 100.0, 120.0, 0.3), // Dim, semi-transparent
+                color: Color::srgba(0.39, 0.39, 0.47, 0.3), // dim blue-grey, 30% opacity
                 alpha_mode: AlphaMode2d::Blend,
                 ..default()
             })),
@@ -731,7 +731,7 @@ pub fn spawn_uncharted_regions(
             MapElement,
             Text2d::new("?"),
             TextFont { font_size: 16.0, ..default() },
-            TextColor(Color::srgba(150.0, 150.0, 170.0, 0.6)),
+            TextColor(Color::srgba(0.59, 0.59, 0.67, 0.6)), // slightly brighter, 60% opacity
             Transform::from_xyz(position.x, position.y - 20.0, Z_MAP_MARKERS + 0.1),
             Visibility::Hidden,
         ));
