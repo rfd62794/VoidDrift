@@ -38,15 +38,17 @@ fn star_layer(uv: vec2<f32>, cam: vec2<f32>, scale: f32, threshold: f32, brightn
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let uv = in.uv;
-    let cam = material.camera_pos * 0.001;
+    let cam = material.camera_pos * 0.0002;  // Much less movement
     
     var stars = 0.0;
-    // Far layer - dense, dim, slow parallax
-    stars += star_layer(uv, cam, 60.0, 0.94, 0.5);
-    // Mid layer - medium, medium parallax
-    stars += star_layer(uv, cam * 2.0, 30.0, 0.92, 0.7);
-    // Near layer - sparse, bright, fast parallax
-    stars += star_layer(uv, cam * 4.0, 15.0, 0.90, 1.0);
+    // Far layer - very dense, dim, minimal parallax
+    stars += star_layer(uv, cam, 120.0, 0.96, 0.4);
+    // Mid layer - dense, dim, minimal parallax
+    stars += star_layer(uv, cam * 1.5, 80.0, 0.94, 0.5);
+    // Near layer - dense, medium, minimal parallax
+    stars += star_layer(uv, cam * 2.0, 50.0, 0.92, 0.6);
+    // Close layer - sparse, bright, minimal parallax
+    stars += star_layer(uv, cam * 3.0, 25.0, 0.88, 0.8);
     
     stars = clamp(stars, 0.0, 1.0);
     
