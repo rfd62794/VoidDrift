@@ -622,9 +622,11 @@ pub fn hud_ui_system(mut params: HudParams) {
             .frame(egui::Frame::NONE)
             .show(ctx, |ui| {
                 // ROUTES | QUEST - each 50% width, always
-                let tab_w = ui.available_width() / 2.0;
+                let available_w = ui.available_width();
+                let tab_w = available_w / 2.0;
                 
                 ui.horizontal(|ui| {
+                    ui.set_max_width(available_w);
                     for (tab, label) in [
                         (ActiveStationTab::Routes, "ROUTES"),
                         (ActiveStationTab::Quest, "QUEST"),
@@ -664,9 +666,11 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .frame(egui::Frame::NONE)
                 .show(ctx, |ui| {
                     // RES | PWR | RFNY | FORGE | PORT - each 20% width
-                    let tab_w = ui.available_width() / 5.0;
+                    let available_w = ui.available_width();
+                    let tab_w = available_w / 5.0;
                     
                     ui.horizontal(|ui| {
+                        ui.set_max_width(available_w);
                         for (tab, label) in [
                             (ActiveStationTab::Reserves, "RES"),
                             (ActiveStationTab::Power, "PWR"),
