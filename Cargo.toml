@@ -22,7 +22,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 bevy = { version = "0.15.3", default-features = false, features = [
     "bevy_winit",
-    "bevy_window",
+    "bevy_window", 
     "bevy_render",
     "bevy_sprite",
     "bevy_text",
@@ -37,7 +37,6 @@ bevy_egui = "0.33.0"
 bevy_kira_audio = "0.21.0"
 bevy_log = "0.15.3"
 rand = "0.8"
-bevy_mod_picking = { version = "0.20", features = ["backend_egui"] }
 
 # ----------------------------------------------------------------------------
 # serde, rand, etc. are deferred to Phase 1+.

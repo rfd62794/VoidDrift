@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::Mutex;
+use bevy::prelude::*;
 
 // Global debug log buffer
 static DEBUG_LOG: Mutex<VecDeque<String>> = Mutex::new(VecDeque::new());
