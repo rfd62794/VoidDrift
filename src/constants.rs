@@ -29,12 +29,25 @@ pub const AI_CORE_COST: u32 = 55;
 use bevy::math::Vec2;
 use bevy::prelude::Color;
 pub const STATION_POS: Vec2      = Vec2::new(0.0, 0.0);
-pub const SECTOR_1_POS: Vec2     = Vec2::new(320.0, 140.0);   // Magnetite — basic
-pub const SECTOR_2_POS: Vec2     = Vec2::new(-220.0, 340.0);  // Iron — basic
-pub const SECTOR_3_POS: Vec2     = Vec2::new(380.0, -280.0);  // Carbon — basic
-pub const SECTOR_4_POS: Vec2     = Vec2::new(-520.0, -380.0); // Tungsten — Tungsten Laser gated
-pub const SECTOR_5_POS: Vec2     = Vec2::new(680.0, 320.0);   // Titanite — Tungsten Laser gated
-pub const SECTOR_6_POS: Vec2     = Vec2::new(-650.0, 520.0);  // Crystal Core — Composite Laser gated
+pub const SECTOR_1_POS: Vec2     = Vec2::new(520.0, 220.0);   // Magnetite - Further but still first destination
+pub const SECTOR_2_POS: Vec2     = Vec2::new(-420.0, 580.0);  // Iron - Different quadrant, further
+pub const SECTOR_3_POS: Vec2     = Vec2::new(680.0, -480.0);  // Carbon - Further, different direction
+pub const SECTOR_4_POS: Vec2     = Vec2::new(-950.0, -720.0); // Tungsten - Feels genuinely distant
+pub const SECTOR_5_POS: Vec2     = Vec2::new(1200.0, 580.0);  // Titanite - Far frontier
+pub const SECTOR_6_POS: Vec2     = Vec2::new(-1150.0, 950.0); // Crystal - Deep system
+
+// Uncharted regions - visual markers only, imply infinite space
+pub const UNCHARTED_REGIONS: [(Vec2, &str); 6] = [
+    (Vec2::new(2000.0, 1500.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+    (Vec2::new(-1800.0, 900.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+    (Vec2::new(1500.0, -1200.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+    (Vec2::new(-1600.0, -1400.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+    (Vec2::new(2200.0, 0.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+    (Vec2::new(-2000.0, -600.0), "UNCHARTED REGION. SIGNAL TOO WEAK TO RESOLVE."),
+];
+
+// Opening sequence starting position - far from station for cinematic arrival
+pub const OPENING_START_POS: Vec2 = Vec2::new(-2000.0, -1500.0);
 
 pub const MAP_STRATEGIC_SCALE: f32 = 8.0;
 pub const ZOOM_MIN: f32   = 0.3;   // most zoomed in
