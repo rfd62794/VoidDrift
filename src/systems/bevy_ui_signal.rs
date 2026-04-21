@@ -10,18 +10,37 @@ pub struct SignalEntryContainer;
 #[derive(Component)]
 pub struct SignalEntry;
 
-pub fn setup_signal_strip(mut commands: Commands) {
-    // DIAGNOSTIC: Full-screen red panel to test Bevy UI rendering
+pub fn setup_signal_strip(mut commands: Commands, mut signal_log: ResMut<SignalLog>) {
+    // TEST 1: Force visible content
+    signal_log.entries.push_back("> SIGNAL STRIP TEST".to_string());
+    
+    // Restore original signal strip setup
     commands.spawn((
         Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
             position_type: PositionType::Absolute,
+            top: Val::Px(0.0), // TEST 2: Change to top positioning
+            left: Val::Px(0.0),
+            right: Val::Px(0.0),
+            height: Val::Px(60.0),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        BackgroundColor(Color::srgb(1.0, 0.0, 0.0)),
-        ZIndex(100),
-    ));
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.78)),
+        SignalStripRoot,
+    ))
+    .with_children(|parent| {
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                overflow: Overflow::clip_y(),
+                ..default()
+            },
+            SignalEntryContainer,
+        ));
+    });
 }
 
 pub fn signal_strip_system(
