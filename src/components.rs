@@ -378,3 +378,33 @@ impl Default for MapPanState {
         }
     }
 }
+
+#[derive(Resource, Default)]
+pub struct UiLayout {
+    // Screen dimensions (logical pixels, post-scale-factor)
+    pub screen_width: f32,
+    pub screen_height: f32,
+    pub is_landscape: bool,
+
+    // Panel dimensions
+    pub left_panel_width: f32,
+    pub signal_strip_height: f32,
+    pub context_panel_height: f32,
+
+    // Content dimensions (derived)
+    pub content_width: f32,      // screen_width - left_panel_width
+    pub card_width: f32,         // (content_width - card_gap) / 2
+    pub card_gap: f32,           // space between two side-by-side cards
+
+    // Touch targets
+    pub button_height: f32,
+    pub tab_button_height: f32,
+
+    // Typography
+    pub font_size_body: f32,
+    pub font_size_label: f32,
+    pub font_size_title: f32,
+
+    // Queue card internals
+    pub queue_button_width: f32, // (card_width - gaps) / 4 for +1/+10/MAX/CLEAR
+}

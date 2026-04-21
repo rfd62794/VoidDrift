@@ -5,6 +5,45 @@ use crate::components::*;
 use crate::constants::*;
 use crate::systems::station_tabs::render_queue_card;
 
+pub fn ui_layout_system(
+    windows: Query<&Window>,
+    mut layout: ResMut<UiLayout>,
+) {
+    let Ok(window) = windows.get_single() else { return };
+
+    let scale = window.scale_factor() as f32;
+    let w = window.physical_width() as f32 / scale;
+    let h = window.physical_height() as f32 / scale;
+    let landscape = w > h;
+
+    let left_panel = if landscape { w * 0.20 } else { w * 0.30 };
+    let signal_height = if landscape { 56.0 } else { 64.0 };
+    let context_height = if landscape { h * 0.42 } else { h * 0.38 };
+    let content_w = w - left_panel;
+    let card_gap = 12.0;
+    let card_w = (content_w - card_gap) / 2.0;
+    let btn_gap = 4.0;
+    let queue_btn_w = (card_w - btn_gap * 3.0) / 4.0;
+
+    *layout = UiLayout {
+        screen_width: w,
+        screen_height: h,
+        is_landscape: landscape,
+        left_panel_width: left_panel,
+        signal_strip_height: signal_height,
+        context_panel_height: context_height,
+        content_width: content_w,
+        card_width: card_w,
+        card_gap,
+        button_height: 44.0,
+        tab_button_height: 44.0,
+        font_size_body: if landscape { 13.0 } else { 12.0 },
+        font_size_label: if landscape { 11.0 } else { 10.0 },
+        font_size_title: if landscape { 15.0 } else { 14.0 },
+        queue_button_width: queue_btn_w,
+    };
+}
+
 pub fn ship_cargo_display_system(
     time: Res<Time>,
     ship_query: Query<&Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,

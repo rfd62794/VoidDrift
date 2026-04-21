@@ -43,6 +43,8 @@ fn main() {
         .insert_resource(QuestLog::default())
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
+        .insert_resource(UiLayout::default())
+        .add_systems(PreUpdate, systems::hud::ui_layout_system)
         .add_systems(Startup, (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
