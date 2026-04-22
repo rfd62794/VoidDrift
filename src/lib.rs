@@ -53,9 +53,13 @@ fn main() {
         .add_systems(OnEnter(AppState::MainMenu), (
             scenes::main_menu::setup_main_menu,
         ))
+        .add_systems(Update, (
+            scenes::main_menu::main_menu_system,
+        ).run_if(in_state(AppState::MainMenu)))
         .add_systems(OnEnter(AppState::InGame), (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
+            scenes::main_menu::ingame_startup_system,
         ))
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 

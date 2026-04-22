@@ -146,6 +146,54 @@ fn sanitize_filename(name: &str) -> String {
         .collect()
 }
 
+// Save collection and application
+pub fn collect_save_data(
+    name: String,
+    category: SaveCategory,
+    description: String,
+    station: &Station,
+    opening: &OpeningSequence,
+    active_tab: &ActiveStationTab,
+) -> SaveData {
+    SaveData {
+        save_version: SAVE_VERSION,
+        save_name: name,
+        save_category: category,
+        timestamp: current_timestamp(),
+        description,
+        opening_complete: opening.phase == OpeningPhase::Complete,
+        opening_phase: format!("{:?}", opening.phase),
+        station_online: station.online,
+        station_power: station.power,
+        power_cells: station.power_cells,
+        magnetite: station.magnetite_reserves,
+        carbon: station.carbon_reserves,
+        hull_plates: station.hull_plate_reserves,
+        ship_hulls: station.ship_hulls,
+        ai_cores: station.ai_cores,
+        repair_progress: station.repair_progress,
+        tab_power: false, // TODO: collect from tabs resource
+        tab_cargo: false, // TODO: collect from tabs resource
+        tab_refinery: false, // TODO: collect from tabs resource
+        tab_foundry: false, // TODO: collect from tabs resource
+        tab_hangar: false, // TODO: collect from tabs resource
+        drone_count: 0, // TODO: collect from world
+        drones: vec![], // TODO: collect from world
+        sectors_discovered: vec![], // TODO: collect from world
+        active_tab: format!("{:?}", active_tab),
+        drawer_state: "default".to_string(),
+    }
+}
+
+fn current_timestamp() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    format!("{secs}")
+}
+
 // Events
 #[derive(Event)]
 pub struct AutosaveEvent;
