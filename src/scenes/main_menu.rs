@@ -245,13 +245,13 @@ fn spawn_menu_starfield(
 ) {
     let mut rng = rand::rngs::StdRng::seed_from_u64(0xBEEF_DEAD_u64); // Different seed for menu
     let far_mat  = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 0.8), // Slightly transparent for menu
-        alpha_mode: AlphaMode2d::Opaque,
+        color: Color::srgba(1.0, 1.0, 1.0, 0.6), // More transparent for menu
+        alpha_mode: AlphaMode2d::Blend,
         ..default()
     });
     let near_mat = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 0.9), // Slightly more transparent
-        alpha_mode: AlphaMode2d::Opaque,
+        color: Color::srgba(1.0, 1.0, 1.0, 0.7), // Slightly more transparent
+        alpha_mode: AlphaMode2d::Blend,
         ..default()
     });
     
