@@ -8,6 +8,17 @@ pub enum GameState {
     MapView,
 }
 
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum AppState {
+    #[default]
+    MainMenu,
+    InGame,
+}
+
+// Forward declaration for MainMenuState (defined in scenes/main_menu.rs)
+#[derive(Resource, Default)]
+pub struct MainMenuState;
+
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
 pub enum OreType {
     #[default]

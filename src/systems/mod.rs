@@ -14,3 +14,4 @@ pub mod narrative;
 pub mod opening_sequence;
 pub mod signal;
 pub mod tutorial;
+pub mod save;

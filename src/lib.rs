@@ -11,6 +11,7 @@ mod components;
 pub use components::*;
 
 pub mod systems;
+pub mod scenes;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -32,6 +33,7 @@ fn main() {
         }))
         .add_plugins(EguiPlugin) // UiPlugin automatically included via bevy_ui feature
         .init_state::<GameState>()
+        .init_state::<AppState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
         .insert_resource(CameraDelta::default())
         .insert_resource(SignalLog::default())
@@ -43,7 +45,15 @@ fn main() {
         .insert_resource(QuestLog::default())
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
+        .insert_resource(MainMenuState::default())
         .add_systems(Startup, (
+            systems::setup::setup_world,
+            systems::debug_log::setup_debug_log_system,
+        ))
+        .add_systems(OnEnter(AppState::MainMenu), (
+            scenes::main_menu::setup_main_menu,
+        ))
+        .add_systems(OnEnter(AppState::InGame), (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
         ))
@@ -58,7 +68,7 @@ fn main() {
             systems::ui::station_visual_system,
             systems::visuals::ship_rotation_system,
             systems::visuals::thruster_glow_system,
-        ).chain())
+        ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
             systems::map::enter_map_view,
             systems::map::show_map_elements,
@@ -75,7 +85,7 @@ fn main() {
             systems::ui::ship_cargo_display_system,
             systems::ui::autonomous_ship_cargo_display_system,
             systems::ui::cargo_label_system,
-        ))
+        ).run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,
@@ -93,6 +103,6 @@ fn main() {
             systems::narrative::signal_system,
             systems::narrative::tutorial_system,
             systems::quest::quest_update_system,
-        ))
+        ).run_if(in_state(AppState::InGame)))
         .run();
 }
