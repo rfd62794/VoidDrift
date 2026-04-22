@@ -48,7 +48,6 @@ fn main() {
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
         .add_systems(Startup, (
-            systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
