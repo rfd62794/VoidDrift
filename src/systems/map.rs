@@ -135,7 +135,7 @@ pub fn pinch_zoom_system(
     mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut last_dist: Local<Option<f32>>,
 ) {
-    let mut projection = query.single_mut();
+    let Ok(mut projection) = query.get_single_mut() else { return; };
     
     // We only care about the distance between the first two touch points
     let touch_points: Vec<Vec2> = touches.iter().map(|t| t.position()).take(2).collect();
