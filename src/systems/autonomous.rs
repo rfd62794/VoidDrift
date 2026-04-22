@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
 use crate::systems::ui::add_log_entry;
+use crate::systems::save::AutosaveEvent;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
@@ -9,6 +10,7 @@ pub fn autonomous_ship_system(
     mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
+    mut autosave_events: EventWriter<AutosaveEvent>,
 ) {
     if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
         for (ship_entity, mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
@@ -59,6 +61,9 @@ pub fn autonomous_ship_system(
                         if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Drone) {
                             commands.entity(ship_entity).insert(DockedAt(b_ent));
                         }
+                        
+                        // Trigger autosave when drone docks
+                        autosave_events.send(AutosaveEvent);
 
                         // [PHASE B] Trigger station resume if not already resuming
                         station.dock_state = StationDockState::Resuming;

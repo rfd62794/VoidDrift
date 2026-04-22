@@ -117,12 +117,113 @@ pub fn main_menu_system(
                         next_state.set(AppState::InGame);
                     }
                 }
+
+                ui.add_space(24.0);
+
+                // PLAY SAVES
+                render_save_list(
+                    ui,
+                    "PLAY SAVES",
+                    &menu_state.play_saves.clone(),
+                    &mut menu_state,
+                    btn_width,
+                    false,
+                    &mut next_state,
+                );
+
+                // STAGE SAVES - developer mode only
+                if menu_state.developer_mode {
+                    ui.add_space(16.0);
+                    render_save_list(
+                        ui,
+                        "STAGE SAVES",
+                        &menu_state.stage_saves.clone(),
+                        &mut menu_state,
+                        btn_width,
+                        true,
+                        &mut next_state,
+                    );
+                }
             });
         });
 }
 
+fn render_save_list(
+    ui: &mut egui::Ui,
+    heading: &str,
+    saves: &[SaveData],
+    menu_state: &mut MainMenuState,
+    btn_width: f32,
+    is_stage: bool,
+    next_state: &mut NextState<AppState>,
+) {
+    ui.label(
+        egui::RichText::new(heading)
+            .size(12.0)
+            .color(egui::Color32::from_rgb(80, 100, 80))
+    );
+
+    ui.add_space(4.0);
+
+    if saves.is_empty() {
+        ui.label(
+            egui::RichText::new("  no saves found")
+                .size(11.0)
+                .color(egui::Color32::from_rgb(50, 60, 50))
+        );
+    }
+
+    for save in saves.iter().take(20) {
+        let version_ok = save.save_version == SAVE_VERSION;
+        let label = if version_ok {
+            format!(
+                "{}    {}",
+                save.save_name,
+                format_timestamp(&save.timestamp),
+            )
+        } else {
+            format!("{}  [VERSION MISMATCH]", save.save_name)
+        };
+
+        let color = if !version_ok {
+            egui::Color32::from_rgb(180, 60, 60)
+        } else if is_stage {
+            egui::Color32::from_rgb(180, 140, 0)
+        } else {
+            egui::Color32::from_rgb(0, 180, 90)
+        };
+
+        let btn = ui.add_sized(
+            egui::vec2(btn_width, 40.0),
+            egui::Button::new(
+                egui::RichText::new(&label).size(13.0).color(color)
+            )
+        );
+
+        if btn.clicked() {
+            menu_state.pending_load = Some(save.clone());
+            next_state.set(AppState::InGame);
+        }
+    }
+}
+
+fn format_timestamp(ts: &str) -> String {
+    ts.parse::<u64>().map(|secs| {
+        let mins = secs / 60;
+        let hours = mins / 60;
+        let days = hours / 24;
+        if days > 0 {
+            format!("{days}d ago")
+        } else if hours > 0 {
+            format!("{hours}h ago")
+        } else {
+            format!("{mins}m ago")
+        }
+    }).unwrap_or_else(|_| ts.to_string())
+}
+
 pub fn ingame_startup_system(
-    menu_state: Res<MainMenuState>,
+    mut menu_state: ResMut<MainMenuState>,
     mut opening: ResMut<OpeningSequence>,
     mut signal_log: ResMut<SignalLog>,
 ) {
@@ -142,5 +243,98 @@ pub fn ingame_startup_system(
     } else {
         // NEW GAME PATH - opening sequence runs normally
         // Opening sequence already starts at Adrift phase by default
+    }
+
+    // Developer mode signal (only once per session)
+    if menu_state.developer_mode && !menu_state.dev_mode_signal_fired {
+        signal_log.entries.push_back(
+            "ECHO: DEVELOPER MODE ENABLED.".to_string()
+        );
+        signal_log.entries.push_back(
+            "ECHO: STAGE SAVES NOW ACCESSIBLE.".to_string()
+        );
+        menu_state.dev_mode_signal_fired = true;
+    }
+}
+
+pub fn save_overlay_system(
+    mut contexts: EguiContexts,
+    mut menu_state: ResMut<MainMenuState>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    let ctx = contexts.ctx_mut();
+
+    if menu_state.show_save_overlay {
+        egui::Window::new("save_overlay")
+            .fixed_pos([
+                ctx.screen_rect().width() / 2.0 - 160.0,
+                ctx.screen_rect().height() / 2.0 - 200.0,
+            ])
+            .fixed_size([320.0, 400.0])
+            .title_bar(false)
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgba_premultiplied(4, 8, 12, 240))
+                .stroke(egui::Stroke::new(1.0,
+                    egui::Color32::from_rgb(0, 100, 50))))
+            .show(ctx, |ui| {
+                ui.label(egui::RichText::new("SAVE / LOAD")
+                    .size(14.0)
+                    .color(egui::Color32::from_rgb(0, 200, 100)));
+
+                ui.separator();
+
+                // Save name input
+                ui.label(egui::RichText::new("SAVE NAME:")
+                    .size(11.0)
+                    .color(egui::Color32::from_rgb(80, 120, 80)));
+
+                ui.text_edit_singleline(&mut menu_state.save_name_input);
+
+                ui.add_space(8.0);
+
+                // Save as Play Save
+                if ui.add_sized([300.0, 44.0],
+                    egui::Button::new("SAVE - PLAY")).clicked() {
+                    if !menu_state.save_name_input.is_empty() {
+                        // TODO: Send SaveRequestEvent
+                        menu_state.show_save_overlay = false;
+                    }
+                }
+
+                // Save as Stage Save - developer mode only
+                if menu_state.developer_mode {
+                    if ui.add_sized([300.0, 44.0],
+                        egui::Button::new(
+                            egui::RichText::new("SAVE - STAGE")
+                                .color(egui::Color32::from_rgb(200, 160, 0))
+                        )).clicked() {
+                        if !menu_state.save_name_input.is_empty() {
+                            // TODO: Send SaveRequestEvent
+                            menu_state.show_save_overlay = false;
+                        }
+                    }
+                }
+
+                ui.separator();
+
+                // Return to main menu
+                if ui.add_sized([300.0, 44.0],
+                    egui::Button::new("MAIN MENU")).clicked() {
+                    next_state.set(AppState::MainMenu);
+                    menu_state.show_save_overlay = false;
+                }
+
+                ui.add_space(4.0);
+
+                // Close overlay
+                if ui.add_sized([300.0, 36.0],
+                    egui::Button::new(
+                        egui::RichText::new("CLOSE")
+                            .size(12.0)
+                            .color(egui::Color32::from_rgb(80, 80, 80))
+                    )).clicked() {
+                    menu_state.show_save_overlay = false;
+                }
+            });
     }
 }

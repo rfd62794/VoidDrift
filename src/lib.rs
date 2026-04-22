@@ -56,6 +56,13 @@ fn main() {
         .add_systems(Update, (
             scenes::main_menu::main_menu_system,
         ).run_if(in_state(AppState::MainMenu)))
+        .add_systems(Update, (
+            scenes::main_menu::save_overlay_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_event::<systems::save::AutosaveEvent>()
+        .add_systems(Update, (
+            systems::save::autosave_system,
+        ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,

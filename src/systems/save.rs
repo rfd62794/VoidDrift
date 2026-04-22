@@ -194,6 +194,30 @@ fn current_timestamp() -> String {
     format!("{secs}")
 }
 
+// Autosave system
+pub fn autosave_system(
+    mut events: EventReader<AutosaveEvent>,
+    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    opening: Res<OpeningSequence>,
+    active_tab: Res<ActiveStationTab>,
+) {
+    if let Ok(station) = station_query.get_single() {
+        for _ in events.read() {
+            let data = collect_save_data(
+                "autosave".to_string(),
+                SaveCategory::Auto,
+                String::new(),
+                station,
+                &opening,
+                &active_tab,
+            );
+            if let Err(e) = save_game(&data) {
+                warn!("Autosave failed: {e}");
+            }
+        }
+    }
+}
+
 // Events
 #[derive(Event)]
 pub struct AutosaveEvent;

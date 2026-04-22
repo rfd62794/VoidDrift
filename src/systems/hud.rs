@@ -4,6 +4,7 @@ use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
 use crate::systems::station_tabs::render_queue_card;
+use crate::scenes::main_menu::MainMenuState;
 
 pub fn ship_cargo_display_system(
     time: Res<Time>,
@@ -109,6 +110,7 @@ pub struct HudParams<'w, 's> {
     pub tutorial: ResMut<'w, TutorialState>,
     pub pan_state: ResMut<'w, MapPanState>,
     pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
+    pub menu_state: ResMut<'w, MainMenuState>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -211,6 +213,10 @@ pub fn hud_ui_system(mut params: HudParams) {
                         if let Ok(mut proj) = params.cam_query.get_single_mut() {
                             proj.scale = 1.0;
                         }
+                    }
+                    ui.add_space(8.0);
+                    if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                        params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
                     }
                 });
             });
