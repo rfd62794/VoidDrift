@@ -29,6 +29,9 @@ pub fn setup_main_menu(
     // Spawn starfield background for main menu
     spawn_menu_starfield(&mut commands, &mut meshes, &mut materials);
     
+    // Spawn camera for main menu
+    spawn_menu_camera(&mut commands);
+    
     // Load save lists on menu entry
     menu_state.play_saves = list_saves(&SaveCategory::Play);
     menu_state.stage_saves = list_saves(&SaveCategory::Stage);
@@ -279,6 +282,17 @@ fn spawn_menu_starfield(
             Transform::from_xyz(x, y, Z_STARS_NEAR),
         ));
     }
+}
+
+fn spawn_menu_camera(commands: &mut Commands) {
+    commands.spawn((
+        Camera2d::default(),
+        OrthographicProjection {
+            far: 1200.0, // Same as game camera
+            ..OrthographicProjection::default_2d()
+        },
+        Transform::from_xyz(0.0, 0.0, 1000.0), // Same Z position as game camera
+    ));
 }
 
 pub fn ingame_startup_system(
