@@ -13,6 +13,7 @@ pub use components::*;
 pub mod systems;
 pub mod scenes;
 use scenes::main_menu::MainMenuState;
+use systems::setup::cleanup_world_entities;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -64,6 +65,7 @@ fn main() {
             systems::save::autosave_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
+            cleanup_world_entities,
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
             scenes::main_menu::ingame_startup_system,

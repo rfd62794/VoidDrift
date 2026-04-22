@@ -5,6 +5,16 @@ use rand::{Rng, SeedableRng};
 use crate::constants::*;
 use crate::components::*;
 
+/// Clean up all entities before setting up a new game
+pub fn cleanup_world_entities(
+    mut commands: Commands,
+    entities: Query<Entity, Or<(With<Ship>, With<Station>, With<MainCamera>, With<StarLayer>, With<AsteroidField>, With<Berth>, With<DestinationHighlight>)>>,
+) {
+    for entity in entities.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
 /// Spawns the world objects, ship, and HUD.
 pub fn setup_world(
     mut commands: Commands,
