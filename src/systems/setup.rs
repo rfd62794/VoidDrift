@@ -41,7 +41,9 @@ pub fn setup_world(
     *camera_delta = CameraDelta::default();
     *map_pan_state = MapPanState::default();
     *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 };
-    signal_log.entries.clear();
+    
+    // Reset SignalLog completely
+    *signal_log = SignalLog::default();
 
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
