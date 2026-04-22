@@ -8,8 +8,9 @@ use crate::components::*;
 /// Clean up all entities before setting up a new game
 pub fn cleanup_world_entities(
     mut commands: Commands,
-    entities: Query<Entity, Or<(With<Ship>, With<Station>, With<MainCamera>, With<StarLayer>, With<AsteroidField>, With<Berth>, With<DestinationHighlight>)>>,
+    entities: Query<Entity, With<Transform>>, // Remove all entities with Transform (game objects)
 ) {
+    info!("Cleaning up {} entities before new game", entities.iter().count());
     for entity in entities.iter() {
         commands.entity(entity).despawn_recursive();
     }
