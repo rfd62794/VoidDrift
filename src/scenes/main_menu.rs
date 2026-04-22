@@ -296,13 +296,17 @@ pub fn save_overlay_system(
                 // Save as Play Save
                 if ui.add_sized([300.0, 44.0],
                     egui::Button::new("SAVE - PLAY")).clicked() {
+                    info!("Save - PLAY button clicked, name: '{}'", menu_state.save_name_input);
                     if !menu_state.save_name_input.is_empty() {
+                        info!("Sending SaveRequestEvent for Play save");
                         save_events.send(crate::systems::save::SaveRequestEvent {
                             name: menu_state.save_name_input.clone(),
                             category: crate::systems::save::SaveCategory::Play,
                             description: String::new(),
                         });
                         menu_state.show_save_overlay = false;
+                    } else {
+                        info!("Save name is empty, not sending event");
                     }
                 }
 

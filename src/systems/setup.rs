@@ -11,7 +11,11 @@ pub fn cleanup_world_entities(
     entities: Query<Entity, With<Transform>>, // Remove all entities with Transform (game objects)
 ) {
     info!("Cleaning up {} entities before new game", entities.iter().count());
-    for entity in entities.iter() {
+    
+    // Collect entities first to avoid modifying query while iterating
+    let entities_to_despawn: Vec<Entity> = entities.iter().collect();
+    
+    for entity in entities_to_despawn {
         commands.entity(entity).despawn_recursive();
     }
 }
@@ -22,8 +26,14 @@ pub fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    mut camera_delta: ResMut<CameraDelta>,
+    mut map_pan_state: ResMut<MapPanState>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
+
+    // Reset resources to clean state
+    *camera_delta = CameraDelta::default();
+    *map_pan_state = MapPanState::default();
 
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
