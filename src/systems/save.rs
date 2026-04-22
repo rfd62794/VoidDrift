@@ -46,45 +46,6 @@ pub struct SaveData {
     // UI state
     pub active_tab: String,
     pub drawer_state: String,
-    
-    // Additional game state
-    pub ship_cargo: f32,
-    pub signal_entries: Vec<String>,
-}
-
-impl SaveData {
-    pub fn default(name: String, category: SaveCategory, description: String) -> Self {
-        Self {
-            save_version: SAVE_VERSION,
-            save_name: name,
-            save_category: category,
-            timestamp: "0".to_string(),
-            description,
-            opening_complete: false,
-            opening_phase: "Adrift".to_string(),
-            station_online: false,
-            station_power: 0.0,
-            power_cells: 0,
-            magnetite: 0.0,
-            carbon: 0.0,
-            hull_plates: 0,
-            ship_hulls: 0,
-            ai_cores: 0,
-            repair_progress: 0.0,
-            tab_power: false,
-            tab_cargo: false,
-            tab_refinery: false,
-            tab_foundry: false,
-            tab_hangar: false,
-            drone_count: 0,
-            drones: vec![],
-            sectors_discovered: vec![],
-            active_tab: "Reserves".to_string(),
-            drawer_state: "default".to_string(),
-            ship_cargo: 0.0,
-            signal_entries: vec![],
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -190,42 +151,18 @@ pub fn collect_save_data(
     name: String,
     category: SaveCategory,
     description: String,
-    params: &SaveSystemParams,
+    station: &Station,
+    opening: &OpeningSequence,
+    active_tab: &ActiveStationTab,
 ) -> SaveData {
-    let Ok(station) = params.station_query.get_single() else {
-        return SaveData::default(name, category, description);
-    };
-    
-    // Collect drone data
-    let mut drones = vec![];
-    let drone_count = params.drone_query.iter().count() as u8;
-    
-    for drone in params.drone_query.iter() {
-        drones.push(DroneSaveData {
-            assignment_sector: "Unknown".to_string(), // TODO: get from AutonomousAssignment
-            assignment_pos_x: 0.0, // TODO: get from AutonomousAssignment
-            assignment_pos_y: 0.0, // TODO: get from AutonomousAssignment
-            ore_type: format!("{:?}", drone.cargo_type),
-            state: format!("{:?}", drone.state),
-            cargo: drone.cargo,
-            is_echo_primary: drone.is_echo_primary,
-        });
-    }
-    
-    // Collect ship data
-    let ship_cargo = params.ship_query.iter().map(|s| s.cargo).next().unwrap_or(0.0);
-    
-    // Collect discovered sectors (simplified for now)
-    let sectors_discovered = vec!["Starting Sector".to_string()];
-    
     SaveData {
         save_version: SAVE_VERSION,
         save_name: name,
         save_category: category,
         timestamp: current_timestamp(),
         description,
-        opening_complete: params.opening.phase == OpeningPhase::Complete,
-        opening_phase: format!("{:?}", params.opening.phase),
+        opening_complete: opening.phase == OpeningPhase::Complete,
+        opening_phase: format!("{:?}", opening.phase),
         station_online: station.online,
         station_power: station.power,
         power_cells: station.power_cells,
@@ -235,18 +172,16 @@ pub fn collect_save_data(
         ship_hulls: station.ship_hulls,
         ai_cores: station.ai_cores,
         repair_progress: station.repair_progress,
-        tab_power: true, // Simplified - assume tabs are unlocked based on progress
-        tab_cargo: true,
-        tab_refinery: station.repair_progress > 0.25,
-        tab_foundry: station.repair_progress > 0.50,
-        tab_hangar: station.repair_progress > 0.75,
-        drone_count,
-        drones,
-        sectors_discovered,
-        active_tab: format!("{:?}", params.active_tab),
+        tab_power: false, // TODO: collect from tabs resource
+        tab_cargo: false, // TODO: collect from tabs resource
+        tab_refinery: false, // TODO: collect from tabs resource
+        tab_foundry: false, // TODO: collect from tabs resource
+        tab_hangar: false, // TODO: collect from tabs resource
+        drone_count: 0, // TODO: collect from world
+        drones: vec![], // TODO: collect from world
+        sectors_discovered: vec![], // TODO: collect from world
+        active_tab: format!("{:?}", active_tab),
         drawer_state: "default".to_string(),
-        ship_cargo,
-        signal_entries: params.signal_log.entries.iter().cloned().collect(),
     }
 }
 
@@ -286,130 +221,35 @@ pub fn autosave_system(
 // Save request system
 pub fn save_request_system(
     mut events: EventReader<SaveRequestEvent>,
-    params: SaveSystemParams,
+    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    opening: Res<OpeningSequence>,
+    active_tab: Res<ActiveStationTab>,
 ) {
     info!("Save request system running, {} events received", events.len());
     
-    for event in events.read() {
-        info!("Processing save request: name={}, category={:?}", event.name, event.category);
-        
-        let data = collect_save_data(
-            event.name.clone(),
-            event.category.clone(),
-            event.description.clone(),
-            &params,
-        );
-        
-        info!("Save data collected, attempting to save...");
-        if let Err(e) = save_game(&data) {
-            error!("Save failed: {e}");
-        } else {
-            info!("Game saved successfully: {}", event.name);
+    if let Ok(station) = station_query.get_single() {
+        info!("Station found for save: online={}", station.online);
+        for event in events.read() {
+            info!("Processing save request: name={}, category={:?}", event.name, event.category);
+            
+            let data = collect_save_data(
+                event.name.clone(),
+                event.category.clone(),
+                event.description.clone(),
+                station,
+                &opening,
+                &active_tab,
+            );
+            
+            info!("Save data collected, attempting to save...");
+            if let Err(e) = save_game(&data) {
+                error!("Save failed: {e}");
+            } else {
+                info!("Game saved successfully: {}", event.name);
+            }
         }
-    }
-}
-
-// Load restoration system
-pub fn restore_save_data(
-    data: &SaveData,
-    mut commands: Commands,
-    mut station: ResMut<Station>,
-    mut opening: ResMut<OpeningSequence>,
-    mut signal_log: ResMut<SignalLog>,
-    mut active_tab: ResMut<ActiveStationTab>,
-) -> Result<(), String> {
-    info!("Restoring save data: {}", data.save_name);
-    
-    // Restore station state
-    station.online = data.station_online;
-    station.power = data.station_power;
-    station.power_cells = data.power_cells;
-    station.magnetite_reserves = data.magnetite;
-    station.carbon_reserves = data.carbon;
-    station.hull_plate_reserves = data.hull_plates;
-    station.ship_hulls = data.ship_hulls;
-    station.ai_cores = data.ai_cores;
-    station.repair_progress = data.repair_progress;
-    
-    // Restore opening sequence
-    if data.opening_complete {
-        opening.phase = OpeningPhase::Complete;
-        opening.timer = 0.0;
     } else {
-        // Try to parse the phase back
-        if let Ok(phase_str) = data.opening_phase.parse::<String>() {
-            match phase_str.as_str() {
-                "Adrift" => opening.phase = OpeningPhase::Adrift,
-                "SignalIdentified" => opening.phase = OpeningPhase::SignalIdentified,
-                "AutoPiloting" => opening.phase = OpeningPhase::AutoPiloting,
-                "Docking" => opening.phase = OpeningPhase::Docking,
-                "Complete" => opening.phase = OpeningPhase::Complete,
-                _ => opening.phase = OpeningPhase::Adrift,
-            }
-        }
-        opening.timer = 0.0;
-    }
-    
-    // Restore active tab
-    if let Ok(tab_str) = data.active_tab.parse::<String>() {
-        match tab_str.as_str() {
-            "Reserves" => *active_tab = ActiveStationTab::Reserves,
-            "Power" => *active_tab = ActiveStationTab::Power,
-            "Cargo" => *active_tab = ActiveStationTab::Cargo,
-            "Refinery" => *active_tab = ActiveStationTab::Refinery,
-            "Foundry" => *active_tab = ActiveStationTab::Foundry,
-            "Hangar" => *active_tab = ActiveStationTab::Hangar,
-            _ => *active_tab = ActiveStationTab::default(),
-        }
-    }
-    
-    // Restore signal log
-    signal_log.entries.clear();
-    for entry in data.signal_entries {
-        signal_log.entries.push_back(entry);
-    }
-    
-    // Add restoration message
-    signal_log.entries.push_back(
-        format!("ECHO: SAVE '{}' RESTORED.", data.save_name.to_uppercase())
-    );
-    
-    info!("Save data restored successfully");
-    Ok(())
-}
-
-// Load request system
-pub fn load_request_system(
-    mut events: EventReader<LoadRequestEvent>,
-    mut commands: Commands,
-    mut station: ResMut<Station>,
-    mut opening: ResMut<OpeningSequence>,
-    mut signal_log: ResMut<SignalLog>,
-    mut active_tab: ResMut<ActiveStationTab>,
-) {
-    for event in events.read() {
-        info!("Processing load request: {:?}", event.path);
-        
-        match load_game(&event.path) {
-            Ok(save_data) => {
-                info!("Save file loaded successfully, restoring game state...");
-                if let Err(e) = restore_save_data(
-                    &save_data,
-                    &mut commands,
-                    &mut station,
-                    &mut opening,
-                    &mut signal_log,
-                    &mut active_tab,
-                ) {
-                    error!("Failed to restore save data: {e}");
-                } else {
-                    info!("Game state restored successfully");
-                }
-            }
-            Err(e) => {
-                error!("Failed to load save file: {e}");
-            }
-        }
+        error!("No station found for save operation!");
     }
 }
 
@@ -422,9 +262,4 @@ pub struct SaveRequestEvent {
     pub name: String,
     pub category: SaveCategory,
     pub description: String,
-}
-
-#[derive(Event)]
-pub struct LoadRequestEvent {
-    pub path: PathBuf,
 }

@@ -62,11 +62,9 @@ fn main() {
         ).run_if(in_state(AppState::InGame)))
         .add_event::<systems::save::AutosaveEvent>()
         .add_event::<systems::save::SaveRequestEvent>()
-        .add_event::<systems::save::LoadRequestEvent>()
         .add_systems(Update, (
             systems::save::autosave_system,
             systems::save::save_request_system,
-            systems::save::load_request_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
