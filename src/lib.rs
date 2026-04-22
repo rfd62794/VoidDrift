@@ -12,6 +12,7 @@ pub use components::*;
 
 pub mod systems;
 pub mod scenes;
+use scenes::main_menu::MainMenuState;
 
 // ----------------------------------------------------------------------------
 // APP SETUP

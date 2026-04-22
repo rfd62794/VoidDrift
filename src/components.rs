@@ -15,9 +15,6 @@ pub enum AppState {
     InGame,
 }
 
-// Forward declaration for MainMenuState (defined in scenes/main_menu.rs)
-#[derive(Resource, Default)]
-pub struct MainMenuState;
 
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
 pub enum OreType {
