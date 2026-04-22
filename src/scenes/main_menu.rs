@@ -261,6 +261,7 @@ pub fn save_overlay_system(
     mut contexts: EguiContexts,
     mut menu_state: ResMut<MainMenuState>,
     mut next_state: ResMut<NextState<AppState>>,
+    mut save_events: EventWriter<crate::systems::save::SaveRequestEvent>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -296,7 +297,11 @@ pub fn save_overlay_system(
                 if ui.add_sized([300.0, 44.0],
                     egui::Button::new("SAVE - PLAY")).clicked() {
                     if !menu_state.save_name_input.is_empty() {
-                        // TODO: Send SaveRequestEvent
+                        save_events.send(crate::systems::save::SaveRequestEvent {
+                            name: menu_state.save_name_input.clone(),
+                            category: crate::systems::save::SaveCategory::Play,
+                            description: String::new(),
+                        });
                         menu_state.show_save_overlay = false;
                     }
                 }
@@ -309,7 +314,11 @@ pub fn save_overlay_system(
                                 .color(egui::Color32::from_rgb(200, 160, 0))
                         )).clicked() {
                         if !menu_state.save_name_input.is_empty() {
-                            // TODO: Send SaveRequestEvent
+                            save_events.send(crate::systems::save::SaveRequestEvent {
+                                name: menu_state.save_name_input.clone(),
+                                category: crate::systems::save::SaveCategory::Stage,
+                                description: format!("Stage save - {}", chrono::Local::now().format("%Y-%m-%d %H:%M")),
+                            });
                             menu_state.show_save_overlay = false;
                         }
                     }

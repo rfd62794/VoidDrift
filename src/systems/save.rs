@@ -218,6 +218,32 @@ pub fn autosave_system(
     }
 }
 
+// Save request system
+pub fn save_request_system(
+    mut events: EventReader<SaveRequestEvent>,
+    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    opening: Res<OpeningSequence>,
+    active_tab: Res<ActiveStationTab>,
+) {
+    if let Ok(station) = station_query.get_single() {
+        for event in events.read() {
+            let data = collect_save_data(
+                event.name.clone(),
+                event.category.clone(),
+                event.description.clone(),
+                station,
+                &opening,
+                &active_tab,
+            );
+            if let Err(e) = save_game(&data) {
+                warn!("Save failed: {e}");
+            } else {
+                info!("Game saved successfully: {}", event.name);
+            }
+        }
+    }
+}
+
 // Events
 #[derive(Event)]
 pub struct AutosaveEvent;

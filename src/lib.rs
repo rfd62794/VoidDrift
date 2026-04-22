@@ -61,8 +61,10 @@ fn main() {
             scenes::main_menu::save_overlay_system,
         ).run_if(in_state(AppState::InGame)))
         .add_event::<systems::save::AutosaveEvent>()
+        .add_event::<systems::save::SaveRequestEvent>()
         .add_systems(Update, (
             systems::save::autosave_system,
+            systems::save::save_request_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
