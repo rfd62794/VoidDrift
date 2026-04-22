@@ -204,21 +204,83 @@ pub fn hud_ui_system(mut params: HudParams) {
                     }
                 }
 
-                // FOCUS BUTTON (Bottom Left)
+                // FOCUS AND SAVE BUTTONS (Bottom Left)
+                let (focus_rect, focus_response) = ui.allocate_exact_size(egui::vec2(80.0, 40.0), egui::Sense::click());
+                let (save_rect, save_response) = ui.allocate_exact_size(egui::vec2(80.0, 40.0), egui::Sense::click());
+                
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     ui.add_space(16.0);
-                    if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                    if focus_response.clicked() {
                         params.pan_state.is_focused = true;
                         params.pan_state.cumulative_offset = Vec2::ZERO;
                         if let Ok(mut proj) = params.cam_query.get_single_mut() {
                             proj.scale = 1.0;
                         }
                     }
+                    if focus_response.hovered() {
+                        ui.painter().rect_filled(
+                            focus_rect,
+                            0.0,
+                            egui::Color32::from_rgb(40, 120, 40)
+                        );
+                    }
+                    
                     ui.add_space(8.0);
-                    if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 40.0))).clicked() {
+                    
+                    if save_response.clicked() {
                         params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
                     }
+                    if save_response.hovered() {
+                        ui.painter().rect_filled(
+                            save_rect,
+                            0.0,
+                            egui::Color32::from_rgb(120, 40, 40)
+                        );
+                    }
                 });
+                
+                // Custom drawing after UI allocation to avoid borrowing conflicts
+                let painter = ui.painter();
+                
+                // Draw focus lines symbol
+                let focus_center = focus_rect.center();
+                let focus_line_length = focus_rect.width() * 0.3;
+                let focus_line_width = 2.0;
+                
+                painter.line_segment(
+                    [focus_center - egui::vec2(focus_line_length, 0.0), focus_center + egui::vec2(focus_line_length, 0.0)],
+                    egui::Stroke::new(focus_line_width, egui::Color32::WHITE)
+                );
+                painter.line_segment(
+                    [focus_center - egui::vec2(0.0, focus_line_length), focus_center + egui::vec2(0.0, focus_line_length)],
+                    egui::Stroke::new(focus_line_width, egui::Color32::WHITE)
+                );
+                
+                // Draw gear symbol (7 circles in hex pattern)
+                let gear_center = save_rect.center();
+                let gear_radius = save_rect.width() * 0.08;
+                
+                // Calculate hex positions (6 around center, 1 in center)
+                let hex_positions = [
+                    gear_center + egui::vec2(0.0, -gear_radius * 2.0),           // top
+                    gear_center + egui::vec2(gear_radius * 1.73, -gear_radius),      // top-right
+                    gear_center + egui::vec2(gear_radius * 1.73, gear_radius),       // bottom-right
+                    gear_center + egui::vec2(0.0, gear_radius * 2.0),            // bottom
+                    gear_center + egui::vec2(-gear_radius * 1.73, gear_radius),      // bottom-left
+                    gear_center + egui::vec2(-gear_radius * 1.73, -gear_radius),     // top-left
+                ];
+                
+                // Draw outer 6 filled circles
+                for pos in &hex_positions {
+                    painter.circle_filled(*pos, gear_radius, egui::Color32::WHITE);
+                }
+                
+                // Draw center empty circle (outline only)
+                painter.circle_stroke(
+                    gear_center,
+                    gear_radius * 0.7,
+                    egui::Stroke::new(1.5, egui::Color32::WHITE)
+                );
             });
 
         // ── 3. QUEST PANEL ────────────────────────────────────────────────────────
