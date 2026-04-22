@@ -83,7 +83,8 @@ pub fn starfield_scroll_system(
     // too large wastes update budget on off-screen entities.
     const WRAP_X: f32 = 700.0;
     const WRAP_Y: f32 = 500.0;
-    let cam_pos = cam_query.single().translation.truncate();
+    let Ok(cam) = cam_query.get_single() else { return; };
+    let cam_pos = cam.translation.truncate();
 
     for (layer, mut transform) in star_query.iter_mut() {
         // Stars advance by (1 - parallax) of camera delta → they appear to drift

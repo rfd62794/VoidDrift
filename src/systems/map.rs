@@ -9,8 +9,8 @@ pub fn camera_follow_system(
     mut cam_delta: ResMut<CameraDelta>,
     pan_state: Res<MapPanState>,
 ) {
-    let st = ship.single();
-    let mut ct = cam.single_mut();
+    let Ok(st) = ship.get_single() else { return; };
+    let Ok(mut ct) = cam.get_single_mut() else { return; };
     let old_pos = ct.translation.truncate();
     
     let target_pos = if *state.get() == GameState::MapView {
@@ -89,13 +89,13 @@ pub fn map_input_system(
         return;
     }
 
-    let (camera, camera_transform) = camera_query.single();
+    let Ok((camera, camera_transform)) = camera_query.get_single() else { return; };
     for touch in touches.iter_just_pressed() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
             for (mt, me) in marker_query.iter() {
                 let mp = mt.translation.truncate();
                 if world_pos.distance(mp) < 80.0 {
-                    let (ship_entity, mut ship) = ship_query.single_mut();
+                    let Ok((ship_entity, mut ship)) = ship_query.get_single_mut() else { continue; };
                     
                     if ship.state == ShipState::Docked && mp.distance(STATION_POS) < 10.0 { 
                         continue; 
@@ -178,7 +178,7 @@ pub fn map_pan_system(
     if let Some(touch) = touches.iter().next() {
         if let Some(last_pos) = pan_state.last_position {
             let delta = touch.position() - last_pos;
-            let projection = projection_query.single();
+            let Ok(projection) = projection_query.get_single() else { return; };
             
             // If dragging in SpaceView while focused, break focus and initialize offset to current ship position
             if *state.get() == GameState::SpaceView && pan_state.is_focused {

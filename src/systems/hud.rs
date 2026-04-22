@@ -114,7 +114,7 @@ pub struct HudParams<'w, 's> {
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
-    let mut ship = params.ship_query.single_mut();
+    let Ok(mut ship) = params.ship_query.get_single_mut() else { return; };
     let ctx = params.contexts.ctx_mut();
 
     // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
