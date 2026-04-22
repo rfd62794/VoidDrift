@@ -226,23 +226,29 @@ pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,
     mut opening: ResMut<OpeningSequence>,
     mut signal_log: ResMut<SignalLog>,
+    mut load_events: EventWriter<crate::systems::save::LoadRequestEvent>,
 ) {
     if let Some(save_data) = &menu_state.pending_load {
-        // LOAD PATH - apply save data, skip opening sequence
-        opening.phase = OpeningPhase::Complete;
-        opening.timer = 0.0;
+        // LOAD PATH - send load request event
+        info!("Loading save: {}", save_data.save_name);
         
-        // TODO: Apply other save data to resources
+        // For now, we'll use the autosave path if it exists, otherwise create a path
+        let load_path = if save_data.save_category == crate::systems::save::SaveCategory::Auto {
+            crate::systems::save::autosave_path()
+        } else {
+            let dir = crate::systems::save::save_dir(&save_data.save_category);
+            let filename = sanitize_filename(&save_data.save_name);
+            dir.join(format!("{filename}.json"))
+        };
         
-        signal_log.entries.push_back(
-            "ECHO: SAVE LOADED SUCCESSFULLY.".to_string()
-        );
-        signal_log.entries.push_back(
-            format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase())
-        );
+        load_events.send(crate::systems::save::LoadRequestEvent { path: load_path });
+        
+        // Clear pending load after sending event
+        menu_state.pending_load = None;
     } else {
         // NEW GAME PATH - opening sequence runs normally
         // Opening sequence already starts at Adrift phase by default
+        info!("Starting new game - opening sequence will run normally");
     }
 
     // Developer mode signal (only once per session)

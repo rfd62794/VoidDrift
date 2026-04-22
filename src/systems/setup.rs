@@ -12,11 +12,15 @@ pub fn cleanup_world_entities(
 ) {
     info!("Cleaning up {} entities before new game", entities.iter().count());
     
+    // Use commands.despawn() instead of despawn_recursive() to avoid B0003 errors
     // Collect entities first to avoid modifying query while iterating
     let entities_to_despawn: Vec<Entity> = entities.iter().collect();
     
     for entity in entities_to_despawn {
-        commands.entity(entity).despawn_recursive();
+        // Try to despawn, but ignore if entity doesn't exist
+        if commands.get_entity(entity).is_some() {
+            commands.entity(entity).despawn();
+        }
     }
 }
 
@@ -28,12 +32,16 @@ pub fn setup_world(
     asset_server: Res<AssetServer>,
     mut camera_delta: ResMut<CameraDelta>,
     mut map_pan_state: ResMut<MapPanState>,
+    mut opening_sequence: ResMut<OpeningSequence>,
+    mut signal_log: ResMut<SignalLog>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     // Reset resources to clean state
     *camera_delta = CameraDelta::default();
     *map_pan_state = MapPanState::default();
+    *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 };
+    signal_log.entries.clear();
 
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
