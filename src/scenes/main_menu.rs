@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use bevy::sprite::AlphaMode2d;
+use rand::{SeedableRng, Rng};
 use crate::components::*;
-use crate::systems::save::*;
+use crate::systems::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
+use crate::constants::*;
 
 #[derive(Resource, Default)]
 pub struct MainMenuState {
@@ -18,9 +21,14 @@ pub struct MainMenuState {
 }
 
 pub fn setup_main_menu(
-    _commands: Commands,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut menu_state: ResMut<MainMenuState>,
 ) {
+    // Spawn starfield background for main menu
+    spawn_menu_starfield(&mut commands, &mut meshes, &mut materials);
+    
     // Load save lists on menu entry
     menu_state.play_saves = list_saves(&SaveCategory::Play);
     menu_state.stage_saves = list_saves(&SaveCategory::Stage);
@@ -209,17 +217,68 @@ fn render_save_list(
 
 fn format_timestamp(ts: &str) -> String {
     ts.parse::<u64>().map(|secs| {
-        let mins = secs / 60;
-        let hours = mins / 60;
-        let days = hours / 24;
-        if days > 0 {
-            format!("{days}d ago")
-        } else if hours > 0 {
-            format!("{hours}h ago")
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        
+        let diff = now.saturating_sub(secs);
+        if diff < 60 {
+            format!("{}s ago", diff)
+        } else if diff < 3600 {
+            let mins = diff / 60;
+            format!("{}m ago", mins)
         } else {
-            format!("{mins}m ago")
+            let hours = diff / 3600;
+            format!("{}h ago", hours)
         }
     }).unwrap_or_else(|_| ts.to_string())
+}
+
+fn spawn_menu_starfield(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0xBEEF_DEAD_u64); // Different seed for menu
+    let far_mat  = materials.add(ColorMaterial {
+        color: Color::srgba(1.0, 1.0, 1.0, 0.8), // Slightly transparent for menu
+        alpha_mode: AlphaMode2d::Opaque,
+        ..default()
+    });
+    let near_mat = materials.add(ColorMaterial {
+        color: Color::srgba(1.0, 1.0, 1.0, 0.9), // Slightly more transparent
+        alpha_mode: AlphaMode2d::Opaque,
+        ..default()
+    });
+    
+    // Create more stars for menu background
+    let star_sm  = meshes.add(Rectangle::new(1.5, 1.5));
+    let star_lg  = meshes.add(Rectangle::new(2.5, 2.5));
+    
+    // Far layer stars
+    for _ in 0..200 {
+        let x: f32 = rng.gen_range(-800.0..800.0);
+        let y: f32 = rng.gen_range(-600.0..600.0);
+        commands.spawn((
+            StarLayer(0.05),
+            Mesh2d(star_sm.clone()),
+            MeshMaterial2d(far_mat.clone()),
+            Transform::from_xyz(x, y, Z_STARS_FAR),
+        ));
+    }
+    
+    // Near layer stars
+    for _ in 0..80 {
+        let x: f32 = rng.gen_range(-800.0..800.0);
+        let y: f32 = rng.gen_range(-600.0..600.0);
+        commands.spawn((
+            StarLayer(0.15),
+            Mesh2d(star_lg.clone()),
+            MeshMaterial2d(near_mat.clone()),
+            Transform::from_xyz(x, y, Z_STARS_NEAR),
+        ));
+    }
 }
 
 pub fn ingame_startup_system(
