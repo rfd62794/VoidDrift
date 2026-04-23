@@ -122,6 +122,11 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     let is_docked = ship.state == ShipState::Docked;
     let opening_complete = params.opening.phase == OpeningPhase::Complete;
 
+    // Always record the full egui canvas size so viewport.rs can derive correct scale
+    let screen = ctx.screen_rect();
+    params.world_view_rect.canvas_w = screen.width();
+    params.world_view_rect.canvas_h = screen.height();
+
     // Drive drawer state from ship/game state
     if !opening_complete {
         *params.drawer = DrawerState::Collapsed;

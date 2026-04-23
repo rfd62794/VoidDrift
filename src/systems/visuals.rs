@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
+use rand::Rng;
 
 pub fn thruster_glow_system(
     mut query: Query<(&Parent, &mut Visibility), With<ThrusterGlow>>,
@@ -69,8 +70,8 @@ pub fn ship_rotation_system(
     }
 }
 
-/// Scrolls all star entities at their layer's parallax speed and wraps them at screen edges.
-/// Wrap bounds scale with camera zoom so the starfield is truly limitless at any zoom level.
+/// Scrolls star entities with parallax and wraps them around the camera.
+/// On wrap, stars are redistributed randomly within bounds — no hard edges at any zoom.
 pub fn starfield_scroll_system(
     cam_query: Query<(&Transform, &OrthographicProjection), (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
     mut star_query: Query<(&StarLayer, &mut Transform), (Without<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
@@ -78,13 +79,11 @@ pub fn starfield_scroll_system(
 ) {
     let Ok((cam_transform, proj)) = cam_query.get_single() else { return; };
     let cam_pos = cam_transform.translation.truncate();
+    let mut rng = rand::thread_rng();
 
-    // Base half-extents in world units for zoom=1. Scale by proj.scale for current zoom.
-    // Extra 1.5× margin ensures no star pop-in during fast pan or parallax offset.
-    const BASE_HALF_X: f32 = 900.0;
-    const BASE_HALF_Y: f32 = 1000.0;
-    let wrap_x = BASE_HALF_X * proj.scale * 1.5;
-    let wrap_y = BASE_HALF_Y * proj.scale * 1.5;
+    // Half-extents scale with zoom so stars always fill the view.
+    let wrap_x = 900.0_f32 * proj.scale.max(1.0);
+    let wrap_y = 1000.0_f32 * proj.scale.max(1.0);
 
     for (layer, mut transform) in star_query.iter_mut() {
         transform.translation.x += cam_delta.0.x * (1.0 - layer.0);
@@ -92,10 +91,23 @@ pub fn starfield_scroll_system(
 
         let rel_x = transform.translation.x - cam_pos.x;
         let rel_y = transform.translation.y - cam_pos.y;
-        if      rel_x >  wrap_x { transform.translation.x -= wrap_x * 2.0; }
-        else if rel_x < -wrap_x { transform.translation.x += wrap_x * 2.0; }
-        if      rel_y >  wrap_y { transform.translation.y -= wrap_y * 2.0; }
-        else if rel_y < -wrap_y { transform.translation.y += wrap_y * 2.0; }
+
+        // On wrap: scatter to a random position on the opposite side
+        // so there's never a visible edge or empty region.
+        if rel_x > wrap_x {
+            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..-wrap_x * 0.5);
+            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..wrap_y);
+        } else if rel_x < -wrap_x {
+            transform.translation.x = cam_pos.x + rng.gen_range(wrap_x * 0.5..wrap_x);
+            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..wrap_y);
+        }
+        if rel_y > wrap_y {
+            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..-wrap_y * 0.5);
+            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..wrap_x);
+        } else if rel_y < -wrap_y {
+            transform.translation.y = cam_pos.y + rng.gen_range(wrap_y * 0.5..wrap_y);
+            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..wrap_x);
+        }
     }
 }
 

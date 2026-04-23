@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::render::camera::Viewport;
 use crate::components::*;
-use crate::constants::EGUI_SCALE;
+
 
 /// Sets the camera viewport each frame to exactly match the CentralPanel rect
 /// written by hud_ui_system. egui handles all panel layout — we just mirror it.
@@ -20,13 +20,11 @@ pub fn drawer_viewport_system(
     let win_h = window.physical_height();
     if win_w == 0 || win_h == 0 { return; }
 
-    // Derive actual egui→physical scale from window size.
-    // EGUI_SCALE=3.0 is the egui pixels-per-point setting, but the egui canvas
-    // logical size doesn't equal physical/3.0 — use actual ratio instead.
-    let egui_canvas_w = world_view.x + world_view.w; // CentralPanel fills full width
-    let egui_canvas_h = world_view.y + world_view.h; // bottom of CentralPanel = full canvas when collapsed
-    let scale_x = if egui_canvas_w > 0.0 { win_w as f32 / egui_canvas_w } else { EGUI_SCALE };
-    let scale_y = if egui_canvas_h > 0.0 { win_h as f32 / egui_canvas_h } else { EGUI_SCALE };
+    // Derive exact egui→physical scale from true canvas size (written by hud_ui_system).
+    // scale_x = physical_width / egui_canvas_width (exact, no guessing)
+    if world_view.canvas_w <= 0.0 || world_view.canvas_h <= 0.0 { return; }
+    let scale_x = win_w as f32 / world_view.canvas_w;
+    let scale_y = win_h as f32 / world_view.canvas_h;
 
     let phys_x = (world_view.x * scale_x).round() as u32;
     let phys_y = (world_view.y * scale_y).round() as u32;
@@ -47,13 +45,7 @@ pub fn drawer_viewport_system(
         depth: 0.0..1.0,
     };
 
-    let needs_update = camera.viewport.as_ref().map_or(true, |v| {
-        v.physical_position != new_viewport.physical_position
-            || v.physical_size != new_viewport.physical_size
-    });
-    if needs_update {
-        camera.viewport = Some(new_viewport);
-    }
+    camera.viewport = Some(new_viewport);
 }
 
 /// No-op — kept for lib.rs registration compatibility.

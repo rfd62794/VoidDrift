@@ -291,11 +291,13 @@ pub struct WorldViewRect {
     pub y: f32,
     pub w: f32,
     pub h: f32,
+    pub canvas_w: f32,
+    pub canvas_h: f32,
 }
 
 impl Default for WorldViewRect {
     fn default() -> Self {
-        Self { x: 0.0, y: 0.0, w: 240.0, h: 534.0 }
+        Self { x: 0.0, y: 0.0, w: 240.0, h: 534.0, canvas_w: 240.0, canvas_h: 534.0 }
     }
 }
 
