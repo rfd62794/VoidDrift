@@ -461,6 +461,13 @@ pub fn camera_viewport_system(
 
     if phys_w == 0 || phys_h == 0 { return; }
 
+    // One-time log to verify correct values on device
+    if camera.viewport.is_none() {
+        info!("[Viewport] egui rect: ({},{}) {}x{} → phys ({},{}) {}x{} win {}x{}",
+            world_view.x, world_view.y, world_view.w, world_view.h,
+            phys_x, phys_y, phys_w, phys_h, win_w, win_h);
+    }
+
     camera.viewport = Some(Viewport {
         physical_position: UVec2::new(phys_x, phys_y),
         physical_size: UVec2::new(phys_w, phys_h),
