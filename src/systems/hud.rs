@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
+use bevy::render::camera::Viewport;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
@@ -145,14 +146,10 @@ pub fn hud_ui_system(mut params: HudParams) {
             let rect = ui.available_rect_before_wrap();
             let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
             if response.clicked() {
-                *params.drawer = match drawer {
-                    DrawerState::Collapsed | DrawerState::TabsOnly => {
-                        if is_docked { DrawerState::Expanded } else { DrawerState::TabsOnly }
-                    }
-                    DrawerState::Expanded => DrawerState::TabsOnly,
-                };
+                params.expanded.0 = !params.expanded.0;
             }
-            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(3).collect();
+            let display_count = if params.expanded.0 { 8 } else { 3 };
+            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
             ui.vertical(|ui| {
                 for line in entries.iter().rev() {
                     ui.label(egui::RichText::new(*line)
@@ -437,4 +434,39 @@ pub fn hud_ui_system(mut params: HudParams) {
             params.tutorial.active = None;
         }
     }
+}
+
+/// Resizes the camera viewport each frame to match the world-view area above the drawer.
+/// Without this the game world renders behind the UI rather than being constrained above it.
+pub fn camera_viewport_system(
+    drawer: Res<DrawerState>,
+    layout: Res<UiLayout>,
+    windows: Query<&Window>,
+    mut cam_query: Query<&mut Camera, With<MainCamera>>,
+) {
+    let Ok(window) = windows.get_single() else { return; };
+    let Ok(mut camera) = cam_query.get_single_mut() else { return; };
+
+    let scale = window.scale_factor() as f32;
+    let win_w = window.physical_width();
+    let win_h = window.physical_height();
+
+    // Calculate total drawer height in logical pixels based on DrawerState
+    let drawer_logical_height = match *drawer {
+        DrawerState::Collapsed => layout.handle_height + layout.signal_height,
+        DrawerState::TabsOnly  => layout.handle_height + layout.primary_tab_height + layout.signal_height,
+        DrawerState::Expanded  => layout.handle_height + layout.primary_tab_height
+                                + layout.secondary_tab_height + layout.content_height
+                                + layout.signal_height,
+    };
+
+    // Convert logical px to physical px
+    let drawer_physical = (drawer_logical_height * scale).round() as u32;
+    let world_h = win_h.saturating_sub(drawer_physical);
+
+    camera.viewport = Some(Viewport {
+        physical_position: UVec2::new(0, 0),
+        physical_size: UVec2::new(win_w, world_h.max(1)),
+        depth: 0.0..1.0,
+    });
 }

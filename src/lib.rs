@@ -106,6 +106,7 @@ fn main() {
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,
+            systems::ui::camera_viewport_system,
             systems::ui::station_visual_system,
             systems::economy::station_status_system,
             systems::economy::station_maintenance_system,
