@@ -318,49 +318,31 @@ pub fn hud_ui_system(mut params: HudParams) {
 
         // ── 5. HANDLE BAR (always visible, topmost of drawer) ─────────────────
         egui::TopBottomPanel::bottom("handle_bar")
-            .frame(egui::Frame::NONE
-                .fill(egui::Color32::from_rgb(20, 20, 30))
-                .inner_margin(egui::Margin::symmetric(8, 4)))
+            .resizable(false)
             .exact_height(layout.handle_height)
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgb(8, 10, 14)))
             .show(ctx, |ui| {
-                // Single full-rect interact — zone determined by tap x-position
-                let rect = ui.available_rect_before_wrap();
-                let response = ui.interact(rect, ui.id().with("handle_tap"), egui::Sense::click());
-                if let Some(pos) = response.interact_pointer_pos() {
-                    if response.clicked() {
-                        let third = rect.width() / 3.0;
-                        let x = pos.x - rect.min.x;
-                        if x < third {
-                            // Left zone — MAP
-                            if *params.state.get() == GameState::SpaceView {
-                                params.next_state.set(GameState::MapView);
-                            } else {
-                                params.next_state.set(GameState::SpaceView);
-                            }
-                            params.quest_log.panel_open = false;
-                        } else if x > third * 2.0 {
-                            // Right zone — SAVE
-                            params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
-                        } else {
-                            // Center zone — cycle drawer
-                            *params.drawer = match drawer {
-                                DrawerState::Collapsed => DrawerState::TabsOnly,
-                                DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
-                                DrawerState::Expanded  => DrawerState::Collapsed,
-                            };
-                        }
-                    }
+                // ONE interact on the full rect — no widgets
+                let rect = ui.max_rect();
+                let response = ui.interact(rect, ui.id(), egui::Sense::click());
+
+                if response.clicked() {
+                    *params.drawer = match drawer {
+                        DrawerState::Collapsed => DrawerState::TabsOnly,
+                        DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
+                        DrawerState::Expanded  => DrawerState::Collapsed,
+                    };
                 }
-                // Paint labels
-                let chevron = match drawer {
-                    DrawerState::Collapsed => "▲",
-                    DrawerState::TabsOnly  => "▲▲",
-                    DrawerState::Expanded  => "▼",
-                };
-                let map_label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT" };
-                ui.painter().text(rect.left_center() + egui::vec2(12.0, 0.0), egui::Align2::LEFT_CENTER, map_label, egui::FontId::proportional(12.0), egui::Color32::from_gray(160));
-                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, chevron, egui::FontId::proportional(14.0), egui::Color32::from_gray(200));
-                ui.painter().text(rect.right_center() - egui::vec2(12.0, 0.0), egui::Align2::RIGHT_CENTER, "SAVE", egui::FontId::proportional(12.0), egui::Color32::from_gray(160));
+
+                // Visual only — painter, no widgets
+                ui.painter().text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                    egui::FontId::monospace(10.0),
+                    egui::Color32::from_gray(60),
+                );
             });
 
         // ── 6. QUEST OVERLAY (window, above world) ────────────────────────────
