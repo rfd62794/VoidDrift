@@ -39,15 +39,11 @@ pub fn drawer_viewport_system(
         depth: 0.0..1.0,
     };
 
-    // Only write if changed to avoid unnecessary GPU state changes
-    let needs_update = camera.viewport.as_ref().map_or(true, |v| {
-        v.physical_position != new_viewport.physical_position
-            || v.physical_size != new_viewport.physical_size
+    // DIAGNOSTIC: force top-half only — if world clips to top half, viewport is working
+    let _ = new_viewport;
+    camera.viewport = Some(Viewport {
+        physical_position: UVec2::new(0, 0),
+        physical_size: UVec2::new(win_w, win_h / 2),
+        depth: 0.0..1.0,
     });
-
-    if needs_update {
-        eprintln!("VIEWPORT: world_h={} drawer_h={} win={}x{}",
-            world_h, drawer_physical, win_w, win_h);
-        camera.viewport = Some(new_viewport);
-    }
 }
