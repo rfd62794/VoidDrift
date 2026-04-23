@@ -140,7 +140,7 @@ pub fn hud_ui_system(mut params: HudParams) {
     let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
     egui::TopBottomPanel::bottom("signal_strip")
         .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_black_alpha(220))
+            .fill(egui::Color32::from_rgb(5, 8, 12))
             .inner_margin(4.0))
         .exact_height(signal_height)
         .show(ctx, |ui| {
@@ -162,6 +162,16 @@ pub fn hud_ui_system(mut params: HudParams) {
         });
 
     if !opening_complete {
+        // Still must register CentralPanel so WorldViewRect gets the correct rect
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE)
+            .show(ctx, |ui| {
+                let r = ui.max_rect();
+                params.world_view_rect.x = r.min.x;
+                params.world_view_rect.y = r.min.y;
+                params.world_view_rect.w = r.width();
+                params.world_view_rect.h = r.height();
+            });
         return;
     }
 
@@ -171,7 +181,7 @@ pub fn hud_ui_system(mut params: HudParams) {
         if drawer == DrawerState::Expanded && is_docked {
             egui::TopBottomPanel::bottom("content_area")
                 .frame(egui::Frame::NONE
-                    .fill(egui::Color32::from_black_alpha(200))
+                    .fill(egui::Color32::from_rgb(8, 10, 16))
                     .inner_margin(egui::Margin::symmetric(8, 8)))
                 .exact_height(layout.content_height)
                 .show(ctx, |ui| {
@@ -386,7 +396,7 @@ pub fn hud_ui_system(mut params: HudParams) {
             params.world_view_rect.w = r.width();
             params.world_view_rect.h = r.height();
 
-            if opening_complete {
+            {
                 if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                     params.pan_state.is_focused = true;
                     params.pan_state.cumulative_offset = Vec2::ZERO;
@@ -406,7 +416,7 @@ pub fn hud_ui_system(mut params: HudParams) {
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .fixed_size([300.0, 180.0])
             .frame(egui::Frame::window(&ctx.style())
-                .fill(egui::Color32::from_black_alpha(240))
+                .fill(egui::Color32::from_rgb(5, 5, 10))
                 .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
                 .inner_margin(16.0))
             .show(ctx, |ui| {
