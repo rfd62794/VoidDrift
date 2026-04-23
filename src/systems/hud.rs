@@ -323,62 +323,44 @@ pub fn hud_ui_system(mut params: HudParams) {
                 .inner_margin(egui::Margin::symmetric(8, 4)))
             .exact_height(layout.handle_height)
             .show(ctx, |ui| {
-                // Full-rect touch target — tapping anywhere on handle bar cycles drawer
+                // Single full-rect interact — zone determined by tap x-position
                 let rect = ui.available_rect_before_wrap();
                 let response = ui.interact(rect, ui.id().with("handle_tap"), egui::Sense::click());
-                if response.clicked() {
-                    *params.drawer = match drawer {
-                        DrawerState::Collapsed => DrawerState::TabsOnly,
-                        DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
-                        DrawerState::Expanded  => DrawerState::Collapsed,
-                    };
+                if let Some(pos) = response.interact_pointer_pos() {
+                    if response.clicked() {
+                        let third = rect.width() / 3.0;
+                        let x = pos.x - rect.min.x;
+                        if x < third {
+                            // Left zone — MAP
+                            if *params.state.get() == GameState::SpaceView {
+                                params.next_state.set(GameState::MapView);
+                            } else {
+                                params.next_state.set(GameState::SpaceView);
+                            }
+                            params.quest_log.panel_open = false;
+                        } else if x > third * 2.0 {
+                            // Right zone — SAVE
+                            params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
+                        } else {
+                            // Center zone — cycle drawer
+                            *params.drawer = match drawer {
+                                DrawerState::Collapsed => DrawerState::TabsOnly,
+                                DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
+                                DrawerState::Expanded  => DrawerState::Collapsed,
+                            };
+                        }
+                    }
                 }
-                // Visual labels painted over the tap target
+                // Paint labels
                 let chevron = match drawer {
                     DrawerState::Collapsed => "▲",
                     DrawerState::TabsOnly  => "▲▲",
                     DrawerState::Expanded  => "▼",
                 };
-                ui.painter().text(
-                    rect.center(),
-                    egui::Align2::CENTER_CENTER,
-                    chevron,
-                    egui::FontId::proportional(14.0),
-                    egui::Color32::from_gray(180),
-                );
-                // MAP label left, SAVE label right
-                let map_label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
-                ui.painter().text(
-                    rect.left_center() + egui::vec2(12.0, 0.0),
-                    egui::Align2::LEFT_CENTER,
-                    map_label,
-                    egui::FontId::proportional(12.0),
-                    egui::Color32::from_gray(160),
-                );
-                ui.painter().text(
-                    rect.right_center() - egui::vec2(12.0, 0.0),
-                    egui::Align2::RIGHT_CENTER,
-                    "SAVE",
-                    egui::FontId::proportional(12.0),
-                    egui::Color32::from_gray(160),
-                );
-                // Handle actual MAP / SAVE tap — split rect into thirds
-                let third = rect.width() / 3.0;
-                let left_rect  = egui::Rect::from_min_size(rect.min, egui::vec2(third, rect.height()));
-                let right_rect = egui::Rect::from_min_max(egui::pos2(rect.max.x - third, rect.min.y), rect.max);
-                let left_resp  = ui.interact(left_rect,  ui.id().with("handle_map"),  egui::Sense::click());
-                let right_resp = ui.interact(right_rect, ui.id().with("handle_save"), egui::Sense::click());
-                if left_resp.clicked() {
-                    if *params.state.get() == GameState::SpaceView {
-                        params.next_state.set(GameState::MapView);
-                    } else {
-                        params.next_state.set(GameState::SpaceView);
-                    }
-                    params.quest_log.panel_open = false;
-                }
-                if right_resp.clicked() {
-                    params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
-                }
+                let map_label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT" };
+                ui.painter().text(rect.left_center() + egui::vec2(12.0, 0.0), egui::Align2::LEFT_CENTER, map_label, egui::FontId::proportional(12.0), egui::Color32::from_gray(160));
+                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, chevron, egui::FontId::proportional(14.0), egui::Color32::from_gray(200));
+                ui.painter().text(rect.right_center() - egui::vec2(12.0, 0.0), egui::Align2::RIGHT_CENTER, "SAVE", egui::FontId::proportional(12.0), egui::Color32::from_gray(160));
             });
 
         // ── 6. QUEST OVERLAY (window, above world) ────────────────────────────
