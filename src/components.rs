@@ -287,14 +287,14 @@ pub enum OpeningPhase {
 
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
 pub enum ActiveStationTab {
+    Station,
+    Fleet,
     #[default]
-    Reserves,
     Power,
-    Smelter,
-    Forge,
-    ShipPort,
-    Market, // Added back for future parity
-    Fleet,  // Added back for future parity
+    Cargo,
+    Refinery,
+    Foundry,
+    Hangar,
 }
 
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]

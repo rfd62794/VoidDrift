@@ -187,21 +187,39 @@ pub fn hud_ui_system(mut params: HudParams) {
                     ui.separator();
                     ui.add_space(8.0);
 
-                    let tab_size = egui::vec2(80.0, 44.0);
-                    let tabs = [
-                        (ActiveStationTab::Reserves, "RESERVES"),
-                        (ActiveStationTab::Power, "POWER"),
-                        (ActiveStationTab::Smelter, "REFINERY"),
-                        (ActiveStationTab::Forge, "FORGE"),
-                        (ActiveStationTab::ShipPort, "SHIP PORT"),
+                    // Primary tabs
+                    let primary_tab_size = egui::vec2(120.0, 44.0);
+                    let primary_tabs = [
+                        (ActiveStationTab::Station, "STATION"),
+                        (ActiveStationTab::Fleet, "FLEET"),
                     ];
-
-                    for (tab, label) in tabs {
-                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
-                            *params.active_tab = tab;
+                    ui.horizontal(|ui| {
+                        for (tab, label) in primary_tabs {
+                            if ui.add_sized(primary_tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
+                                *params.active_tab = tab;
+                            }
+                            ui.add_space(4.0);
                         }
-                        ui.add_space(8.0);
-                    }
+                    });
+                    ui.add_space(4.0);
+
+                    // Secondary tabs
+                    let tab_size = egui::vec2(80.0, 44.0);
+                    let secondary_tabs = [
+                        (ActiveStationTab::Power, "POWER"),
+                        (ActiveStationTab::Cargo, "CARGO"),
+                        (ActiveStationTab::Refinery, "REFINERY"),
+                        (ActiveStationTab::Foundry, "FOUNDRY"),
+                        (ActiveStationTab::Hangar, "HANGAR"),
+                    ];
+                    ui.horizontal(|ui| {
+                        for (tab, label) in secondary_tabs {
+                            if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
+                                *params.active_tab = tab;
+                            }
+                            ui.add_space(4.0);
+                        }
+                    });
                 }
 
                 // FOCUS AND SAVE BUTTONS (Bottom Left)
@@ -320,7 +338,17 @@ pub fn hud_ui_system(mut params: HudParams) {
                     ui.add_space(8.0);
                     ui.vertical_centered(|ui| {
                         match *params.active_tab {
-                            ActiveStationTab::Reserves => {
+                            ActiveStationTab::Station => {
+                                ui.heading("VOIDRIFT STATION");
+                                ui.add_space(8.0);
+                                ui.label(egui::RichText::new("ECHO: STATION AI - OPERATIONAL").color(egui::Color32::from_rgb(0, 204, 102)));
+                            }
+                            ActiveStationTab::Fleet => {
+                                ui.heading("FLEET");
+                                ui.add_space(8.0);
+                                ui.label("DRONE MANAGEMENT - COMING ONLINE");
+                            }
+                            ActiveStationTab::Cargo => {
                                 ui.vertical(|ui| {
                                     ui.heading("STATION RESOURCES");
                                     ui.add_space(8.0);
@@ -354,21 +382,21 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
                                 });
                             }
-                            ActiveStationTab::Smelter => {
+                            ActiveStationTab::Refinery => {
                                 ui.horizontal(|ui| {
                                     render_queue_card(ui, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
                                     ui.add_space(16.0);
                                     render_queue_card(ui, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
                                 });
                             }
-                            ActiveStationTab::Forge => {
+                            ActiveStationTab::Foundry => {
                                 ui.horizontal(|ui| {
                                     render_queue_card(ui, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
                                     ui.add_space(16.0);
                                     render_queue_card(ui, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
                                 });
                             }
-                            ActiveStationTab::ShipPort => {
+                            ActiveStationTab::Hangar => {
                                 ui.horizontal(|ui| {
                                     if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
                                         station.ship_hulls -= 1; station.ai_cores -= 1;
@@ -388,7 +416,6 @@ pub fn hud_ui_system(mut params: HudParams) {
                                     }
                                 });
                             }
-                            _ => { ui.label("Unavailable."); }
                         }
                     });
                     ui.add_space(8.0);

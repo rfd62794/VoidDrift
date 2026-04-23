@@ -41,7 +41,7 @@ pub fn autopilot_system(
                     else if let Ok(berth) = berth_query.get(target_ent) {
                         if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
                             ship.state = ShipState::Docked; 
-                            *active_tab = ActiveStationTab::Reserves;
+                            *active_tab = ActiveStationTab::Cargo;
                             ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
                             // [PHASE B] Docking Sequence Trigger
