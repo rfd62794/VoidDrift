@@ -137,11 +137,12 @@ pub fn hud_ui_system(mut params: HudParams) {
     // Signal strip → content → secondary tabs → primary tabs → handle bar → CentralPanel.
 
     // ── 1. SIGNAL STRIP (always visible, bottommost) ─────────────────────────
+    let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
     egui::TopBottomPanel::bottom("signal_strip")
         .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_black_alpha(200))
+            .fill(egui::Color32::from_black_alpha(220))
             .inner_margin(4.0))
-        .exact_height(layout.signal_height)
+        .exact_height(signal_height)
         .show(ctx, |ui| {
             let rect = ui.available_rect_before_wrap();
             let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
@@ -451,13 +452,16 @@ pub fn camera_viewport_system(
     let win_w = window.physical_width();
     let win_h = window.physical_height();
 
+    // Signal strip expands when SignalStripExpanded is true
+    let signal_h = layout.signal_height; // collapsed height — expanded is 3x but viewport clips to this
+
     // Calculate total drawer height in logical pixels based on DrawerState
     let drawer_logical_height = match *drawer {
-        DrawerState::Collapsed => layout.handle_height + layout.signal_height,
-        DrawerState::TabsOnly  => layout.handle_height + layout.primary_tab_height + layout.signal_height,
+        DrawerState::Collapsed => layout.handle_height + signal_h,
+        DrawerState::TabsOnly  => layout.handle_height + layout.primary_tab_height + signal_h,
         DrawerState::Expanded  => layout.handle_height + layout.primary_tab_height
                                 + layout.secondary_tab_height + layout.content_height
-                                + layout.signal_height,
+                                + signal_h,
     };
 
     // Convert logical px to physical px
