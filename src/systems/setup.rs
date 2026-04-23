@@ -40,7 +40,7 @@ pub fn setup_world(
     // Reset resources to clean state
     *camera_delta = CameraDelta::default();
     *map_pan_state = MapPanState::default();
-    *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 };
+    *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
     
     // Reset SignalLog completely
     *signal_log = SignalLog::default();
