@@ -114,6 +114,7 @@ pub struct HudParams<'w, 's> {
     pub menu_state: ResMut<'w, MainMenuState>,
     pub drawer: ResMut<'w, DrawerState>,
     pub ui_layout: Res<'w, UiLayout>,
+    pub world_view_rect: ResMut<'w, WorldViewRect>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -380,6 +381,13 @@ pub fn hud_ui_system(mut params: HudParams) {
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
+            // Store the actual rendered rect so camera_viewport_system uses it exactly
+            let r = ui.max_rect();
+            params.world_view_rect.x = r.min.x;
+            params.world_view_rect.y = r.min.y;
+            params.world_view_rect.w = r.width();
+            params.world_view_rect.h = r.height();
+
             if opening_complete {
                 if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                     params.pan_state.is_focused = true;
@@ -423,11 +431,11 @@ pub fn hud_ui_system(mut params: HudParams) {
     }
 }
 
-/// Resizes the camera viewport each frame to match the world-view area above the drawer.
-/// Without this the game world renders behind the UI rather than being constrained above it.
+/// Resizes the camera viewport each frame to exactly match the CentralPanel rect
+/// written by hud_ui_system. Using the actual egui rect eliminates the one-frame
+/// lag that caused the graphical clone glitch on drawer state changes.
 pub fn camera_viewport_system(
-    drawer: Res<DrawerState>,
-    layout: Res<UiLayout>,
+    world_view: Res<WorldViewRect>,
     windows: Query<&Window>,
     mut cam_query: Query<&mut Camera, With<MainCamera>>,
 ) {
@@ -435,28 +443,18 @@ pub fn camera_viewport_system(
     let Ok(mut camera) = cam_query.get_single_mut() else { return; };
 
     let scale = window.scale_factor() as f32;
-    let win_w = window.physical_width();
-    let win_h = window.physical_height();
 
-    // Signal strip expands when SignalStripExpanded is true
-    let signal_h = layout.signal_height; // collapsed height — expanded is 3x but viewport clips to this
+    // Convert logical egui px to physical px
+    let phys_x = (world_view.x * scale).round() as u32;
+    let phys_y = (world_view.y * scale).round() as u32;
+    let phys_w = (world_view.w * scale).round() as u32;
+    let phys_h = (world_view.h * scale).round() as u32;
 
-    // Calculate total drawer height in logical pixels based on DrawerState
-    let drawer_logical_height = match *drawer {
-        DrawerState::Collapsed => layout.handle_height + signal_h,
-        DrawerState::TabsOnly  => layout.handle_height + layout.primary_tab_height + signal_h,
-        DrawerState::Expanded  => layout.handle_height + layout.primary_tab_height
-                                + layout.secondary_tab_height + layout.content_height
-                                + signal_h,
-    };
-
-    // Convert logical px to physical px
-    let drawer_physical = (drawer_logical_height * scale).round() as u32;
-    let world_h = win_h.saturating_sub(drawer_physical);
+    if phys_w == 0 || phys_h == 0 { return; }
 
     camera.viewport = Some(Viewport {
-        physical_position: UVec2::new(0, 0),
-        physical_size: UVec2::new(win_w, world_h.max(1)),
+        physical_position: UVec2::new(phys_x, phys_y),
+        physical_size: UVec2::new(phys_w, phys_h),
         depth: 0.0..1.0,
     });
 }

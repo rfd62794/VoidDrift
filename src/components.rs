@@ -285,6 +285,20 @@ pub enum OpeningPhase {
     Complete,         // Player has control — show S-007, UI unlocks
 }
 
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct WorldViewRect {
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
+
+impl Default for WorldViewRect {
+    fn default() -> Self {
+        Self { x: 0.0, y: 0.0, w: 720.0, h: 1604.0 }
+    }
+}
+
 #[derive(Resource, PartialEq, Debug, Clone, Copy, Default)]
 pub enum DrawerState {
     #[default]
