@@ -42,6 +42,8 @@ fn main() {
         .insert_resource(SignalStripExpanded(false))
         .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 })
         .insert_resource(ActiveStationTab::default())
+        .insert_resource(DrawerState::default())
+        .insert_resource(UiLayout::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())

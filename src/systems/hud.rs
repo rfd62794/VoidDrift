@@ -111,197 +111,257 @@ pub struct HudParams<'w, 's> {
     pub pan_state: ResMut<'w, MapPanState>,
     pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
     pub menu_state: ResMut<'w, MainMenuState>,
+    pub drawer: ResMut<'w, DrawerState>,
+    pub ui_layout: Res<'w, UiLayout>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
     let Ok(mut ship) = params.ship_query.get_single_mut() else { return; };
     let ctx = params.contexts.ctx_mut();
+    let is_docked = ship.state == ShipState::Docked;
+    let opening_complete = params.opening.phase == OpeningPhase::Complete;
 
-    // ── 1. SIGNAL STRIP (Bottom) ──────────────────────────────────────────────
-// [PHASE B] SIGNAL STRIP (Bottom) - MIGRATED TO BEVY UI
-    let strip_height = if params.expanded.0 { 180.0 } else { 60.0 };
+    // Drive drawer state from ship/game state
+    if !opening_complete {
+        *params.drawer = DrawerState::Collapsed;
+    } else if is_docked && *params.drawer == DrawerState::Collapsed {
+        *params.drawer = DrawerState::Expanded;
+    } else if !is_docked && *params.drawer == DrawerState::Expanded {
+        *params.drawer = DrawerState::Collapsed;
+    }
+    let drawer = *params.drawer;
+    let layout = *params.ui_layout;
 
+    // PANEL REGISTRATION ORDER: bottom-up.
+    // Signal strip → content → secondary tabs → primary tabs → handle bar → CentralPanel.
+
+    // ── 1. SIGNAL STRIP (always visible, bottommost) ─────────────────────────
     egui::TopBottomPanel::bottom("signal_strip")
         .frame(egui::Frame::NONE
             .fill(egui::Color32::from_black_alpha(200))
             .inner_margin(4.0))
-        .exact_height(strip_height)
+        .exact_height(layout.signal_height)
         .show(ctx, |ui| {
-            let display_count = if params.expanded.0 { 20 } else { 3 };
-            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
-            
             let rect = ui.available_rect_before_wrap();
             let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
             if response.clicked() {
-                params.expanded.0 = !params.expanded.0;
+                *params.drawer = match drawer {
+                    DrawerState::Collapsed | DrawerState::TabsOnly => {
+                        if is_docked { DrawerState::Expanded } else { DrawerState::TabsOnly }
+                    }
+                    DrawerState::Expanded => DrawerState::TabsOnly,
+                };
             }
-
-            egui::ScrollArea::vertical()
-                .stick_to_bottom(true)
-                .show(ui, |ui| {
-                    ui.vertical(|ui| {
-                        for line in entries.iter().rev() {
-                            ui.label(egui::RichText::new(*line)
-                                .monospace()
-                                .size(11.0)
-                                .color(egui::Color32::from_rgb(0, 255, 128)));
-                        }
-                    });
-                });
+            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(3).collect();
+            ui.vertical(|ui| {
+                for line in entries.iter().rev() {
+                    ui.label(egui::RichText::new(*line)
+                        .monospace()
+                        .size(11.0)
+                        .color(egui::Color32::from_rgb(0, 204, 102)));
+                }
+            });
         });
 
-    if params.opening.phase != OpeningPhase::Complete {
+    if !opening_complete {
         return;
     }
 
     if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
-        // ── 2. LEFT PANEL (MAP + TABS) ──────────────────────────────────────────────
-        egui::SidePanel::left("left_panel")
-            .frame(egui::Frame::NONE)
-            .show_separator_line(false)
-            .show(ctx, |ui| {
-                ui.add_space(16.0);
-                
-                let label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
-                if ui.add(egui::Button::new(label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    if *params.state.get() == GameState::SpaceView {
-                        params.next_state.set(GameState::MapView);
-                    } else {
-                        params.next_state.set(GameState::SpaceView);
+
+        // ── 2. CONTENT AREA (Expanded + docked only) ──────────────────────────
+        if drawer == DrawerState::Expanded && is_docked {
+            egui::TopBottomPanel::bottom("content_area")
+                .frame(egui::Frame::NONE
+                    .fill(egui::Color32::from_black_alpha(200))
+                    .inner_margin(egui::Margin::symmetric(8, 8)))
+                .exact_height(layout.content_height)
+                .show(ctx, |ui| {
+                    ui.set_width(ui.available_width());
+                    match *params.active_tab {
+                        ActiveStationTab::Station => {
+                            ui.heading("VOIDRIFT STATION");
+                            ui.add_space(8.0);
+                            ui.label(egui::RichText::new("ECHO: STATION AI - OPERATIONAL")
+                                .color(egui::Color32::from_rgb(0, 204, 102)));
+                        }
+                        ActiveStationTab::Fleet => {
+                            ui.heading("FLEET");
+                            ui.add_space(8.0);
+                            ui.label("DRONE MANAGEMENT - COMING ONLINE");
+                        }
+                        ActiveStationTab::Cargo => {
+                            ui.vertical(|ui| {
+                                ui.heading("CARGO BAY");
+                                ui.add_space(8.0);
+                                egui::Grid::new("res_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                                    ui.label("MAGNETITE:"); ui.label(egui::RichText::new(format!("{:.1}", station.magnetite_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                                    ui.label("CARBON:"); ui.label(egui::RichText::new(format!("{:.1}", station.carbon_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                                    ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                                    ui.label("POWER CELLS:"); ui.label(egui::RichText::new(format!("{}", station.power_cells)).color(egui::Color32::GREEN)); ui.end_row();
+                                    ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
+                                    ui.label("SHIP HULLS:"); ui.label(egui::RichText::new(format!("{}", station.ship_hulls)).color(egui::Color32::GOLD)); ui.end_row();
+                                });
+                                ui.add_space(16.0);
+                                ui.separator();
+                                ui.heading("AUTO-DOCK SETTINGS");
+                                ui.checkbox(&mut params.auto_dock_settings.auto_unload, "Auto-Unload Cargo");
+                                ui.checkbox(&mut params.auto_dock_settings.auto_smelt_magnetite, "Auto-Smelt Magnetite");
+                                ui.checkbox(&mut params.auto_dock_settings.auto_smelt_carbon, "Auto-Smelt Carbon");
+                            });
+                            if !station.online {
+                                if ui.button(format!("REPAIR STATION [{} CELLS]", REPAIR_COST)).clicked() && station.power_cells >= REPAIR_COST {
+                                    station.power_cells -= REPAIR_COST; station.repair_progress = 1.0; station.online = true;
+                                }
+                            }
+                        }
+                        ActiveStationTab::Power => {
+                            ui.heading("POWER");
+                            ui.add_space(8.0);
+                            ui.horizontal(|ui| {
+                                ui.label(format!("STATION: {:.1}/{:.0}", station.power, STATION_POWER_MAX));
+                                ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(150.0));
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label(format!("SHIP:    {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
+                                ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(150.0));
+                            });
+                        }
+                        ActiveStationTab::Refinery => {
+                            ui.horizontal(|ui| {
+                                render_queue_card(ui, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
+                                ui.add_space(16.0);
+                                render_queue_card(ui, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
+                            });
+                        }
+                        ActiveStationTab::Foundry => {
+                            ui.horizontal(|ui| {
+                                render_queue_card(ui, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
+                                ui.add_space(16.0);
+                                render_queue_card(ui, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
+                            });
+                        }
+                        ActiveStationTab::Hangar => {
+                            ui.horizontal(|ui| {
+                                if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
+                                    station.ship_hulls -= 1; station.ai_cores -= 1;
+                                    let (target_pos, ore, name) = if station.ai_cores >= 1 { (SECTOR_3_POS, OreType::Carbon, "Sector 3") } else { (SECTOR_1_POS, OreType::Magnetite, "Sector 1") };
+                                    params.commands.spawn((AutonomousShipTag, LastHeading(0.0), AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX }, AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() }, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)))
+                                    .with_children(|parent| {
+                                        parent.spawn((ThrusterGlow, Mesh2d(params.meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));
+                                        parent.spawn((MiningBeam, Mesh2d(params.meshes.add(Rectangle::new(2.0, 1.0))), MeshMaterial2d(params.materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), Visibility::Hidden));
+                                        parent.spawn((Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.2, 0.2, 0.2))), Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)));
+                                        parent.spawn((ShipCargoBarFill, Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)));
+                                        parent.spawn((MapElement, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), MeshMaterial2d(params.materials.add(ColorMaterial { color: Color::srgb(1.0, 0.5, 0.0), alpha_mode: bevy::sprite::AlphaMode2d::Opaque, ..default() })), Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), Visibility::Hidden));
+                                    });
+                                }
+                                ui.separator();
+                                if ui.button("TOP UP SHIP [3 CELLS]").clicked() && station.power_cells >= 3 && ship.power_cells < 5 {
+                                    station.power_cells -= 3; ship.power_cells = (ship.power_cells + 3).min(5);
+                                }
+                            });
+                        }
                     }
-                    params.quest_log.panel_open = false;
-                }
+                });
+        }
 
-                ui.add_space(8.0);
-
-                let quest_label = if params.quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
-                if ui.add(egui::Button::new(quest_label).min_size(egui::vec2(80.0, 40.0))).clicked() {
-                    params.quest_log.panel_open = !params.quest_log.panel_open;
-                    if params.quest_log.panel_open {
-                        params.next_state.set(GameState::SpaceView);
-                    }
-                }
-
-                if ship.state == ShipState::Docked {
-                    ui.add_space(8.0);
-                    ui.separator();
-                    ui.add_space(8.0);
-
-                    // Primary tabs
-                    let primary_tab_size = egui::vec2(120.0, 44.0);
-                    let primary_tabs = [
-                        (ActiveStationTab::Station, "STATION"),
-                        (ActiveStationTab::Fleet, "FLEET"),
-                    ];
+        // ── 3. SECONDARY TABS (Expanded + docked only) ────────────────────────
+        if drawer == DrawerState::Expanded && is_docked {
+            egui::TopBottomPanel::bottom("secondary_tabs")
+                .frame(egui::Frame::NONE
+                    .fill(egui::Color32::from_rgb(15, 15, 20))
+                    .inner_margin(egui::Margin::symmetric(4, 4)))
+                .exact_height(layout.secondary_tab_height)
+                .show(ctx, |ui| {
+                    let available = ui.available_width();
+                    let tab_w = (available / 5.0 - 4.0).max(60.0);
+                    let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                     ui.horizontal(|ui| {
-                        for (tab, label) in primary_tabs {
-                            if ui.add_sized(primary_tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
+                        for (tab, label) in [
+                            (ActiveStationTab::Power, "POWER"),
+                            (ActiveStationTab::Cargo, "CARGO"),
+                            (ActiveStationTab::Refinery, "REFINERY"),
+                            (ActiveStationTab::Foundry, "FOUNDRY"),
+                            (ActiveStationTab::Hangar, "HANGAR"),
+                        ] {
+                            if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                                 *params.active_tab = tab;
                             }
-                            ui.add_space(4.0);
+                            ui.add_space(2.0);
                         }
                     });
-                    ui.add_space(4.0);
+                });
+        }
 
-                    // Secondary tabs
-                    let tab_size = egui::vec2(80.0, 44.0);
-                    let secondary_tabs = [
-                        (ActiveStationTab::Power, "POWER"),
-                        (ActiveStationTab::Cargo, "CARGO"),
-                        (ActiveStationTab::Refinery, "REFINERY"),
-                        (ActiveStationTab::Foundry, "FOUNDRY"),
-                        (ActiveStationTab::Hangar, "HANGAR"),
-                    ];
+        // ── 4. PRIMARY TABS (TabsOnly + Expanded) ─────────────────────────────
+        if drawer != DrawerState::Collapsed {
+            egui::TopBottomPanel::bottom("primary_tabs")
+                .frame(egui::Frame::NONE
+                    .fill(egui::Color32::from_rgb(10, 10, 18))
+                    .inner_margin(egui::Margin::symmetric(4, 4)))
+                .exact_height(layout.primary_tab_height)
+                .show(ctx, |ui| {
+                    let available = ui.available_width();
+                    let tab_w = (available / 2.0 - 6.0).max(80.0);
+                    let tab_size = egui::vec2(tab_w, layout.primary_tab_height - 8.0);
                     ui.horizontal(|ui| {
-                        for (tab, label) in secondary_tabs {
+                        for (tab, label) in [
+                            (ActiveStationTab::Station, "STATION"),
+                            (ActiveStationTab::Fleet, "FLEET"),
+                        ] {
                             if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                                 *params.active_tab = tab;
                             }
                             ui.add_space(4.0);
                         }
                     });
-                }
-
-                // FOCUS AND SAVE BUTTONS (Bottom Left)
-                let (focus_rect, focus_response) = ui.allocate_exact_size(egui::vec2(80.0, 40.0), egui::Sense::click());
-                let (save_rect, save_response) = ui.allocate_exact_size(egui::vec2(80.0, 40.0), egui::Sense::click());
-                
-                ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
-                    ui.add_space(16.0);
-                    if focus_response.clicked() {
-                        params.pan_state.is_focused = true;
-                        params.pan_state.cumulative_offset = Vec2::ZERO;
-                        if let Ok(mut proj) = params.cam_query.get_single_mut() {
-                            proj.scale = 1.0;
-                        }
-                    }
-                    if focus_response.hovered() {
-                        ui.painter().rect_filled(
-                            focus_rect,
-                            0.0,
-                            egui::Color32::from_rgb(40, 120, 40)
-                        );
-                    }
-                    
-                    ui.add_space(8.0);
-                    
-                    if save_response.clicked() {
-                        params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
-                    }
-                    if save_response.hovered() {
-                        ui.painter().rect_filled(
-                            save_rect,
-                            0.0,
-                            egui::Color32::from_rgb(120, 40, 40)
-                        );
-                    }
                 });
-                
-                // Custom drawing after UI allocation to avoid borrowing conflicts
-                let painter = ui.painter();
-                
-                // Draw focus lines symbol
-                let focus_center = focus_rect.center();
-                let focus_line_length = focus_rect.width() * 0.3;
-                let focus_line_width = 2.0;
-                
-                painter.line_segment(
-                    [focus_center - egui::vec2(focus_line_length, 0.0), focus_center + egui::vec2(focus_line_length, 0.0)],
-                    egui::Stroke::new(focus_line_width, egui::Color32::WHITE)
-                );
-                painter.line_segment(
-                    [focus_center - egui::vec2(0.0, focus_line_length), focus_center + egui::vec2(0.0, focus_line_length)],
-                    egui::Stroke::new(focus_line_width, egui::Color32::WHITE)
-                );
-                
-                // Draw gear symbol (7 circles in hex pattern)
-                let gear_center = save_rect.center();
-                let gear_radius = save_rect.width() * 0.08;
-                
-                // Calculate hex positions (6 around center, 1 in center)
-                let hex_positions = [
-                    gear_center + egui::vec2(0.0, -gear_radius * 2.0),           // top
-                    gear_center + egui::vec2(gear_radius * 1.73, -gear_radius),      // top-right
-                    gear_center + egui::vec2(gear_radius * 1.73, gear_radius),       // bottom-right
-                    gear_center + egui::vec2(0.0, gear_radius * 2.0),            // bottom
-                    gear_center + egui::vec2(-gear_radius * 1.73, gear_radius),      // bottom-left
-                    gear_center + egui::vec2(-gear_radius * 1.73, -gear_radius),     // top-left
-                ];
-                
-                // Draw outer 6 filled circles
-                for pos in &hex_positions {
-                    painter.circle_filled(*pos, gear_radius, egui::Color32::WHITE);
-                }
-                
-                // Draw center empty circle (outline only)
-                painter.circle_stroke(
-                    gear_center,
-                    gear_radius * 0.7,
-                    egui::Stroke::new(1.5, egui::Color32::WHITE)
-                );
+        }
+
+        // ── 5. HANDLE BAR (always visible, topmost of drawer) ─────────────────
+        egui::TopBottomPanel::bottom("handle_bar")
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgb(20, 20, 30))
+                .inner_margin(egui::Margin::symmetric(8, 4)))
+            .exact_height(layout.handle_height)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    let map_label = if *params.state.get() == GameState::SpaceView { "MAP" } else { "EXIT MAP" };
+                    if ui.add(egui::Button::new(map_label).min_size(egui::vec2(60.0, 24.0))).clicked() {
+                        if *params.state.get() == GameState::SpaceView {
+                            params.next_state.set(GameState::MapView);
+                        } else {
+                            params.next_state.set(GameState::SpaceView);
+                        }
+                        params.quest_log.panel_open = false;
+                    }
+                    let chevron = match drawer {
+                        DrawerState::Collapsed => "\u{25b2}",
+                        DrawerState::TabsOnly  => "\u{25b2}\u{25b2}",
+                        DrawerState::Expanded  => "\u{25bc}",
+                    };
+                    ui.add_space(8.0);
+                    if ui.add(egui::Button::new(chevron).min_size(egui::vec2(60.0, 24.0))).clicked() {
+                        *params.drawer = match drawer {
+                            DrawerState::Collapsed => DrawerState::TabsOnly,
+                            DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
+                            DrawerState::Expanded  => DrawerState::Collapsed,
+                        };
+                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(60.0, 24.0))).clicked() {
+                            params.menu_state.show_save_overlay = !params.menu_state.show_save_overlay;
+                        }
+                        let quest_label = if params.quest_log.panel_open { "CLOSE Q" } else { "QUEST" };
+                        if ui.add(egui::Button::new(quest_label).min_size(egui::vec2(60.0, 24.0))).clicked() {
+                            params.quest_log.panel_open = !params.quest_log.panel_open;
+                            if params.quest_log.panel_open { params.next_state.set(GameState::SpaceView); }
+                        }
+                    });
+                });
             });
 
-        // ── 3. QUEST PANEL ────────────────────────────────────────────────────────
+        // ── 6. QUEST OVERLAY (window, above world) ────────────────────────────
         if params.quest_log.panel_open {
             egui::Window::new("OBJECTIVES")
                 .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10.0, 10.0))
@@ -330,100 +390,24 @@ pub fn hud_ui_system(mut params: HudParams) {
                 });
         }
 
-        // ── 4. TAB DETAIL PANEL ───────────────────────────────────────────────────
-        if ship.state == ShipState::Docked {
-            egui::TopBottomPanel::bottom("tab_detail_panel")
-                .frame(egui::Frame::NONE)
-                .show(ctx, |ui| {
-                    ui.add_space(8.0);
-                    ui.vertical_centered(|ui| {
-                        match *params.active_tab {
-                            ActiveStationTab::Station => {
-                                ui.heading("VOIDRIFT STATION");
-                                ui.add_space(8.0);
-                                ui.label(egui::RichText::new("ECHO: STATION AI - OPERATIONAL").color(egui::Color32::from_rgb(0, 204, 102)));
-                            }
-                            ActiveStationTab::Fleet => {
-                                ui.heading("FLEET");
-                                ui.add_space(8.0);
-                                ui.label("DRONE MANAGEMENT - COMING ONLINE");
-                            }
-                            ActiveStationTab::Cargo => {
-                                ui.vertical(|ui| {
-                                    ui.heading("STATION RESOURCES");
-                                    ui.add_space(8.0);
-                                    egui::Grid::new("res_grid").spacing([20.0, 8.0]).show(ui, |ui| {
-                                        ui.label("MAGNETITE:"); ui.label(egui::RichText::new(format!("{:.1}", station.magnetite_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                                        ui.label("CARBON:"); ui.label(egui::RichText::new(format!("{:.1}", station.carbon_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                                        ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                                        ui.label("POWER CELLS:"); ui.label(egui::RichText::new(format!("{}", station.power_cells)).color(egui::Color32::GREEN)); ui.end_row();
-                                        ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
-                                        ui.label("SHIP HULLS:"); ui.label(egui::RichText::new(format!("{}", station.ship_hulls)).color(egui::Color32::GOLD)); ui.end_row();
-                                    });
-                                    ui.add_space(16.0);
-                                    ui.separator();
-                                    ui.heading("AUTO-DOCK SETTINGS");
-                                    ui.checkbox(&mut params.auto_dock_settings.auto_unload, "Auto-Unload Cargo");
-                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_magnetite, "Auto-Smelt Magnetite");
-                                    ui.checkbox(&mut params.auto_dock_settings.auto_smelt_carbon, "Auto-Smelt Carbon");
-                                });
-                                if !station.online {
-                                    if ui.button(format!("REPAIR STATION [{} CELLS]", REPAIR_COST)).clicked() && station.power_cells >= REPAIR_COST {
-                                        station.power_cells -= REPAIR_COST; station.repair_progress = 1.0; station.online = true;
-                                    }
-                                }
-                            }
-                            ActiveStationTab::Power => {
-                                ui.horizontal(|ui| {
-                                    ui.label(format!("STATION POWER: {:.1}/{:.0}", station.power, STATION_POWER_MAX));
-                                    ui.add(egui::ProgressBar::new(station.power / STATION_POWER_MAX).desired_width(120.0));
-                                    ui.separator();
-                                    ui.label(format!("SHIP POWER: {:.1}/{:.0}", ship.power, SHIP_POWER_MAX));
-                                    ui.add(egui::ProgressBar::new(ship.power / SHIP_POWER_MAX).desired_width(120.0));
-                                });
-                            }
-                            ActiveStationTab::Refinery => {
-                                ui.horizontal(|ui| {
-                                    render_queue_card(ui, &mut station, &mut queues.magnetite_refinery, ProcessingOperation::MagnetiteRefinery, REFINERY_RATIO as f32, POWER_COST_REFINERY as f32, REFINERY_MAGNETITE_TIME);
-                                    ui.add_space(16.0);
-                                    render_queue_card(ui, &mut station, &mut queues.carbon_refinery, ProcessingOperation::CarbonRefinery, HULL_PLATE_COST_CARBON as f32, POWER_COST_HULL_FORGE as f32, REFINERY_CARBON_TIME);
-                                });
-                            }
-                            ActiveStationTab::Foundry => {
-                                ui.horizontal(|ui| {
-                                    render_queue_card(ui, &mut station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, POWER_COST_SHIP_FORGE as f32, FORGE_HULL_TIME);
-                                    ui.add_space(16.0);
-                                    render_queue_card(ui, &mut station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_CELLS as f32, POWER_COST_AI_FABRICATE as f32, FORGE_CORE_TIME);
-                                });
-                            }
-                            ActiveStationTab::Hangar => {
-                                ui.horizontal(|ui| {
-                                    if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked() && station.ship_hulls >= 1 && station.ai_cores >= 1 {
-                                        station.ship_hulls -= 1; station.ai_cores -= 1;
-                                        let (target_pos, ore, name) = if station.ai_cores >= 1 { (SECTOR_3_POS, OreType::Carbon, "Sector 3") } else { (SECTOR_1_POS, OreType::Magnetite, "Sector 1") };
-                                        params.commands.spawn((AutonomousShipTag, LastHeading(0.0), AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore, power: SHIP_POWER_MAX }, AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() }, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP)))
-                                        .with_children(|parent| {
-                                            parent.spawn((ThrusterGlow, Mesh2d(params.meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));
-                                            parent.spawn((MiningBeam, Mesh2d(params.meshes.add(Rectangle::new(2.0, 1.0))), MeshMaterial2d(params.materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), Visibility::Hidden));
-                                            parent.spawn((Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(0.2, 0.2, 0.2))), Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)));
-                                            parent.spawn((ShipCargoBarFill, Mesh2d(params.meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(params.materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)));
-                                            parent.spawn((MapElement, Mesh2d(params.meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), MeshMaterial2d(params.materials.add(ColorMaterial { color: Color::srgb(1.0, 0.5, 0.0), alpha_mode: bevy::sprite::AlphaMode2d::Opaque, ..default() })), Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), Visibility::Hidden));
-                                        });
-                                    }
-                                    ui.separator();
-                                    if ui.button("TOP UP SHIP [3 CELLS]").clicked() && station.power_cells >= 3 && ship.power_cells < 5 {
-                                        station.power_cells -= 3; ship.power_cells = (ship.power_cells + 3).min(5);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                    ui.add_space(8.0);
-                });
-        }
-    }
+    } // end station query
 
-    // ── 5. TUTORIAL POP-UP ───────────────────────────────────────────────────
+    // ── 7. CENTRAL PANEL (world view — MUST be last) ───────────────────────────
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE)
+        .show(ctx, |ui| {
+            if opening_complete {
+                if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                    params.pan_state.is_focused = true;
+                    params.pan_state.cumulative_offset = Vec2::ZERO;
+                    if let Ok(mut proj) = params.cam_query.get_single_mut() {
+                        proj.scale = 1.0;
+                    }
+                }
+            }
+        });
+
+    // ── 8. TUTORIAL POP-UP ───────────────────────────────────────────────────
     if let Some(popup) = params.tutorial.active.clone() {
         egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
             .id(egui::Id::new("tutorial_popup"))
