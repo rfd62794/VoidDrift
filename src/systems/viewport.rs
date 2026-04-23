@@ -3,40 +3,13 @@ use bevy::render::camera::Viewport;
 use crate::components::*;
 use crate::constants::EGUI_SCALE;
 
-/// Updates UiLayout.content_height each frame based on actual window size.
-/// Guarantees Expanded drawer never overflows the screen.
-/// Formula: content_h = screen_egui_h - handle - primary - secondary - signal - world_min
-pub fn ui_layout_system(
-    windows: Query<&Window>,
-    mut layout: ResMut<UiLayout>,
-) {
-    let Ok(window) = windows.get_single() else { return; };
-    let win_h = window.physical_height();
-    if win_h == 0 { return; }
-
-    // Convert physical px → egui logical pts
-    let screen_egui_h = win_h as f32 / EGUI_SCALE;
-
-    // Reserve 45% of screen for world view minimum
-    let world_min = screen_egui_h * 0.45;
-
-    let fixed_ui_h = layout.handle_height
-        + layout.primary_tab_height
-        + layout.secondary_tab_height
-        + layout.signal_height;
-
-    let content_h = (screen_egui_h - fixed_ui_h - world_min).max(60.0);
-
-    if (layout.content_height - content_h).abs() > 1.0 {
-        layout.content_height = content_h;
-    }
-}
-
-/// Sets the camera viewport each frame based purely on DrawerState + UiLayout constants.
-/// No egui rect involved — constants are reliable on frame 0, egui rect is not.
+/// Sets the camera viewport each frame to exactly match the CentralPanel rect
+/// written by hud_ui_system. egui handles all panel layout — we just mirror it.
+///
+/// egui logical pts × EGUI_SCALE = physical px.
+/// Do NOT multiply by window.scale_factor() — that double-scales and crashes.
 pub fn drawer_viewport_system(
-    drawer: Res<DrawerState>,
-    layout: Res<UiLayout>,
+    world_view: Res<WorldViewRect>,
     windows: Query<&Window>,
     mut cam_query: Query<&mut Camera, With<MainCamera>>,
 ) {
@@ -45,33 +18,37 @@ pub fn drawer_viewport_system(
 
     let win_w = window.physical_width();
     let win_h = window.physical_height();
-
     if win_w == 0 || win_h == 0 { return; }
 
-    // Compute drawer height in egui logical pts from constants
-    let drawer_egui_h = match *drawer {
-        DrawerState::Collapsed => layout.handle_height + layout.signal_height,
-        DrawerState::TabsOnly  => layout.handle_height + layout.primary_tab_height
-                                + layout.signal_height,
-        DrawerState::Expanded  => layout.handle_height + layout.primary_tab_height
-                                + layout.secondary_tab_height + layout.content_height
-                                + layout.signal_height,
-    };
+    // egui logical pts → physical px
+    let phys_x = (world_view.x * EGUI_SCALE).round() as u32;
+    let phys_y = (world_view.y * EGUI_SCALE).round() as u32;
+    let phys_w = (world_view.w * EGUI_SCALE).round() as u32;
+    let phys_h = (world_view.h * EGUI_SCALE).round() as u32;
 
-    // egui logical pts → physical px: multiply by EGUI_SCALE only
-    let drawer_physical = (drawer_egui_h * EGUI_SCALE).round() as u32;
-    let world_h = win_h.saturating_sub(drawer_physical).max(1);
+    // Clamp to window bounds — never let viewport exceed render target
+    let phys_x = phys_x.min(win_w.saturating_sub(1));
+    let phys_y = phys_y.min(win_h.saturating_sub(1));
+    let phys_w = phys_w.min(win_w - phys_x);
+    let phys_h = phys_h.min(win_h - phys_y);
+
+    if phys_w == 0 || phys_h == 0 { return; }
 
     let new_viewport = Viewport {
-        physical_position: UVec2::new(0, 0),
-        physical_size: UVec2::new(win_w, world_h),
+        physical_position: UVec2::new(phys_x, phys_y),
+        physical_size: UVec2::new(phys_w, phys_h),
         depth: 0.0..1.0,
     };
 
     let needs_update = camera.viewport.as_ref().map_or(true, |v| {
-        v.physical_size != new_viewport.physical_size
+        v.physical_position != new_viewport.physical_position
+            || v.physical_size != new_viewport.physical_size
     });
     if needs_update {
         camera.viewport = Some(new_viewport);
     }
 }
+
+/// No-op — kept for lib.rs registration compatibility.
+/// Content height is now fixed in UiLayout::default().
+pub fn ui_layout_system() {}

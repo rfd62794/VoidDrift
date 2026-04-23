@@ -44,6 +44,7 @@ fn main() {
         .insert_resource(ActiveStationTab::default())
         .insert_resource(DrawerState::default())
         .insert_resource(UiLayout::default())
+        .insert_resource(WorldViewRect::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())

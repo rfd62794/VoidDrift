@@ -113,6 +113,7 @@ pub struct HudParams<'w, 's> {
     pub menu_state: ResMut<'w, MainMenuState>,
     pub drawer: ResMut<'w, DrawerState>,
     pub ui_layout: Res<'w, UiLayout>,
+    pub world_view_rect: ResMut<'w, WorldViewRect>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -379,6 +380,12 @@ pub fn hud_ui_system(mut params: HudParams) {
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
+            let r = ui.max_rect();
+            params.world_view_rect.x = r.min.x;
+            params.world_view_rect.y = r.min.y;
+            params.world_view_rect.w = r.width();
+            params.world_view_rect.h = r.height();
+
             if opening_complete {
                 if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                     params.pan_state.is_focused = true;
