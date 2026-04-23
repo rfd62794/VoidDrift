@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
 
 fn fire_signal(signal_log: &mut SignalLog, id: u32, message: &str) {
     if !signal_log.fired.contains(&id) {
