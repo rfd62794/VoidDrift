@@ -268,11 +268,10 @@ pub fn berth_world_pos(
     )
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct OpeningSequence {
     pub phase: OpeningPhase,
     pub timer: f32,
-    pub beat_timer: f32,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy, Default)]
