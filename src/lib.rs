@@ -121,8 +121,10 @@ fn main() {
             systems::narrative::tutorial_system,
             systems::quest::quest_update_system,
         ).run_if(in_state(AppState::InGame)))
-        .add_systems(PostUpdate,
+        .add_systems(PostUpdate, (
+            systems::viewport::ui_layout_system,
             systems::viewport::drawer_viewport_system
-                .run_if(in_state(AppState::InGame)))
+                .after(systems::viewport::ui_layout_system),
+        ).run_if(in_state(AppState::InGame)))
         .run();
 }
