@@ -125,8 +125,6 @@ pub fn hud_ui_system(mut params: HudParams) {
     // Drive drawer state from ship/game state
     if !opening_complete {
         *params.drawer = DrawerState::Collapsed;
-    } else if is_docked && *params.drawer == DrawerState::Collapsed {
-        *params.drawer = DrawerState::Expanded;
     } else if !is_docked && *params.drawer == DrawerState::Expanded {
         *params.drawer = DrawerState::Collapsed;
     }

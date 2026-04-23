@@ -20,11 +20,18 @@ pub fn drawer_viewport_system(
     let win_h = window.physical_height();
     if win_w == 0 || win_h == 0 { return; }
 
-    // egui logical pts → physical px
-    let phys_x = (world_view.x * EGUI_SCALE).round() as u32;
-    let phys_y = (world_view.y * EGUI_SCALE).round() as u32;
-    let phys_w = (world_view.w * EGUI_SCALE).round() as u32;
-    let phys_h = (world_view.h * EGUI_SCALE).round() as u32;
+    // Derive actual egui→physical scale from window size.
+    // EGUI_SCALE=3.0 is the egui pixels-per-point setting, but the egui canvas
+    // logical size doesn't equal physical/3.0 — use actual ratio instead.
+    let egui_canvas_w = world_view.x + world_view.w; // CentralPanel fills full width
+    let egui_canvas_h = world_view.y + world_view.h; // bottom of CentralPanel = full canvas when collapsed
+    let scale_x = if egui_canvas_w > 0.0 { win_w as f32 / egui_canvas_w } else { EGUI_SCALE };
+    let scale_y = if egui_canvas_h > 0.0 { win_h as f32 / egui_canvas_h } else { EGUI_SCALE };
+
+    let phys_x = (world_view.x * scale_x).round() as u32;
+    let phys_y = (world_view.y * scale_y).round() as u32;
+    let phys_w = (world_view.w * scale_x).round() as u32;
+    let phys_h = (world_view.h * scale_y).round() as u32;
 
     // Clamp to window bounds — never let viewport exceed render target
     let phys_x = phys_x.min(win_w.saturating_sub(1));
