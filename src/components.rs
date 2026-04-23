@@ -303,7 +303,6 @@ impl Default for WorldViewRect {
 pub enum DrawerState {
     #[default]
     Collapsed,
-    TabsOnly,
     Expanded,
 }
 

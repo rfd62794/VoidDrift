@@ -299,8 +299,8 @@ pub fn hud_ui_system(mut params: HudParams) {
                 });
         }
 
-        // ── 4. PRIMARY TABS (TabsOnly + Expanded) ─────────────────────────────
-        if drawer != DrawerState::Collapsed {
+        // ── 4. PRIMARY TABS (Expanded only) ──────────────────────────────────
+        if drawer == DrawerState::Expanded {
             egui::TopBottomPanel::bottom("primary_tabs")
                 .frame(egui::Frame::NONE
                     .fill(egui::Color32::from_rgb(10, 10, 18))
@@ -337,8 +337,7 @@ pub fn hud_ui_system(mut params: HudParams) {
 
                 if response.clicked() {
                     *params.drawer = match drawer {
-                        DrawerState::Collapsed => DrawerState::TabsOnly,
-                        DrawerState::TabsOnly  => if is_docked { DrawerState::Expanded } else { DrawerState::Collapsed },
+                        DrawerState::Collapsed => DrawerState::Expanded,
                         DrawerState::Expanded  => DrawerState::Collapsed,
                     };
                 }

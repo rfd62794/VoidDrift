@@ -47,10 +47,13 @@ pub fn drawer_viewport_system(
         depth: 0.0..1.0,
     };
 
-    eprintln!("VP: egui=({:.0},{:.0},{:.0},{:.0}) phys=({},{},{},{}) win={}x{}",
-        world_view.x, world_view.y, world_view.w, world_view.h,
-        phys_x, phys_y, phys_w, phys_h, win_w, win_h);
-    camera.viewport = Some(new_viewport);
+    let needs_update = camera.viewport.as_ref().map_or(true, |v| {
+        v.physical_position != new_viewport.physical_position
+            || v.physical_size != new_viewport.physical_size
+    });
+    if needs_update {
+        camera.viewport = Some(new_viewport);
+    }
 }
 
 /// No-op — kept for lib.rs registration compatibility.
