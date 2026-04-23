@@ -44,7 +44,6 @@ fn main() {
         .insert_resource(ActiveStationTab::default())
         .insert_resource(DrawerState::default())
         .insert_resource(UiLayout::default())
-        .insert_resource(WorldViewRect::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())
@@ -107,7 +106,6 @@ fn main() {
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,
-            systems::ui::camera_viewport_system.after(systems::ui::hud_ui_system),
             systems::ui::station_visual_system,
             systems::economy::station_status_system,
             systems::economy::station_maintenance_system,
@@ -123,5 +121,8 @@ fn main() {
             systems::narrative::tutorial_system,
             systems::quest::quest_update_system,
         ).run_if(in_state(AppState::InGame)))
+        .add_systems(PostUpdate,
+            systems::viewport::drawer_viewport_system
+                .run_if(in_state(AppState::InGame)))
         .run();
 }

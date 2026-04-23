@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
-use bevy::render::camera::Viewport;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
@@ -114,7 +113,6 @@ pub struct HudParams<'w, 's> {
     pub menu_state: ResMut<'w, MainMenuState>,
     pub drawer: ResMut<'w, DrawerState>,
     pub ui_layout: Res<'w, UiLayout>,
-    pub world_view_rect: ResMut<'w, WorldViewRect>,
 }
 
 pub fn hud_ui_system(mut params: HudParams) {
@@ -381,13 +379,6 @@ pub fn hud_ui_system(mut params: HudParams) {
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
-            // Store the actual rendered rect so camera_viewport_system uses it exactly
-            let r = ui.max_rect();
-            params.world_view_rect.x = r.min.x;
-            params.world_view_rect.y = r.min.y;
-            params.world_view_rect.w = r.width();
-            params.world_view_rect.h = r.height();
-
             if opening_complete {
                 if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                     params.pan_state.is_focused = true;
@@ -431,42 +422,3 @@ pub fn hud_ui_system(mut params: HudParams) {
     }
 }
 
-/// Resizes the camera viewport each frame to exactly match the CentralPanel rect
-/// written by hud_ui_system. Using the actual egui rect eliminates the one-frame
-/// lag that caused the graphical clone glitch on drawer state changes.
-pub fn camera_viewport_system(
-    world_view: Res<WorldViewRect>,
-    windows: Query<&Window>,
-    mut cam_query: Query<&mut Camera, With<MainCamera>>,
-) {
-    let Ok(window) = windows.get_single() else { return; };
-    let Ok(mut camera) = cam_query.get_single_mut() else { return; };
-
-    // egui logical coords are already physical_pixels / EGUI_SCALE.
-    // Multiply by EGUI_SCALE only — do NOT use window.scale_factor() which double-scales.
-    let egui_scale = EGUI_SCALE;
-
-    let phys_x = (world_view.x * egui_scale).round() as u32;
-    let phys_y = (world_view.y * egui_scale).round() as u32;
-    let phys_w = (world_view.w * egui_scale).round() as u32;
-    let phys_h = (world_view.h * egui_scale).round() as u32;
-
-    // Hard clamp to render target bounds — never exceed physical window size
-    let win_w = window.physical_width();
-    let win_h = window.physical_height();
-    let phys_x = phys_x.min(win_w.saturating_sub(1));
-    let phys_y = phys_y.min(win_h.saturating_sub(1));
-    let phys_w = phys_w.min(win_w - phys_x);
-    let phys_h = phys_h.min(win_h - phys_y);
-
-    if phys_w == 0 || phys_h == 0 { return; }
-
-    eprintln!("VIEWPORT: pos=({},{}) size=({},{}) window=({},{})",
-        phys_x, phys_y, phys_w, phys_h, win_w, win_h);
-
-    camera.viewport = Some(Viewport {
-        physical_position: UVec2::new(phys_x, phys_y),
-        physical_size: UVec2::new(phys_w, phys_h),
-        depth: 0.0..1.0,
-    });
-}
