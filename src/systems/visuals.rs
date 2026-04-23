@@ -70,35 +70,32 @@ pub fn ship_rotation_system(
 }
 
 /// Scrolls all star entities at their layer's parallax speed and wraps them at screen edges.
-/// Stars track camera movement at (1 - parallax_factor) speed, creating the illusion
-/// that far stars (factor=0.05) barely drift while near stars (0.15) move slightly more.
+/// Wrap bounds scale with camera zoom so the starfield is truly limitless at any zoom level.
 pub fn starfield_scroll_system(
-    cam_query: Query<&Transform, (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
+    cam_query: Query<(&Transform, &OrthographicProjection), (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
     mut star_query: Query<(&StarLayer, &mut Transform), (Without<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>)>,
     cam_delta: Res<CameraDelta>,
 ) {
-    // DEVICE-CALIBRATED: Moto G 2025 — 720×1604 logical px.
-    // Wrap bounds must exceed half-screen in each axis so stars never pop in.
-    // X: 720/2 = 360 → 900 gives generous margin for parallax offset
-    // Y: 1604/2 = 802 → 1000 covers the full portrait height plus margin
-    const WRAP_X: f32 = 900.0;
-    const WRAP_Y: f32 = 1000.0;
-    let Ok(cam) = cam_query.get_single() else { return; };
-    let cam_pos = cam.translation.truncate();
+    let Ok((cam_transform, proj)) = cam_query.get_single() else { return; };
+    let cam_pos = cam_transform.translation.truncate();
+
+    // Base half-extents in world units for zoom=1. Scale by proj.scale for current zoom.
+    // Extra 1.5× margin ensures no star pop-in during fast pan or parallax offset.
+    const BASE_HALF_X: f32 = 900.0;
+    const BASE_HALF_Y: f32 = 1000.0;
+    let wrap_x = BASE_HALF_X * proj.scale * 1.5;
+    let wrap_y = BASE_HALF_Y * proj.scale * 1.5;
 
     for (layer, mut transform) in star_query.iter_mut() {
-        // Stars advance by (1 - parallax) of camera delta → they appear to drift
-        // backward at parallax-factor speed relative to camera.
         transform.translation.x += cam_delta.0.x * (1.0 - layer.0);
         transform.translation.y += cam_delta.0.y * (1.0 - layer.0);
 
-        // Wrap when the star exits the ±WRAP window around camera.
         let rel_x = transform.translation.x - cam_pos.x;
         let rel_y = transform.translation.y - cam_pos.y;
-        if      rel_x >  WRAP_X { transform.translation.x -= WRAP_X * 2.0; }
-        else if rel_x < -WRAP_X { transform.translation.x += WRAP_X * 2.0; }
-        if      rel_y >  WRAP_Y { transform.translation.y -= WRAP_Y * 2.0; }
-        else if rel_y < -WRAP_Y { transform.translation.y += WRAP_Y * 2.0; }
+        if      rel_x >  wrap_x { transform.translation.x -= wrap_x * 2.0; }
+        else if rel_x < -wrap_x { transform.translation.x += wrap_x * 2.0; }
+        if      rel_y >  wrap_y { transform.translation.y -= wrap_y * 2.0; }
+        else if rel_y < -wrap_y { transform.translation.y += wrap_y * 2.0; }
     }
 }
 
