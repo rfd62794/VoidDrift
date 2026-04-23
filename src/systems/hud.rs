@@ -442,13 +442,22 @@ pub fn camera_viewport_system(
     let Ok(window) = windows.get_single() else { return; };
     let Ok(mut camera) = cam_query.get_single_mut() else { return; };
 
-    let scale = window.scale_factor() as f32;
+    // egui logical coords are already physical_pixels / EGUI_SCALE.
+    // Multiply by EGUI_SCALE only — do NOT use window.scale_factor() which double-scales.
+    let egui_scale = EGUI_SCALE;
 
-    // Convert logical egui px to physical px
-    let phys_x = (world_view.x * scale).round() as u32;
-    let phys_y = (world_view.y * scale).round() as u32;
-    let phys_w = (world_view.w * scale).round() as u32;
-    let phys_h = (world_view.h * scale).round() as u32;
+    let phys_x = (world_view.x * egui_scale).round() as u32;
+    let phys_y = (world_view.y * egui_scale).round() as u32;
+    let phys_w = (world_view.w * egui_scale).round() as u32;
+    let phys_h = (world_view.h * egui_scale).round() as u32;
+
+    // Hard clamp to render target bounds — never exceed physical window size
+    let win_w = window.physical_width();
+    let win_h = window.physical_height();
+    let phys_x = phys_x.min(win_w.saturating_sub(1));
+    let phys_y = phys_y.min(win_h.saturating_sub(1));
+    let phys_w = phys_w.min(win_w - phys_x);
+    let phys_h = phys_h.min(win_h - phys_y);
 
     if phys_w == 0 || phys_h == 0 { return; }
 
