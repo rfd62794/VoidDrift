@@ -274,9 +274,8 @@ pub struct OpeningSequence {
     pub timer: f32,
 }
 
-#[derive(PartialEq, Debug, Clone, Copy, Default)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum OpeningPhase {
-    #[default]
     Adrift,           // Waiting — show S-001
     SignalIdentified, // 2s timer — show S-002
     AutoPiloting,     // Ship moving to station — show S-003

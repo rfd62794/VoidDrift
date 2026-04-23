@@ -40,7 +40,7 @@ fn main() {
         .insert_resource(CameraDelta::default())
         .insert_resource(SignalLog::default())
         .insert_resource(SignalStripExpanded(false))
-        .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 })
+        .insert_resource(OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0 })
         .insert_resource(ActiveStationTab::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(AutoDockSettings::default())
