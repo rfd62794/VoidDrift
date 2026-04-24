@@ -55,17 +55,21 @@ if (-not (Test-Path $AdbExe)) {
 }
 
 # ---------------------------------------------------------------------------
-# Wireless ADB auto-connect (non-fatal - falls back to USB if not reachable)
+# Device connection: prefer wired USB, fall back to wireless
 # ---------------------------------------------------------------------------
-if ($PhoneIP -and -not $LogcatOnly) {
-    $connectOut = & $AdbExe connect "${PhoneIP}:5555" 2>&1
-    if ($connectOut -match "connected") {
-        Write-Host "  Wireless ADB: connected to ${PhoneIP}:5555" -ForegroundColor Green
-    } elseif ($connectOut -match "already connected") {
-        Write-Host "  Wireless ADB: already connected to ${PhoneIP}:5555" -ForegroundColor DarkGray
-    } else {
-        Write-Host "  Wireless ADB: could not connect to ${PhoneIP}:5555 - falling back to USB" -ForegroundColor Yellow
-        Write-Host "  (Hint: plug in USB once and run: adb tcpip 5555)" -ForegroundColor DarkGray
+if (-not $LogcatOnly) {
+    $wiredDevice = & $AdbExe devices 2>&1 | Select-String "^\w+\s+device$"
+    if ($wiredDevice) {
+        Write-Host "  ADB: wired device found." -ForegroundColor Green
+    } elseif ($PhoneIP) {
+        Write-Host "  ADB: no wired device, trying wireless ${PhoneIP}:5555..." -ForegroundColor Yellow
+        $connectOut = & $AdbExe connect "${PhoneIP}:5555" 2>&1
+        if ($connectOut -match "connected") {
+            Write-Host "  ADB: wireless connected to ${PhoneIP}:5555" -ForegroundColor Green
+        } else {
+            Write-Host "  ADB: wireless failed - $connectOut" -ForegroundColor Red
+            Write-Host "  Plug in USB or run: adb tcpip 5555 while wired." -ForegroundColor DarkGray
+        }
     }
 }
 
@@ -204,7 +208,19 @@ $devices = & $AdbExe devices
 Write-Host "  Connected devices:" -ForegroundColor DarkGray
 $devices | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
-& $AdbExe install -r $ApkPath
+# Pick the first available device serial so multi-device setups don't error
+$targetSerial = & $AdbExe devices 2>&1 |
+    Select-String "^\S+\s+device$" |
+    Select-Object -First 1 |
+    ForEach-Object { ($_ -split "\s+")[0] }
+
+if (-not $targetSerial) {
+    Write-Host "  ERROR: No ADB device found." -ForegroundColor Red
+    exit 1
+}
+Write-Host "  Target device: $targetSerial" -ForegroundColor DarkGray
+
+& $AdbExe -s $targetSerial install -r $ApkPath
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  ERROR: ADB install failed (exit code $LASTEXITCODE)." -ForegroundColor Red
     Write-Host "  Is the device connected with USB debugging enabled?" -ForegroundColor Yellow
@@ -220,12 +236,12 @@ Write-Host "[5/5] Launching app and tailing logcat..." -ForegroundColor Cyan
 Write-Host "  Press Ctrl+C to stop." -ForegroundColor DarkGray
 Write-Host ""
 
-& $AdbExe shell am start -n "com.rfditservices.voidrift/.MainActivity"
+& $AdbExe -s $targetSerial shell am start -n "com.rfditservices.voidrift/.MainActivity"
 
 Write-Host ""
 Write-Host "  === LOGCAT (filtered) ===" -ForegroundColor Cyan
 Write-Host "  Filter: $LogcatPattern" -ForegroundColor DarkGray
 Write-Host ""
 
-& $AdbExe logcat -c
-& $AdbExe logcat | Select-String -Pattern $LogcatPattern
+& $AdbExe -s $targetSerial logcat -c
+& $AdbExe -s $targetSerial logcat | Select-String -Pattern $LogcatPattern
