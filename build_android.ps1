@@ -38,6 +38,12 @@ $JniLibsDir = Join-Path $AndroidDir "app\src\main\jniLibs"
 $LibName    = "voidrift"
 $AbiTarget  = "arm64-v8a"
 
+# Wireless ADB: set your phone's IP here (or leave empty to skip)
+# One-time setup: plug in USB, run `adb tcpip 5555`, then unplug.
+# Set a static IP on the phone so this never changes:
+#   Settings → WiFi → long-press network → Modify → Static
+$PhoneIP = "10.0.0.14"  # Moto G 2025 - set static IP to keep this stable
+
 # Resolve ADB from Android SDK platform-tools - do not rely on system PATH.
 # Same SDK root used by the NDK linker config.
 $SdkRoot = $env:ANDROID_SDK_ROOT
@@ -46,6 +52,21 @@ if (-not $SdkRoot) { $SdkRoot = "$env:LOCALAPPDATA\Android\Sdk" }
 $AdbExe = Join-Path $SdkRoot "platform-tools\adb.exe"
 if (-not (Test-Path $AdbExe)) {
     $AdbExe = "adb"
+}
+
+# ---------------------------------------------------------------------------
+# Wireless ADB auto-connect (non-fatal - falls back to USB if not reachable)
+# ---------------------------------------------------------------------------
+if ($PhoneIP -and -not $LogcatOnly) {
+    $connectOut = & $AdbExe connect "${PhoneIP}:5555" 2>&1
+    if ($connectOut -match "connected") {
+        Write-Host "  Wireless ADB: connected to ${PhoneIP}:5555" -ForegroundColor Green
+    } elseif ($connectOut -match "already connected") {
+        Write-Host "  Wireless ADB: already connected to ${PhoneIP}:5555" -ForegroundColor DarkGray
+    } else {
+        Write-Host "  Wireless ADB: could not connect to ${PhoneIP}:5555 - falling back to USB" -ForegroundColor Yellow
+        Write-Host "  (Hint: plug in USB once and run: adb tcpip 5555)" -ForegroundColor DarkGray
+    }
 }
 
 # Logcat filter pattern stored as variable - prevents PowerShell from
