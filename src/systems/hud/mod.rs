@@ -116,15 +116,29 @@ pub struct HudParams<'w, 's> {
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
-    let Ok(mut ship) = params.ship_query.get_single_mut() else { return; }; // mut needed for render_tab_content
     let ctx = params.contexts.ctx_mut();
-    let is_docked = ship.state == ShipState::Docked;
-    let opening_complete = params.opening.phase == OpeningPhase::Complete;
 
     // Record egui canvas size every frame for viewport scaling
     let screen = ctx.screen_rect();
     params.world_view_rect.canvas_w = screen.width();
     params.world_view_rect.canvas_h = screen.height();
+
+    // If ship not spawned yet (first frame), register a minimal egui context and return
+    let Ok(mut ship) = params.ship_query.get_single_mut() else {
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE)
+            .show(ctx, |ui| {
+                let r = ui.max_rect();
+                params.world_view_rect.x = r.min.x;
+                params.world_view_rect.y = r.min.y;
+                params.world_view_rect.w = r.width();
+                params.world_view_rect.h = r.height();
+            });
+        return;
+    };
+
+    let is_docked = ship.state == ShipState::Docked;
+    let opening_complete = params.opening.phase == OpeningPhase::Complete;
 
     // ── STATE MACHINE ─────────────────────────────────────────────────────────
     state_machine::update_drawer_state(
@@ -358,12 +372,17 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             params.world_view_rect.w = r.width();
             params.world_view_rect.h = r.height();
 
-            if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
-                params.pan_state.is_focused = true;
-                params.pan_state.cumulative_offset = Vec2::ZERO;
-                if let Ok(mut proj) = params.cam_query.get_single_mut() {
-                    proj.scale = 1.0;
+            ui.horizontal(|ui| {
+                if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                    params.pan_state.is_focused = true;
+                    params.pan_state.cumulative_offset = Vec2::ZERO;
+                    if let Ok(mut proj) = params.cam_query.get_single_mut() {
+                        proj.scale = 1.0;
+                    }
                 }
-            }
+                if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                    params.menu_state.show_save_overlay = true;
+                }
+            });
         });
 }
