@@ -133,8 +133,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     } else if is_docked && !*was_docked {
         // Just docked — open drawer once
         *params.drawer = DrawerState::Expanded;
-    } else if !is_docked && *params.drawer == DrawerState::Expanded {
-        *params.drawer = DrawerState::Collapsed;
     }
     *was_docked = is_docked;
     let drawer = *params.drawer;
