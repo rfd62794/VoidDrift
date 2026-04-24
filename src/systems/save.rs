@@ -67,8 +67,21 @@ pub struct DroneSaveData {
 }
 
 // File path functions
+fn get_save_base_dir() -> PathBuf {
+    #[cfg(target_os = "android")]
+    {
+        // Android app data directory
+        PathBuf::from("/data/data/com.rfditservices.voidrift/files")
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        // Desktop
+        std::env::current_dir().unwrap_or_default()
+    }
+}
+
 pub fn save_dir(category: &SaveCategory) -> PathBuf {
-    let base = PathBuf::from("./saves");
+    let base = get_save_base_dir().join("saves");
     match category {
         SaveCategory::Play => base.join("play"),
         SaveCategory::Stage => base.join("stage"),
@@ -77,7 +90,7 @@ pub fn save_dir(category: &SaveCategory) -> PathBuf {
 }
 
 pub fn autosave_path() -> PathBuf {
-    PathBuf::from("./saves/autosave.json")
+    get_save_base_dir().join("saves/autosave.json")
 }
 
 // Save and load functions

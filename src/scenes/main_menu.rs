@@ -288,11 +288,18 @@ fn spawn_menu_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
         OrthographicProjection {
-            far: 1200.0, // Same as game camera
+            far: 1200.0,
             ..OrthographicProjection::default_2d()
         },
-        Transform::from_xyz(0.0, 0.0, 1000.0), // Same Z position as game camera
+        Transform::from_xyz(0.0, 0.0, 1000.0),
+        MenuCamera,
     ));
+}
+
+pub fn cleanup_menu(mut commands: Commands, query: Query<Entity, With<MenuCamera>>) {
+    for e in query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
 }
 
 pub fn ingame_startup_system(

@@ -131,6 +131,9 @@ pub struct MapMarker;
 #[derive(Component)]
 pub struct MainCamera;
 
+#[derive(Component)]
+pub struct MenuCamera;
+
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum AutonomousShipState {
     Holding,

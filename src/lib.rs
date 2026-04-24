@@ -57,6 +57,9 @@ fn main() {
         .add_systems(OnEnter(AppState::MainMenu), (
             scenes::main_menu::setup_main_menu,
         ))
+        .add_systems(OnExit(AppState::MainMenu), (
+            scenes::main_menu::cleanup_menu,
+        ))
         .add_systems(Update, (
             scenes::main_menu::main_menu_system,
         ).run_if(in_state(AppState::MainMenu)))
