@@ -34,6 +34,7 @@ pub fn setup_world(
     mut map_pan_state: ResMut<MapPanState>,
     mut opening_sequence: ResMut<OpeningSequence>,
     mut signal_log: ResMut<SignalLog>,
+    mut drawer_state: ResMut<DrawerState>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
@@ -41,6 +42,7 @@ pub fn setup_world(
     *camera_delta = CameraDelta::default();
     *map_pan_state = MapPanState::default();
     *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
+    *drawer_state = DrawerState::Collapsed;
     
     // Reset SignalLog completely
     *signal_log = SignalLog::default();
