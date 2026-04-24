@@ -73,8 +73,11 @@ fn main() {
             cleanup_world_entities,
             systems::setup::setup_world,
             systems::debug_log::setup_debug_log_system,
-            scenes::main_menu::ingame_startup_system,
         ))
+        .add_systems(OnEnter(AppState::InGame),
+            scenes::main_menu::ingame_startup_system
+                .after(systems::setup::setup_world)
+        )
         .add_systems(Update, (
             systems::autopilot::autopilot_system, 
             systems::map::camera_follow_system,                

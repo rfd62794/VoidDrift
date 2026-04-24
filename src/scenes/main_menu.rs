@@ -299,23 +299,43 @@ pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,
     mut opening: ResMut<OpeningSequence>,
     mut signal_log: ResMut<SignalLog>,
+    mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
+    mut active_tab: ResMut<ActiveStationTab>,
 ) {
-    if let Some(save_data) = &menu_state.pending_load {
-        // LOAD PATH - apply save data, skip opening sequence
+    if let Some(save_data) = menu_state.pending_load.take() {
+        // LOAD PATH — apply save data, skip opening sequence
         opening.phase = OpeningPhase::Complete;
         opening.timer = 0.0;
-        
-        // TODO: Apply other save data to resources
-        
-        signal_log.entries.push_back(
-            "ECHO: SAVE LOADED SUCCESSFULLY.".to_string()
-        );
-        signal_log.entries.push_back(
-            format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase())
-        );
+
+        // Restore station state to the just-spawned station entity
+        if let Ok(mut station) = station_query.get_single_mut() {
+            station.online            = save_data.station_online;
+            station.power             = save_data.station_power;
+            station.power_cells       = save_data.power_cells;
+            station.magnetite_reserves = save_data.magnetite;
+            station.carbon_reserves   = save_data.carbon;
+            station.hull_plate_reserves = save_data.hull_plates;
+            station.ship_hulls        = save_data.ship_hulls;
+            station.ai_cores          = save_data.ai_cores;
+            station.repair_progress   = save_data.repair_progress;
+        }
+
+        // Restore active tab
+        *active_tab = match save_data.active_tab.as_str() {
+            "Station"  => ActiveStationTab::Station,
+            "Fleet"    => ActiveStationTab::Fleet,
+            "Cargo"    => ActiveStationTab::Cargo,
+            "Power"    => ActiveStationTab::Power,
+            "Refinery" => ActiveStationTab::Refinery,
+            "Foundry"  => ActiveStationTab::Foundry,
+            "Hangar"   => ActiveStationTab::Hangar,
+            _          => ActiveStationTab::Power,
+        };
+
+        signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
+        signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
     } else {
-        // NEW GAME PATH - opening sequence runs normally
-        // Opening sequence already starts at Adrift phase by default
+        // NEW GAME PATH — opening sequence runs normally
     }
 
     // Developer mode signal (only once per session)

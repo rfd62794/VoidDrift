@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
+use crate::systems::save::AutosaveEvent;
 
 pub fn autopilot_system(
     time: Res<Time>,
@@ -10,6 +11,7 @@ pub fn autopilot_system(
     mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
+    mut autosave_events: EventWriter<AutosaveEvent>,
 ) {
     for (mut ship, mut transform, mut target, entity) in query.iter_mut() {
         if ship.state == ShipState::Navigating {
@@ -58,7 +60,8 @@ pub fn autopilot_system(
                                 ship.power = SHIP_POWER_MAX;
                             }
 
-                             info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
+                            info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
+                            autosave_events.send(AutosaveEvent);
                             commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(target_ent));
                         }
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
