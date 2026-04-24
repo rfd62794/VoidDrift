@@ -90,7 +90,12 @@ pub fn autosave_path() -> PathBuf {
 // Save and load functions
 pub fn save_game(data: &SaveData) -> Result<(), String> {
     let path = if data.save_category == SaveCategory::Auto {
-        autosave_path()
+        let p = autosave_path();
+        if let Some(parent) = p.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create autosave dir: {e}"))?;
+        }
+        p
     } else {
         let dir = save_dir(&data.save_category);
         std::fs::create_dir_all(&dir)
