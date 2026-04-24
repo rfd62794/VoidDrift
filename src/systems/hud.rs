@@ -182,6 +182,32 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         return;
     }
 
+    // ── 5. HANDLE BAR (always visible when game is running, topmost of drawer) ──
+    egui::TopBottomPanel::bottom("handle_bar")
+        .resizable(false)
+        .exact_height(layout.handle_height)
+        .frame(egui::Frame::NONE
+            .fill(egui::Color32::from_rgb(8, 10, 14)))
+        .show(ctx, |ui| {
+            let rect = ui.max_rect();
+            let response = ui.interact(rect, ui.id(), egui::Sense::click());
+
+            if response.clicked() {
+                *params.drawer = match *params.drawer {
+                    DrawerState::Collapsed => DrawerState::Expanded,
+                    DrawerState::Expanded  => DrawerState::Collapsed,
+                };
+            }
+
+            ui.painter().text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                egui::FontId::monospace(10.0),
+                egui::Color32::from_gray(60),
+            );
+        });
+
     if let Ok((_station_ent, mut station, mut queues)) = params.station_query.get_single_mut() {
 
         // ── 2. CONTENT AREA (Expanded + docked only) ──────────────────────────
@@ -332,34 +358,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     });
                 });
         }
-
-        // ── 5. HANDLE BAR (always visible, topmost of drawer) ─────────────────
-        egui::TopBottomPanel::bottom("handle_bar")
-            .resizable(false)
-            .exact_height(layout.handle_height)
-            .frame(egui::Frame::NONE
-                .fill(egui::Color32::from_rgb(8, 10, 14)))
-            .show(ctx, |ui| {
-                // ONE interact on the full rect — no widgets
-                let rect = ui.max_rect();
-                let response = ui.interact(rect, ui.id(), egui::Sense::click());
-
-                if response.clicked() {
-                    *params.drawer = match drawer {
-                        DrawerState::Collapsed => DrawerState::Expanded,
-                        DrawerState::Expanded  => DrawerState::Collapsed,
-                    };
-                }
-
-                // Visual only — painter, no widgets
-                ui.painter().text(
-                    rect.center(),
-                    egui::Align2::CENTER_CENTER,
-                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-                    egui::FontId::monospace(10.0),
-                    egui::Color32::from_gray(60),
-                );
-            });
 
         // ── 6. QUEST OVERLAY (window, above world) ────────────────────────────
         if params.quest_log.panel_open {
