@@ -91,10 +91,10 @@ pub const COLOR_MAP_HIGHLIGHT: Color  = Color::srgb(1.0, 1.0, 1.0);       // Whi
 pub const LOG_MAX_LINES: usize = 10;
 
 // [PHASE 10] PROCESSING QUEUE TIMES (Seconds per batch)
-pub const REFINERY_IRON_TIME: f32      = 20.0;
-pub const REFINERY_TUNGSTEN_TIME: f32  = 25.0;
-pub const REFINERY_NICKEL_TIME: f32    = 15.0;
-pub const FORGE_HULL_TIME: f32         = 45.0;
-pub const FORGE_CORE_TIME: f32         = 60.0;
+pub const REFINERY_IRON_TIME: f32      = 2.0;
+pub const REFINERY_TUNGSTEN_TIME: f32  = 2.5;
+pub const REFINERY_NICKEL_TIME: f32    = 1.5;
+pub const FORGE_HULL_TIME: f32         = 5.0;
+pub const FORGE_CORE_TIME: f32         = 6.0;
 
 pub const MAP_PAN_SPEED: f32 = 1.5;
