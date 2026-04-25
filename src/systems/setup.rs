@@ -195,7 +195,7 @@ fn spawn_player_ship(
             laser_tier: LaserTier::Basic,
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
-        MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
         Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
     )).id();
     

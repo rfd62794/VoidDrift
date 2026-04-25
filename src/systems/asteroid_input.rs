@@ -11,6 +11,7 @@ pub fn asteroid_input_system(
     opening: Res<OpeningSequence>,
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
+    mut ships: Query<&mut Ship>,
 ) {
     if opening.phase != OpeningPhase::Complete {
         return;
@@ -33,6 +34,9 @@ pub fn asteroid_input_system(
 
                     // Assign the next available ship
                     if let Some(ship_entity) = queue.available_ships.pop() {
+                        if let Ok(mut ship) = ships.get_mut(ship_entity) {
+                            ship.state = ShipState::Navigating;
+                        }
                         commands.entity(ship_entity).remove::<DockedAt>();
                         commands.entity(ship_entity).insert(AutopilotTarget {
                             destination: mp,
