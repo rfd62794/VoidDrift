@@ -92,7 +92,6 @@ pub fn station_visual_system(
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
-    pub ship_query: Query<'w, 's, &'static mut Ship, (With<PlayerShip>, Without<AutonomousShipTag>, Without<Station>)>,
     pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
@@ -123,21 +122,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     params.world_view_rect.canvas_w = screen.width();
     params.world_view_rect.canvas_h = screen.height();
 
-    // If ship not spawned yet (first frame), register a minimal egui context and return
-    let Ok(mut ship) = params.ship_query.get_single_mut() else {
-        egui::CentralPanel::default()
-            .frame(egui::Frame::NONE)
-            .show(ctx, |ui| {
-                let r = ui.max_rect();
-                params.world_view_rect.x = r.min.x;
-                params.world_view_rect.y = r.min.y;
-                params.world_view_rect.w = r.width();
-                params.world_view_rect.h = r.height();
-            });
-        return;
-    };
-
-    let is_docked = ship.state == ShipState::Docked;
+    let is_docked = true;
     let opening_complete = params.opening.phase == OpeningPhase::Complete;
 
     // ── STATE MACHINE ─────────────────────────────────────────────────────────
@@ -210,7 +195,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         *params.active_tab,
                         &mut station,
                         &mut params.toggles,
-                        &mut ship,
                         &mut params.commands,
                         &mut params.meshes,
                         &mut params.materials,

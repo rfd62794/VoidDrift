@@ -48,7 +48,6 @@ pub fn render_tab_content(
     active_tab: ActiveStationTab,
     station: &mut Station,
     toggles: &mut ProductionToggles,
-    _ship: &mut Ship,
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<ColorMaterial>,

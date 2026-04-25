@@ -4,7 +4,7 @@ use crate::components::*;
 pub fn tutorial_system(
     mut tutorial: ResMut<TutorialState>,
     opening: Res<OpeningSequence>,
-    ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AsteroidField>)>,
+    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<AsteroidField>)>,
     station_query: Query<(&Station, &StationQueues), (Without<Ship>, Without<AutonomousShipTag>)>,
     ast_query: Query<(&AsteroidField, &Transform), (Without<Ship>, Without<Station>)>, 
 ) {

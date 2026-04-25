@@ -6,7 +6,7 @@ use crate::components::*;
 pub fn quest_update_system(
     mut quest_log: ResMut<QuestLog>,
     // Universal Disjointness filters applied to all Transform-accessing (or potentially panicking) queries
-    station_query: Query<&Station, (With<Station>, Without<PlayerShip>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    station_query: Query<&Station, (With<Station>, Without<InOpeningSequence>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
 ) {
     let Ok(station) = station_query.get_single() else { return };
 

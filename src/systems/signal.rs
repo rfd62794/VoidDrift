@@ -7,7 +7,7 @@ pub fn signal_system(
     opening: Res<OpeningSequence>,
     station_query: Query<(&Station, &StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShip>)>,
     auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
-    ship_query: Query<(&Ship, &Transform), (With<PlayerShip>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     mut quest_log: ResMut<QuestLog>,
 ) {
     let now = time.elapsed_secs();
