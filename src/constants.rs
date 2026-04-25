@@ -17,8 +17,8 @@ pub const REPAIR_COST: u32 = 25;
 
 // [PHASE 9] PRODUCTION CHAIN COSTS
 pub const SHIP_HULL_COST_PLATES: u32   = 3;
-pub const HULL_PLATE_COST_IRON: u32    = 2;
-pub const HULL_PLATE_COST_TUNGSTEN: u32 = 1;
+pub const HULL_PLATE_COST_IRON: u32    = 2;  // Only iron needed
+pub const THRUSTER_COST_TUNGSTEN: u32  = 1;  // 1 Tungsten ingot per thruster
 pub const AI_CORE_COST_NICKEL: u32     = 1; 
 
 use bevy::math::Vec2;
@@ -95,6 +95,7 @@ pub const REFINERY_IRON_TIME: f32      = 2.0;
 pub const REFINERY_TUNGSTEN_TIME: f32  = 2.5;
 pub const REFINERY_NICKEL_TIME: f32    = 1.5;
 pub const FORGE_HULL_TIME: f32         = 5.0;
+pub const FORGE_THRUSTER_TIME: f32     = 5.0;  // Same as Hull
 pub const FORGE_CORE_TIME: f32         = 6.0;
 
 pub const MAP_PAN_SPEED: f32 = 1.5;

@@ -105,6 +105,7 @@ pub struct HudParams<'w, 's> {
     pub expanded: ResMut<'w, SignalStripExpanded>,
     pub quest_log: ResMut<'w, QuestLog>,
     pub forge_settings: Res<'w, ForgeSettings>,
+    pub toggles: ResMut<'w, ProductionToggles>,
     pub tutorial: ResMut<'w, TutorialState>,
     pub pan_state: ResMut<'w, MapPanState>,
     pub cam_query: Query<'w, 's, &'static mut OrthographicProjection, With<MainCamera>>,
@@ -203,12 +204,12 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             .exact_height(layout.content_height)
             .show(ctx, |ui| {
                 ui.set_width(ui.available_width());
-                if let Ok((_ent, mut station, mut queues)) = station_result {
+                if let Ok((_ent, mut station, _queues)) = station_result {
                     content::render_tab_content(
                         ui,
                         *params.active_tab,
                         &mut station,
-                        &mut queues,
+                        &mut params.toggles,
                         &mut ship,
                         &mut params.commands,
                         &mut params.meshes,
@@ -240,9 +241,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 ui.horizontal(|ui| {
                     for (tab, label) in [
                         (ActiveStationTab::Cargo,    "CARGO"),
-                        (ActiveStationTab::Refinery, "REFINERY"),
-                        (ActiveStationTab::Foundry,  "FOUNDRY"),
-                        (ActiveStationTab::Hangar,   "HANGAR"),
+                        (ActiveStationTab::Iron,     "IRON"),
+                        (ActiveStationTab::Tungsten, "TUNGSTEN"),
+                        (ActiveStationTab::Nickel,   "NICKEL"),
+                        (ActiveStationTab::Upgrades, "UPGRADES"),
                     ] {
                         if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                             *params.active_tab = tab;

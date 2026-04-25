@@ -324,8 +324,9 @@ pub fn ingame_startup_system(
             station.nickel_reserves     = save_data.nickel;
             station.nickel_ingots       = save_data.nickel_ingots;
             station.hull_plate_reserves = save_data.hull_plates;
+            station.thruster_reserves   = save_data.thruster_reserves;
             station.ship_hulls          = save_data.ship_hulls;
-            station.ai_cores          = save_data.ai_cores;
+            station.ai_cores            = save_data.ai_cores;
             station.repair_progress   = save_data.repair_progress;
         }
 
@@ -334,9 +335,10 @@ pub fn ingame_startup_system(
             "Station"  => ActiveStationTab::Station,
             "Fleet"    => ActiveStationTab::Fleet,
             "Cargo"    => ActiveStationTab::Cargo,
-            "Refinery" => ActiveStationTab::Refinery,
-            "Foundry"  => ActiveStationTab::Foundry,
-            "Hangar"   => ActiveStationTab::Hangar,
+            "Iron"     => ActiveStationTab::Iron,
+            "Tungsten" => ActiveStationTab::Tungsten,
+            "Nickel"   => ActiveStationTab::Nickel,
+            "Upgrades" => ActiveStationTab::Upgrades,
             _          => ActiveStationTab::Cargo,
         };
 

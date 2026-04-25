@@ -278,6 +278,7 @@ fn spawn_station(
             nickel_reserves: 0.0,
             nickel_ingots: 0.0,
             hull_plate_reserves: 0.0,
+            thruster_reserves: 0.0,
             ship_hulls: 0.0,
             ai_cores: 0.0,
             log: std::collections::VecDeque::new(),

@@ -46,6 +46,7 @@ fn main() {
         .insert_resource(UiLayout::default())
         .insert_resource(WorldViewRect::default())
         .insert_resource(ForgeSettings::default())
+        .insert_resource(ProductionToggles::default())
         .insert_resource(QuestLog::default())
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())

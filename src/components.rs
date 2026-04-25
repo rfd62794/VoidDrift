@@ -87,6 +87,7 @@ pub struct Station {
     pub nickel_reserves: f32,
     pub nickel_ingots: f32,
     pub hull_plate_reserves: f32,
+    pub thruster_reserves: f32,
     pub ship_hulls: f32,
     pub ai_cores: f32,
     pub log: VecDeque<String>,
@@ -321,9 +322,10 @@ pub enum ActiveStationTab {
     Fleet,
     #[default]
     Cargo,
-    Refinery,
-    Foundry,
-    Hangar,
+    Iron,
+    Tungsten,
+    Nickel,
+    Upgrades,
 }
 
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
@@ -364,6 +366,29 @@ pub struct StationQueues {
     pub nickel_refinery: Option<ProcessingJob>,
     pub hull_forge:         Option<ProcessingJob>,
     pub core_fabricator:    Option<ProcessingJob>,
+}
+
+#[derive(Resource, Clone)]
+pub struct ProductionToggles {
+    pub refine_iron: bool,
+    pub refine_tungsten: bool,
+    pub refine_nickel: bool,
+    pub forge_hull: bool,
+    pub forge_thruster: bool,
+    pub forge_core: bool,
+}
+
+impl Default for ProductionToggles {
+    fn default() -> Self {
+        Self {
+            refine_iron: true,
+            refine_tungsten: true,
+            refine_nickel: true,
+            forge_hull: true,
+            forge_thruster: true,
+            forge_core: true,
+        }
+    }
 }
 
 
