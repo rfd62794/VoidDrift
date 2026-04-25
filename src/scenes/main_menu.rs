@@ -309,6 +309,7 @@ pub fn ingame_startup_system(
             // ship_hulls restored to queue above
             station.ai_cores            = save_data.ai_cores;
             station.repair_progress     = save_data.repair_progress;
+            station.drone_build_progress = save_data.drone_build_progress;
         }
 
         // Restore active tab

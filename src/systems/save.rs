@@ -31,6 +31,7 @@ pub struct SaveData {
     pub ship_hulls: f32,  // kept for save compat — maps to queue count on load
     pub ai_cores: f32,
     pub repair_progress: f32,
+    pub drone_build_progress: f32,
 
     // Tabs unlocked
     pub tab_power: bool,
@@ -194,6 +195,7 @@ pub fn collect_save_data(
         ship_hulls: queue.available_count as f32,
         ai_cores: station.ai_cores,
         repair_progress: station.repair_progress,
+        drone_build_progress: station.drone_build_progress,
         tab_power: false, // TODO: collect from tabs resource
         tab_cargo: false, // TODO: collect from tabs resource
         tab_refinery: false, // TODO: collect from tabs resource
