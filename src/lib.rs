@@ -108,7 +108,6 @@ fn main() {
             systems::auto_process::auto_forge_system,
             systems::auto_process::auto_build_drones_system,
             systems::ui::ship_cargo_display_system,
-            systems::ui::autonomous_ship_cargo_display_system,
             systems::ui::cargo_label_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(Update, (

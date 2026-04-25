@@ -12,64 +12,50 @@ use crate::scenes::main_menu::MainMenuState;
 
 pub fn ship_cargo_display_system(
     time: Res<Time>,
-    ship_query: Query<&Ship, (With<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
-    mut fill_query: Query<(&mut Transform, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<PlayerShip>, Without<Station>, Without<AutonomousShipTag>, Without<AsteroidField>)>,
+    ship_query: Query<(&Ship, &Children), Without<Station>>,
+    mut fill_query: Query<(&mut Transform, &mut MeshMaterial2d<ColorMaterial>), With<ShipCargoBarFill>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    if let Ok(ship) = ship_query.get_single() {
-        if let Ok((mut transform, mat_handle)) = fill_query.get_single_mut() {
-            let ratio = (ship.cargo / ship.cargo_capacity as f32).clamp(0.0, 1.0);
-            transform.scale.x = ratio;
-            transform.translation.x = -20.0 * (1.0 - ratio);
-            if let Some(mat) = materials.get_mut(&mat_handle.0) {
-                mat.color = if ship.cargo >= ship.cargo_capacity as f32 * 0.95 {
-                    let pulse = (time.elapsed_secs() * 10.0).sin() * 0.2 + 0.8;
-                    Color::srgba(0.0, pulse, pulse, 1.0)
-                } else {
-                    match ship.cargo_type {
-                        OreDeposit::Iron => COLOR_IRON,
-                        OreDeposit::Tungsten    => COLOR_TUNGSTEN,
-                        _ => Color::srgb(0.0, 1.0, 1.0),
-                    }
-                };
-            }
-        }
-    }
-}
-
-pub fn autonomous_ship_cargo_display_system(
-    ship_query: Query<&AutonomousShip>,
-    mut fill_query: Query<(&mut Transform, &Parent, &mut MeshMaterial2d<ColorMaterial>), (With<ShipCargoBarFill>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<DestinationHighlight>)>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    for (mut tr, parent, mat_handle) in fill_query.iter_mut() {
-        if let Ok(ship) = ship_query.get(**parent) {
-            let r = ship.cargo / CARGO_CAPACITY as f32;
-            tr.scale.x = r.max(0.001);
-            tr.translation.x = -15.0 + (15.0 * r);
-            if let Some(mat) = materials.get_mut(&mat_handle.0) {
-                mat.color = Color::srgb(1.0, 0.5, 0.0);
+    for (ship, children) in ship_query.iter() {
+        for child in children.iter() {
+            if let Ok((mut transform, mat_handle)) = fill_query.get_mut(*child) {
+                let ratio = (ship.cargo / ship.cargo_capacity as f32).clamp(0.0, 1.0);
+                transform.scale.x = ratio.max(0.001);
+                transform.translation.x = -20.0 * (1.0 - ratio);
+                if let Some(mat) = materials.get_mut(&mat_handle.0) {
+                    mat.color = if ship.cargo >= ship.cargo_capacity as f32 * 0.95 {
+                        let pulse = (time.elapsed_secs() * 10.0).sin() * 0.2 + 0.8;
+                        Color::srgba(0.0, pulse, pulse, 1.0)
+                    } else {
+                        match ship.cargo_type {
+                            OreDeposit::Iron => COLOR_IRON,
+                            OreDeposit::Tungsten    => COLOR_TUNGSTEN,
+                            _ => Color::srgb(0.0, 1.0, 1.0),
+                        }
+                    };
+                }
             }
         }
     }
 }
 
 pub fn cargo_label_system(
-    ship_query: Query<(&Ship, &Children), (With<PlayerShip>, Without<Station>, Without<AsteroidField>)>,
+    ship_query: Query<(&Ship, &Children), Without<Station>>,
     mut ore_label_query: Query<&mut Text2d, (With<CargoOreLabel>, Without<CargoCountLabel>)>,
     mut count_label_query: Query<&mut Text2d, (With<CargoCountLabel>, Without<CargoOreLabel>)>,
 ) {
-    let Ok((ship, children)) = ship_query.get_single() else { return; };
-    for &child in children.iter() {
-        if let Ok(mut ore_text) = ore_label_query.get_mut(child) {
-            ore_text.0 = match ship.cargo_type {
-                OreDeposit::Iron => "IRON".to_string(),
-                OreDeposit::Tungsten => "TUNGSTEN".to_string(),
-                OreDeposit::Nickel    => "NICKEL".to_string(),
-            };
-        }
-        if let Ok(mut count_text) = count_label_query.get_mut(child) {
-            count_text.0 = format!("{:.0} / {}", ship.cargo, ship.cargo_capacity);
+    for (ship, children) in ship_query.iter() {
+        for &child in children.iter() {
+            if let Ok(mut ore_text) = ore_label_query.get_mut(child) {
+                ore_text.0 = match ship.cargo_type {
+                    OreDeposit::Iron => "IRON".to_string(),
+                    OreDeposit::Tungsten => "TUNGSTEN".to_string(),
+                    OreDeposit::Nickel    => "NICKEL".to_string(),
+                };
+            }
+            if let Ok(mut count_text) = count_label_query.get_mut(child) {
+                count_text.0 = format!("{:.0} / {}", ship.cargo, ship.cargo_capacity);
+            }
         }
     }
 }

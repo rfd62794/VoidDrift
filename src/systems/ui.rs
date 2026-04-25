@@ -2,7 +2,6 @@
 pub use crate::systems::hud::{
     hud_ui_system,
     ship_cargo_display_system,
-    autonomous_ship_cargo_display_system,
     cargo_label_system,
     station_visual_system,
 };
