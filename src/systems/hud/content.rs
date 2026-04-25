@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
-use crate::systems::station_tabs::render_queue_card;
 
 /// Render the active tab content inside the content_area panel.
 /// Called only when docked and drawer is Expanded.
@@ -10,9 +9,8 @@ pub fn render_tab_content(
     ui: &mut egui::Ui,
     active_tab: ActiveStationTab,
     station: &mut Station,
-    queues: &mut StationQueues,
+    _queues: &mut StationQueues,
     _ship: &mut Ship,
-    auto_dock_settings: &mut AutoDockSettings,
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<ColorMaterial>,
@@ -41,13 +39,6 @@ pub fn render_tab_content(
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
                     ui.label("SHIP HULLS:"); ui.label(egui::RichText::new(format!("{}", station.ship_hulls)).color(egui::Color32::GOLD)); ui.end_row();
                 });
-                ui.add_space(16.0);
-                ui.separator();
-                ui.heading("AUTO-DOCK SETTINGS");
-                ui.checkbox(&mut auto_dock_settings.auto_unload, "Auto-Unload Cargo");
-                ui.checkbox(&mut auto_dock_settings.auto_smelt_iron, "Auto-Smelt Iron");
-                ui.checkbox(&mut auto_dock_settings.auto_smelt_tungsten, "Auto-Smelt Tungsten");
-                ui.checkbox(&mut auto_dock_settings.auto_smelt_nickel, "Auto-Smelt Nickel");
             });
             if !station.online {
                 if ui.button("REPAIR STATION").clicked() {
@@ -58,30 +49,41 @@ pub fn render_tab_content(
         }
 
         ActiveStationTab::Refinery => {
-            ui.horizontal(|ui| {
-                render_queue_card(ui, station, &mut queues.iron_refinery, ProcessingOperation::IronRefinery, HULL_PLATE_COST_IRON as f32, REFINERY_IRON_TIME);
+            ui.vertical(|ui| {
+                ui.heading("REFINERY STATUS");
                 ui.add_space(8.0);
-                render_queue_card(ui, station, &mut queues.tungsten_refinery, ProcessingOperation::TungstenRefinery, HULL_PLATE_COST_TUNGSTEN as f32, REFINERY_TUNGSTEN_TIME);
-                ui.add_space(8.0);
-                render_queue_card(ui, station, &mut queues.nickel_refinery, ProcessingOperation::NickelRefinery, 1.0, REFINERY_NICKEL_TIME);
+                egui::Grid::new("refinery_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                    ui.label("IRON ORE:"); ui.label(egui::RichText::new(format!("{:.1}", station.iron_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("IRON INGOTS:"); ui.label(egui::RichText::new(format!("{:.1}", station.iron_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label(""); ui.end_row();
+                    ui.label("TUNGSTEN ORE:"); ui.label(egui::RichText::new(format!("{:.1}", station.tungsten_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("TUNGSTEN INGOTS:"); ui.label(egui::RichText::new(format!("{:.1}", station.tungsten_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label(""); ui.end_row();
+                    ui.label("NICKEL ORE:"); ui.label(egui::RichText::new(format!("{:.1}", station.nickel_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("NICKEL INGOTS:"); ui.label(egui::RichText::new(format!("{:.1}", station.nickel_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                });
             });
         }
         ActiveStationTab::Foundry => {
-            ui.horizontal(|ui| {
-                render_queue_card(ui, station, &mut queues.hull_forge, ProcessingOperation::HullForge, SHIP_HULL_COST_PLATES as f32, FORGE_HULL_TIME);
-                ui.add_space(16.0);
-                render_queue_card(ui, station, &mut queues.core_fabricator, ProcessingOperation::CoreFabricator, AI_CORE_COST_NICKEL as f32, FORGE_CORE_TIME);
+            ui.vertical(|ui| {
+                ui.heading("FOUNDRY STATUS");
+                ui.add_space(8.0);
+                egui::Grid::new("foundry_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                    ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
+                    ui.label("SHIP HULLS:"); ui.label(egui::RichText::new(format!("{:.1}", station.ship_hulls)).color(egui::Color32::GOLD)); ui.end_row();
+                });
             });
         }
         ActiveStationTab::Hangar => {
             ui.horizontal(|ui| {
                 if ui.button("ASSEMBLE & DEPLOY AUTONOMOUS SHIP").clicked()
-                    && station.ship_hulls >= 1
-                    && station.ai_cores >= 1
+                    && station.ship_hulls >= 1.0
+                    && station.ai_cores >= 1.0
                 {
-                    station.ship_hulls -= 1;
-                    station.ai_cores -= 1;
-                    let (target_pos, ore, name) = if station.ai_cores >= 1 {
+                    station.ship_hulls -= 1.0;
+                    station.ai_cores -= 1.0;
+                    let (target_pos, ore, name) = if station.ai_cores >= 1.0 {
                         (SECTOR_3_POS, OreDeposit::Nickel, "Sector 3")
                     } else {
                         (SECTOR_1_POS, OreDeposit::Iron, "Sector 1")

@@ -132,19 +132,19 @@ pub fn signal_system(
             }
 
             // ID 13: AI Core
-            if st.ai_cores > 0 {
+            if st.ai_cores > 0.0 {
                 if fire_signal(&mut signal, 13, "> AI CORE NOMINAL. SECTOR 7 SCAN INITIATED.") {
                     signal.last_fired_at.insert(13, now);
                 }
             }
 
             // ID 15: Hull Plate
-            if st.hull_plate_reserves > 0 {
+            if st.hull_plate_reserves > 0.0 {
                 fire_signal(&mut signal, 15, "> HULL PLATE FABRICATED. FORGE AVAILABLE.");
             }
 
             // ID 16: Ship Hull
-            if st.ship_hulls > 0 {
+            if st.ship_hulls > 0.0 {
                 fire_signal(&mut signal, 16, "> SHIP HULL COMPLETE. ASSEMBLY POSSIBLE.");
             }
 
@@ -176,7 +176,7 @@ pub fn signal_system(
             }
 
             // ID 14: 3s after ID 13 (Core)
-            if st.ai_cores > 0 && signal.fired.contains(&13) {
+            if st.ai_cores > 0.0 && signal.fired.contains(&13) {
                 if let Some(t13) = signal.last_fired_at.get(&13) {
                     if now - *t13 >= 3.0 {
                         fire_signal(&mut signal, 14, "> CARBON SIGNATURE DETECTED. BEARING 047. DESIGNATION: SECTOR 7.");

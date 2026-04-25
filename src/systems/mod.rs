@@ -4,6 +4,7 @@ pub mod visuals;
 pub mod autopilot;
 pub mod mining;
 pub mod autonomous;
+pub mod auto_process;
 
 pub mod ui;
 pub mod hud;

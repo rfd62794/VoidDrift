@@ -46,7 +46,6 @@ fn main() {
         .insert_resource(UiLayout::default())
         .insert_resource(WorldViewRect::default())
         .insert_resource(ForgeSettings::default())
-        .insert_resource(AutoDockSettings::default())
         .insert_resource(QuestLog::default())
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
@@ -103,6 +102,9 @@ fn main() {
             systems::mining::mining_system, 
             systems::autonomous::autonomous_ship_system,
             systems::autonomous::autonomous_beam_system.after(systems::autonomous::autonomous_ship_system),
+            systems::auto_process::auto_refine_system,
+            systems::auto_process::auto_forge_system,
+            systems::auto_process::auto_build_drones_system,
             systems::ui::ship_cargo_display_system,
             systems::ui::autonomous_ship_cargo_display_system,
             systems::ui::cargo_label_system,

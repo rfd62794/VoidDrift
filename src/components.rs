@@ -81,11 +81,14 @@ pub struct Station {
     pub repair_progress: f32,
     pub online: bool,
     pub iron_reserves: f32,
+    pub iron_ingots: f32,
     pub tungsten_reserves: f32,
+    pub tungsten_ingots: f32,
     pub nickel_reserves: f32,
-    pub hull_plate_reserves: u32,
-    pub ship_hulls: u32,
-    pub ai_cores: u32,
+    pub nickel_ingots: f32,
+    pub hull_plate_reserves: f32,
+    pub ship_hulls: f32,
+    pub ai_cores: f32,
     pub log: VecDeque<String>,
     pub rotation: f32,
     pub rotation_speed: f32,
@@ -363,24 +366,7 @@ pub struct StationQueues {
     pub core_fabricator:    Option<ProcessingJob>,
 }
 
-#[derive(Resource, Clone)]
-pub struct AutoDockSettings {
-    pub auto_unload: bool,
-    pub auto_smelt_iron: bool,
-    pub auto_smelt_tungsten: bool,
-    pub auto_smelt_nickel: bool,
-}
 
-impl Default for AutoDockSettings {
-    fn default() -> Self {
-        Self {
-            auto_unload: true,
-            auto_smelt_iron: false,
-            auto_smelt_tungsten: false,
-            auto_smelt_nickel: false,
-        }
-    }
-}
 
 // ── TUTORIAL & UX ────────────────────────────────────────────────────────────
 

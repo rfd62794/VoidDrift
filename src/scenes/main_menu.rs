@@ -317,11 +317,14 @@ pub fn ingame_startup_system(
         // Restore station state to the just-spawned station entity
         if let Ok(mut station) = station_query.get_single_mut() {
             station.online            = save_data.station_online;
-            station.iron_reserves   = save_data.iron;
+            station.iron_reserves       = save_data.iron;
+            station.iron_ingots         = save_data.iron_ingots;
             station.tungsten_reserves   = save_data.tungsten;
+            station.tungsten_ingots     = save_data.tungsten_ingots;
             station.nickel_reserves     = save_data.nickel;
+            station.nickel_ingots       = save_data.nickel_ingots;
             station.hull_plate_reserves = save_data.hull_plates;
-            station.ship_hulls        = save_data.ship_hulls;
+            station.ship_hulls          = save_data.ship_hulls;
             station.ai_cores          = save_data.ai_cores;
             station.repair_progress   = save_data.repair_progress;
         }
