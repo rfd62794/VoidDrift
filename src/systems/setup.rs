@@ -206,6 +206,7 @@ fn spawn_opening_drone(
             cargo_capacity: CARGO_CAPACITY,
             laser_tier: LaserTier::Basic,
         },
+        AutonomousShipTag,
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
         MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
         Transform::from_xyz(-1000.0, -800.0, Z_SHIP),

@@ -261,6 +261,8 @@ pub fn ingame_startup_system(
     mut active_tab: ResMut<ActiveStationTab>,
     mut queue: ResMut<ShipQueue>,
     opening_drone_query: Query<Entity, With<InOpeningSequence>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
 ) {
     if let Some(save_data) = menu_state.pending_load.take() {
@@ -323,6 +325,75 @@ pub fn ingame_startup_system(
 
         signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
         signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
+
+        // ── RESTORE ACTIVE DRONES ──
+        for d in save_data.drones.iter() {
+            let state = match d.state.as_str() {
+                "Idle"       => ShipState::Idle,
+                "Navigating" => ShipState::Navigating,
+                "Mining"     => ShipState::Mining,
+                "Docked"     => ShipState::Docked,
+                _            => ShipState::Navigating,
+            };
+            let ore_type = match d.ore_type.as_str() {
+                "Iron"     => OreDeposit::Iron,
+                "Tungsten" => OreDeposit::Tungsten,
+                "Nickel"   => OreDeposit::Nickel,
+                _          => OreDeposit::Iron,
+            };
+
+            let ship_ent = commands.spawn((
+                Ship {
+                    state,
+                    speed: crate::constants::SHIP_SPEED,
+                    cargo: d.cargo,
+                    cargo_type: ore_type,
+                    cargo_capacity: crate::constants::CARGO_CAPACITY,
+                    laser_tier: LaserTier::Basic,
+                },
+                AutonomousShipTag,
+                LastHeading(d.heading),
+                Transform::from_xyz(d.pos_x, d.pos_y, crate::constants::Z_SHIP),
+                Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
+                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+            )).id();
+
+            // If it had a destination, restore Autopilot
+            if d.assignment_pos_x != 0.0 || d.assignment_pos_y != 0.0 {
+                commands.entity(ship_ent).insert(AutopilotTarget {
+                    destination: Vec2::new(d.assignment_pos_x, d.assignment_pos_y),
+                    target_entity: None, // Asteroid entity link is lost, but position is enough
+                });
+            }
+
+            commands.entity(ship_ent).with_children(|parent| {
+                parent.spawn((
+                    ThrusterGlow,
+                    Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
+                    Transform::from_xyz(0.0, -18.0, 0.1),
+                    Visibility::Hidden,
+                ));
+                parent.spawn((
+                    MiningBeam,
+                    Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
+                    MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))),
+                    Transform::from_xyz(0.0, 0.0, crate::constants::Z_BEAM - crate::constants::Z_SHIP),
+                    Visibility::Hidden,
+                ));
+                parent.spawn((
+                    Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                    Transform::from_xyz(0.0, 24.0, crate::constants::Z_CARGO_BAR - crate::constants::Z_SHIP),
+                ));
+                parent.spawn((
+                    ShipCargoBarFill,
+                    Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+                    Transform::from_xyz(0.0, 24.0, (crate::constants::Z_CARGO_BAR - crate::constants::Z_SHIP) + 0.05),
+                ));
+            });
+        }
     } else {
         // NEW GAME PATH — opening sequence runs normally
     }

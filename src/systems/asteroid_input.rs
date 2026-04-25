@@ -59,6 +59,7 @@ pub fn asteroid_input_system(
                             cargo_capacity: CARGO_CAPACITY,
                             laser_tier: LaserTier::Basic,
                         },
+                        AutonomousShipTag,
                         LastHeading(0.0),
                         AutopilotTarget {
                             destination: mp,

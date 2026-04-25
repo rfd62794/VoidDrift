@@ -67,6 +67,9 @@ pub struct DroneSaveData {
     pub state: String,
     pub cargo: f32,
     pub is_echo_primary: bool,
+    pub pos_x: f32,
+    pub pos_y: f32,
+    pub heading: f32,
 }
 
 // File path functions
@@ -169,6 +172,7 @@ pub fn collect_save_data(
     opening: &OpeningSequence,
     active_tab: &ActiveStationTab,
     queue: &ShipQueue,
+    drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -195,8 +199,21 @@ pub fn collect_save_data(
         tab_refinery: false, // TODO: collect from tabs resource
         tab_foundry: false, // TODO: collect from tabs resource
         tab_hangar: false, // TODO: collect from tabs resource
-        drone_count: 0, // TODO: collect from world
-        drones: vec![], // TODO: collect from world
+        drone_count: drone_query.iter().count() as u8,
+        drones: drone_query.iter().map(|(ship, transform, heading, target)| {
+            DroneSaveData {
+                assignment_sector: "Unknown".to_string(), // Could be derived from pos if needed
+                assignment_pos_x: target.map(|t| t.destination.x).unwrap_or(0.0),
+                assignment_pos_y: target.map(|t| t.destination.y).unwrap_or(0.0),
+                ore_type: format!("{:?}", ship.cargo_type),
+                state: format!("{:?}", ship.state),
+                cargo: ship.cargo,
+                is_echo_primary: false,
+                pos_x: transform.translation.x,
+                pos_y: transform.translation.y,
+                heading: heading.0,
+            }
+        }).collect(),
         sectors_discovered: vec![], // TODO: collect from world
         active_tab: format!("{:?}", active_tab),
         drawer_state: "default".to_string(),
@@ -219,6 +236,7 @@ pub fn autosave_system(
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
     queue: Res<ShipQueue>,
+    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -230,6 +248,7 @@ pub fn autosave_system(
                 &opening,
                 &active_tab,
                 &queue,
+                &drone_query,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -245,14 +264,10 @@ pub fn save_request_system(
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
     queue: Res<ShipQueue>,
+    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
 ) {
-    info!("Save request system running, {} events received", events.len());
-    
     if let Ok(station) = station_query.get_single() {
-        info!("Station found for save: online={}", station.online);
         for event in events.read() {
-            info!("Processing save request: name={}, category={:?}", event.name, event.category);
-            
             let data = collect_save_data(
                 event.name.clone(),
                 event.category.clone(),
@@ -261,17 +276,15 @@ pub fn save_request_system(
                 &opening,
                 &active_tab,
                 &queue,
+                &drone_query,
             );
             
-            info!("Save data collected, attempting to save...");
             if let Err(e) = save_game(&data) {
                 error!("Save failed: {e}");
             } else {
                 info!("Game saved successfully: {}", event.name);
             }
         }
-    } else {
-        error!("No station found for save operation!");
     }
 }
 
