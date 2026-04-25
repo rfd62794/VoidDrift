@@ -58,7 +58,7 @@ if (-not (Test-Path $AdbExe)) {
 # Device connection: prefer wired USB, fall back to wireless
 # ---------------------------------------------------------------------------
 if (-not $LogcatOnly) {
-    $wiredDevice = & $AdbExe devices 2>&1 | Select-String "^\w+\s+device$"
+    $wiredDevice = & $AdbExe devices | Select-String "^\w+\s+device$"
     if ($wiredDevice) {
         Write-Host "  ADB: wired device found." -ForegroundColor Green
     } elseif ($PhoneIP) {
@@ -209,7 +209,7 @@ Write-Host "  Connected devices:" -ForegroundColor DarkGray
 $devices | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
 
 # Pick the first available device serial so multi-device setups don't error
-$targetSerial = & $AdbExe devices 2>&1 |
+$targetSerial = & $AdbExe devices |
     Select-String "^\S+\s+device$" |
     Select-Object -First 1 |
     ForEach-Object { ($_ -split "\s+")[0] }
