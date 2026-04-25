@@ -12,16 +12,24 @@ pub fn cleanup_world_entities(
 ) {
     info!("Cleaning up {} entities before new game", entities.iter().count());
     
-    // Use commands.despawn() instead of despawn_recursive() to avoid B0003 errors
-    // Collect entities first to avoid modifying query while iterating
     let entities_to_despawn: Vec<Entity> = entities.iter().collect();
     
     for entity in entities_to_despawn {
-        // Try to despawn, but ignore if entity doesn't exist
         if commands.get_entity(entity).is_some() {
             commands.entity(entity).despawn();
         }
     }
+}
+
+/// Resets runtime resources to a clean state (call on OnExit(InGame))
+pub fn reset_game_resources(
+    mut queue: ResMut<ShipQueue>,
+    mut cam_delta: ResMut<CameraDelta>,
+    mut signal_log: ResMut<SignalLog>,
+) {
+    *queue = ShipQueue::default();
+    *cam_delta = CameraDelta::default();
+    *signal_log = SignalLog::default();
 }
 
 /// Spawns the world objects, ship, and HUD.
@@ -36,6 +44,7 @@ pub fn setup_world(
     mut signal_log: ResMut<SignalLog>,
     mut drawer_state: ResMut<DrawerState>,
     mut world_view_rect: ResMut<WorldViewRect>,
+    mut queue: ResMut<ShipQueue>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
@@ -45,6 +54,7 @@ pub fn setup_world(
     *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
     *drawer_state = DrawerState::Collapsed;
     *world_view_rect = WorldViewRect::default();
+    *queue = ShipQueue::default(); // Always start with 0 — opening sequence gifts count=1 on complete
     
     // Reset SignalLog completely
     *signal_log = SignalLog::default();

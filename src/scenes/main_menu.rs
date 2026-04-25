@@ -287,6 +287,10 @@ fn spawn_menu_starfield(
 fn spawn_menu_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
+        Camera {
+            order: -1, // Below MainCamera (order 0) — no ambiguity when transitioning
+            ..default()
+        },
         OrthographicProjection {
             far: 1200.0,
             ..OrthographicProjection::default_2d()
@@ -308,11 +312,21 @@ pub fn ingame_startup_system(
     mut signal_log: ResMut<SignalLog>,
     mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
     mut active_tab: ResMut<ActiveStationTab>,
+    mut queue: ResMut<ShipQueue>,
+    opening_drone_query: Query<Entity, With<InOpeningSequence>>,
+    mut commands: Commands,
 ) {
     if let Some(save_data) = menu_state.pending_load.take() {
         // LOAD PATH — apply save data, skip opening sequence
         opening.phase = OpeningPhase::Complete;
         opening.timer = 0.0;
+
+        // Despawn the opening drone (setup_world always spawns it, but we don't need it on load)
+        for ent in opening_drone_query.iter() {
+            commands.entity(ent).despawn_recursive();
+        }
+        // Gift the queue its first drone directly (simulating the completed sequence)
+        queue.available_count = 1;
 
         // Restore station state to the just-spawned station entity
         if let Ok(mut station) = station_query.get_single_mut() {

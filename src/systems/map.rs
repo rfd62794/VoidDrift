@@ -9,6 +9,10 @@ pub fn camera_follow_system(
     mut cam_delta: ResMut<CameraDelta>,
     pan_state: Res<MapPanState>,
 ) {
+    // Always zero-out delta first — only set it if we actually move the camera
+    // this prevents stale velocity from scrolling the starfield after a ship despawns
+    cam_delta.0 = Vec2::ZERO;
+
     let Ok(st) = ship.get_single() else { return; };
     let Ok(mut ct) = cam.get_single_mut() else { return; };
     let old_pos = ct.translation.truncate();
