@@ -265,15 +265,33 @@ pub fn ingame_startup_system(
 ) {
     if let Some(save_data) = menu_state.pending_load.take() {
         // LOAD PATH — apply save data, skip opening sequence
-        opening.phase = OpeningPhase::Complete;
+        // Restore opening phase
+        opening.phase = match save_data.opening_phase.as_str() {
+            "Adrift"           => OpeningPhase::Adrift,
+            "SignalIdentified" => OpeningPhase::SignalIdentified,
+            "AutoPiloting"     => OpeningPhase::AutoPiloting,
+            "InRange"          => OpeningPhase::InRange,
+            "Docked"           => OpeningPhase::Docked,
+            "Complete"         => OpeningPhase::Complete,
+            _                  => OpeningPhase::Complete,
+        };
         opening.timer = 0.0;
 
-        // Despawn the opening drone (setup_world always spawns it, but we don't need it on load)
-        for ent in opening_drone_query.iter() {
-            commands.entity(ent).despawn_recursive();
+        // Only despawn the opening drone if the intro is actually finished
+        if opening.phase == OpeningPhase::Complete {
+            for ent in opening_drone_query.iter() {
+                commands.entity(ent).despawn_recursive();
+            }
         }
+
         // Restore the queue count from save
         queue.available_count = save_data.ship_hulls as u32;
+
+        // Emergency sanity check: if intro is skipped/finished but fleet is 0, gift 1 drone
+        if opening.phase == OpeningPhase::Complete && queue.available_count == 0 {
+            queue.available_count = 1;
+            info!("[Voidrift] Load sanity check: Gifting emergency drone to empty fleet.");
+        }
 
         // Restore station state to the just-spawned station entity
         if let Ok(mut station) = station_query.get_single_mut() {

@@ -143,6 +143,28 @@ pub fn render_tab_content(
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
                     ui.label("FLEET READY:"); ui.label(egui::RichText::new(format!("{}", queue.available_count)).color(egui::Color32::from_rgb(0, 230, 120)).strong()); ui.end_row();
                 });
+
+                ui.add_space(8.0);
+                
+                // DRONE BUILD PROGRESS BAR
+                let progress = station.drone_build_progress;
+                let can_build = station.hull_plate_reserves >= DRONE_BUILD_COST_HULLS
+                    && station.thruster_reserves >= DRONE_BUILD_COST_THRUSTERS
+                    && station.ai_cores >= DRONE_BUILD_COST_CORES;
+
+                let bar_color = if can_build {
+                    egui::Color32::from_rgb(0, 180, 100)
+                } else {
+                    egui::Color32::from_rgb(180, 60, 0)
+                };
+
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("NEXT DRONE:").color(egui::Color32::from_gray(160)).size(12.0));
+                    let progress_bar = egui::ProgressBar::new(progress)
+                        .fill(bar_color)
+                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { "STALLED".to_string() });
+                    ui.add(progress_bar);
+                });
             });
             if !station.online {
                 if ui.button("REPAIR STATION").clicked() {
