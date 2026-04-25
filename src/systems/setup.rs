@@ -207,7 +207,7 @@ fn spawn_opening_drone(
             laser_tier: LaserTier::Basic,
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
-        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+        MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
         Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
     )).id();
     
@@ -215,7 +215,7 @@ fn spawn_opening_drone(
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
             Transform::from_xyz(0.0, -18.0, 0.1),
             Visibility::Hidden,
         ));
@@ -241,7 +241,7 @@ fn spawn_opening_drone(
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
             MeshMaterial2d(materials.add(ColorMaterial {
-                color: Color::srgb(1.0, 0.5, 0.0),
+                color: Color::srgb(0.0, 0.6, 1.0),
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),

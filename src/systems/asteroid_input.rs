@@ -65,7 +65,7 @@ pub fn asteroid_input_system(
                             target_entity: Some(asteroid_ent),
                         },
                         Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
-                        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                        MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
                         Transform::from_xyz(spawn_pos.x, spawn_pos.y, Z_SHIP),
                     )).id();
 
@@ -92,7 +92,7 @@ pub fn asteroid_input_system(
                         parent.spawn((
                             ShipCargoBarFill,
                             Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
-                            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
+                            MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
                             Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
                         ));
                     });
