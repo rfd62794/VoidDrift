@@ -71,7 +71,7 @@ pub fn ore_name(ore: &OreDeposit) -> &'static str {
 pub fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
     match ore {
         OreDeposit::Iron     => LaserTier::Basic,
-        OreDeposit::Tungsten => LaserTier::Tungsten,
+        OreDeposit::Tungsten => LaserTier::Basic,
         OreDeposit::Nickel   => LaserTier::Basic,
     }
 }
