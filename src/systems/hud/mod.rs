@@ -205,7 +205,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 .inner_margin(egui::Margin { left: 0, right: 4, top: 4, bottom: 4 }))
             .exact_height(layout.secondary_tab_height)
             .show(ctx, |ui| {
-                let tab_w = (ui.available_width() / 5.0 - 1.5).max(60.0);
+                ui.spacing_mut().item_spacing.x = 0.0;
+                let tab_w = ui.available_width() / 5.0;
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
@@ -218,7 +219,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                             *params.active_tab = tab;
                         }
-                        ui.add_space(1.0);
                     }
                 });
             });
