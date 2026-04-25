@@ -272,8 +272,8 @@ pub fn ingame_startup_system(
         for ent in opening_drone_query.iter() {
             commands.entity(ent).despawn_recursive();
         }
-        // Gift the queue its first drone directly (simulating the completed sequence)
-        queue.available_count = 1;
+        // Restore the queue count from save
+        queue.available_count = save_data.ship_hulls as u32;
 
         // Restore station state to the just-spawned station entity
         if let Ok(mut station) = station_query.get_single_mut() {
@@ -286,7 +286,7 @@ pub fn ingame_startup_system(
             station.nickel_ingots       = save_data.nickel_ingots;
             station.hull_plate_reserves = save_data.hull_plates;
             station.thruster_reserves   = save_data.thruster_reserves;
-            // ship_hulls is runtime-only (queue count), not restored from save
+            // ship_hulls restored to queue above
             station.ai_cores            = save_data.ai_cores;
             station.repair_progress     = save_data.repair_progress;
         }

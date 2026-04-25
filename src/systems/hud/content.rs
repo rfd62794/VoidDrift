@@ -141,6 +141,7 @@ pub fn render_tab_content(
                     ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
+                    ui.label("FLEET READY:"); ui.label(egui::RichText::new(format!("{}", queue.available_count)).color(egui::Color32::from_rgb(0, 230, 120)).strong()); ui.end_row();
                 });
             });
             if !station.online {

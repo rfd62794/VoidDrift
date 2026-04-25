@@ -168,6 +168,7 @@ pub fn collect_save_data(
     station: &Station,
     opening: &OpeningSequence,
     active_tab: &ActiveStationTab,
+    queue: &ShipQueue,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -186,7 +187,7 @@ pub fn collect_save_data(
         nickel_ingots: station.nickel_ingots,
         hull_plates: station.hull_plate_reserves,
         thruster_reserves: station.thruster_reserves,
-        ship_hulls: 0.0, // queue count is runtime-only, not persisted
+        ship_hulls: queue.available_count as f32,
         ai_cores: station.ai_cores,
         repair_progress: station.repair_progress,
         tab_power: false, // TODO: collect from tabs resource
@@ -217,6 +218,7 @@ pub fn autosave_system(
     station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
+    queue: Res<ShipQueue>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -227,6 +229,7 @@ pub fn autosave_system(
                 station,
                 &opening,
                 &active_tab,
+                &queue,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -241,6 +244,7 @@ pub fn save_request_system(
     station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
+    queue: Res<ShipQueue>,
 ) {
     info!("Save request system running, {} events received", events.len());
     
@@ -256,6 +260,7 @@ pub fn save_request_system(
                 station,
                 &opening,
                 &active_tab,
+                &queue,
             );
             
             info!("Save data collected, attempting to save...");
