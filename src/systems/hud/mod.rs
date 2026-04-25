@@ -202,10 +202,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         egui::TopBottomPanel::bottom("secondary_tabs")
             .frame(egui::Frame::NONE
                 .fill(egui::Color32::from_rgb(15, 15, 20))
-                .inner_margin(egui::Margin::symmetric(4, 4)))
+                .inner_margin(egui::Margin { left: 0, right: 4, top: 4, bottom: 4 }))
             .exact_height(layout.secondary_tab_height)
             .show(ctx, |ui| {
-                let tab_w = (ui.available_width() / 5.0 - 4.0).max(60.0);
+                let tab_w = (ui.available_width() / 5.0 - 1.5).max(60.0);
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
@@ -218,35 +218,13 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                             *params.active_tab = tab;
                         }
-                        ui.add_space(2.0);
+                        ui.add_space(1.0);
                     }
                 });
             });
     }
 
-    // ── 4. PRIMARY TABS (if Expanded) ─────────────────────────────────────────
-    if drawer == DrawerState::Expanded {
-        egui::TopBottomPanel::bottom("primary_tabs")
-            .frame(egui::Frame::NONE
-                .fill(egui::Color32::from_rgb(10, 10, 18))
-                .inner_margin(egui::Margin::symmetric(4, 4)))
-            .exact_height(layout.primary_tab_height)
-            .show(ctx, |ui| {
-                let tab_w = (ui.available_width() / 2.0 - 6.0).max(80.0);
-                let tab_size = egui::vec2(tab_w, layout.primary_tab_height - 8.0);
-                ui.horizontal(|ui| {
-                    for (tab, label) in [
-                        (ActiveStationTab::Station, "STATION"),
-                        (ActiveStationTab::Fleet,   "FLEET"),
-                    ] {
-                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
-                            *params.active_tab = tab;
-                        }
-                        ui.add_space(4.0);
-                    }
-                });
-            });
-    }
+    // ── 4. PRIMARY TABS REMOVED ─────────────────────────────
 
     // ── 5. HANDLE BAR (always when opening_complete) ──────────────────────────
     egui::TopBottomPanel::bottom("handle_bar")
