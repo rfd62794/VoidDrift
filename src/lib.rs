@@ -111,11 +111,7 @@ fn main() {
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,
             systems::ui::station_visual_system,
-            systems::economy::station_status_system,
-            systems::economy::station_maintenance_system,
-            systems::economy::ship_self_preservation_system,
-            systems::economy::processing_queue_system,
-            systems::economy::auto_dock_system,
+
             systems::map::map_highlight_system,
             systems::map::map_input_system,
             systems::map::pinch_zoom_system,

@@ -109,17 +109,17 @@ pub fn signal_system(
             fire_signal(&mut signal, 7, "> REPAIRS POSSIBLE. MATERIALS REQUIRED.");
 
             // ID 8: First Magnetite
-            if st.magnetite_reserves > 0.0 {
-                fire_signal(&mut signal, 8, "> MAGNETITE ACQUIRED. REFINERY READY.");
+            if st.iron_reserves > 0.0 {
+                fire_signal(&mut signal, 8, "> IRON ACQUIRED. REFINERY READY.");
             }
 
             // ID 9: First Cells
-            if st.power_cells > 0 {
-                fire_signal(&mut signal, 9, "> POWER CELLS PRODUCED. REPAIR THRESHOLD: 25.");
+            if st.tungsten_reserves > 0.0 {
+                fire_signal(&mut signal, 9, "> TUNGSTEN PRODUCED. REPAIR THRESHOLD: 25.");
             }
 
             // ID 10: Threshold 25
-            if st.power_cells >= 25 {
+            if st.iron_reserves >= 25.0 {
                 fire_signal(&mut signal, 10, "> REPAIR THRESHOLD MET. INITIATE WHEN READY.");
             }
 
@@ -185,10 +185,10 @@ pub fn signal_system(
             }
             
             // ID 19: Critical Power (Refirable)
-            fire_refirable(&mut signal, 19, "> POWER RESERVES CRITICAL. MINING RUN REQUIRED.", 
+            fire_refirable(&mut signal, 19, "> MATERIAL RESERVES CRITICAL. MINING RUN REQUIRED.", 
                 now,
-                st.power_cells < 5, 
-                st.power_cells >= 8
+                st.iron_reserves < 5.0, 
+                st.iron_reserves >= 15.0
             );
 
             // [PHASE B] Docking Sequence Signals
@@ -218,7 +218,7 @@ pub fn signal_system(
         }
 
         if let Ok((_st, q)) = station_res {
-            let processing_active = q.magnetite_refinery.is_some() || q.carbon_refinery.is_some() || q.hull_forge.is_some() || q.core_fabricator.is_some();
+            let processing_active = q.iron_refinery.is_some() || q.tungsten_refinery.is_some() || q.nickel_refinery.is_some() || q.hull_forge.is_some() || q.core_fabricator.is_some();
             
             fire_refirable(&mut signal, 32, "> INDUSTRIAL PROCESSING ACTIVE. PARALLEL QUEUES COMMENCED.",
                 now,

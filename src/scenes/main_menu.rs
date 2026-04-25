@@ -317,10 +317,9 @@ pub fn ingame_startup_system(
         // Restore station state to the just-spawned station entity
         if let Ok(mut station) = station_query.get_single_mut() {
             station.online            = save_data.station_online;
-            station.power             = save_data.station_power;
-            station.power_cells       = save_data.power_cells;
-            station.magnetite_reserves = save_data.magnetite;
-            station.carbon_reserves   = save_data.carbon;
+            station.iron_reserves   = save_data.iron;
+            station.tungsten_reserves   = save_data.tungsten;
+            station.nickel_reserves     = save_data.nickel;
             station.hull_plate_reserves = save_data.hull_plates;
             station.ship_hulls        = save_data.ship_hulls;
             station.ai_cores          = save_data.ai_cores;
@@ -332,11 +331,10 @@ pub fn ingame_startup_system(
             "Station"  => ActiveStationTab::Station,
             "Fleet"    => ActiveStationTab::Fleet,
             "Cargo"    => ActiveStationTab::Cargo,
-            "Power"    => ActiveStationTab::Power,
             "Refinery" => ActiveStationTab::Refinery,
             "Foundry"  => ActiveStationTab::Foundry,
             "Hangar"   => ActiveStationTab::Hangar,
-            _          => ActiveStationTab::Power,
+            _          => ActiveStationTab::Cargo,
         };
 
         signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());

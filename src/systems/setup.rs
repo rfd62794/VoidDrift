@@ -188,10 +188,8 @@ fn spawn_player_ship(
             state: ShipState::Idle,
             speed: SHIP_SPEED,
             cargo: 0.0,
-            cargo_type: OreType::Empty,
+            cargo_type: OreDeposit::Iron,
             cargo_capacity: CARGO_CAPACITY,
-            power: SHIP_POWER_MAX,
-            power_cells: 0,
             laser_tier: LaserTier::Basic,
         },
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
@@ -273,15 +271,12 @@ fn spawn_station(
         Station {
             repair_progress: 1.0,
             online: true,
-            magnetite_reserves: 50.0,
-            carbon_reserves: 25.0,
+            iron_reserves: 50.0,
+            tungsten_reserves: 25.0,
+            nickel_reserves: 10.0,
             hull_plate_reserves: 0,
             ship_hulls: 0,
             ai_cores: 0,
-            power_cells: 5,
-            power: STATION_POWER_MAX,
-            maintenance_timer: Timer::from_seconds(10.0, TimerMode::Repeating),
-            last_power_warning_time: -100.0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
             rotation_speed: STATION_ROTATION_SPEED,
@@ -368,12 +363,9 @@ fn spawn_sectors(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     asset_server: &AssetServer,
 ) {
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_1_POS, OreDeposit::Magnetite, 1234, "S1");
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_2_POS, OreDeposit::Iron, 2345, "S2");
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_3_POS, OreDeposit::Carbon, 3456, "S3");
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_4_POS, OreDeposit::Tungsten, 4567, "S4");
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_5_POS, OreDeposit::Titanite, 5678, "S5");
-    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_6_POS, OreDeposit::CrystalCore, 6789, "S6");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_1_POS, OreDeposit::Iron, 1234, "S1");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_2_POS, OreDeposit::Tungsten, 2345, "S2");
+    spawn_asteroid_field(commands, meshes, materials, asset_server, SECTOR_3_POS, OreDeposit::Nickel, 3456, "S3");
 }
 
 fn spawn_map_connectors(
@@ -384,9 +376,6 @@ fn spawn_map_connectors(
     spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_1_POS);
     spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_2_POS);
     spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_3_POS);
-    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_4_POS);
-    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_5_POS);
-    spawn_map_connector(commands, meshes, materials, STATION_POS, SECTOR_6_POS);
 }
 
 fn spawn_destination_highlight(
@@ -421,12 +410,9 @@ fn spawn_asteroid_field(
     use bevy::sprite::AlphaMode2d;
 
     let base_color = match ore {
-        OreDeposit::Magnetite => COLOR_MAGNETITE,
         OreDeposit::Iron => COLOR_IRON,
-        OreDeposit::Carbon => COLOR_CARBON,
         OreDeposit::Tungsten => COLOR_TUNGSTEN,
-        OreDeposit::Titanite => COLOR_TITANITE,
-        OreDeposit::CrystalCore => COLOR_CRYSTAL,
+        OreDeposit::Nickel => COLOR_NICKEL,
     };
 
     let is_gated = ore_laser_required(&ore) != LaserTier::Basic;
@@ -444,27 +430,14 @@ fn spawn_asteroid_field(
     };
 
     let radius = match ore {
-        OreDeposit::Magnetite => ASTEROID_RADIUS_MAGNETITE,
         OreDeposit::Iron => ASTEROID_RADIUS_IRON,
-        OreDeposit::Carbon => ASTEROID_RADIUS_CARBON,
         OreDeposit::Tungsten => ASTEROID_RADIUS_TUNGSTEN,
-        OreDeposit::Titanite => ASTEROID_RADIUS_TITANITE,
-        OreDeposit::CrystalCore => ASTEROID_RADIUS_CRYSTAL,
-    };
-
-    let cargo_ore_type = match ore {
-        OreDeposit::Magnetite => OreType::Magnetite,
-        OreDeposit::Iron => OreType::Magnetite, // Iron maps to Magnetite in existing cargo logic
-        OreDeposit::Carbon => OreType::Carbon,
-        OreDeposit::Tungsten => OreType::Magnetite,
-        OreDeposit::Titanite => OreType::Magnetite,
-        OreDeposit::CrystalCore => OreType::Magnetite,
+        OreDeposit::Nickel => ASTEROID_RADIUS_NICKEL,
     };
 
     let asteroid_entity = commands.spawn((
         MapMarker,
         AsteroidField { 
-            ore_type: cargo_ore_type, 
             ore_deposit: ore,
             depleted: false 
         },
@@ -582,40 +555,12 @@ pub fn triangle_mesh(w: f32, h: f32) -> Mesh {
 
 pub fn generate_ore_mesh(ore: &OreDeposit, seed: u64) -> Mesh {
     match ore {
-        OreDeposit::Magnetite   => generate_magnetite_mesh(seed),
-        OreDeposit::Iron        => generate_iron_mesh(seed),
-        OreDeposit::Carbon      => generate_carbon_mesh(seed),
-        OreDeposit::Tungsten    => generate_tungsten_mesh(seed),
-        OreDeposit::Titanite    => generate_titanite_mesh(seed),
-        OreDeposit::CrystalCore => generate_crystal_mesh(seed),
+        OreDeposit::Iron     => generate_iron_mesh(seed),
+        OreDeposit::Tungsten => generate_tungsten_mesh(seed),
+        OreDeposit::Nickel   => generate_nickel_mesh(seed),
     }
 }
 
-pub fn generate_magnetite_mesh(seed: u64) -> Mesh {
-    use bevy::render::mesh::{Indices, PrimitiveTopology};
-    use std::f32::consts::TAU;
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_MAGNETITE;
-    let vertex_count = rng.gen_range(10..=12);
-    let mut vertices = vec![[0.0, 0.0, 0.0]];
-    let mut normals = vec![[0.0, 0.0, 1.0]];
-    let mut uvs = vec![[0.5, 0.5]];
-    for i in 0..vertex_count {
-        let angle = (i as f32 / vertex_count as f32) * TAU;
-        // High variation + sharp spikes
-        let variance = if rng.gen_bool(0.3) { rng.gen_range(1.2..1.4) } else { rng.gen_range(0.6..1.0) };
-        let radius = base_radius * variance;
-        let x = angle.cos() * radius * 1.2; // Elongated
-        let y = angle.sin() * radius * 0.8;
-        vertices.push([x, y, 0.0]);
-        normals.push([0.0, 0.0, 1.0]);
-        uvs.push([(x / (base_radius * 2.0)) + 0.5, (y / (base_radius * 2.0)) + 0.5]);
-    }
-    let mut indices = Vec::new();
-    for i in 1..vertex_count { indices.extend_from_slice(&[0, i, i + 1]); }
-    indices.extend_from_slice(&[0, vertex_count, 1]);
-    Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
-}
 
 pub fn generate_iron_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -641,30 +586,6 @@ pub fn generate_iron_mesh(seed: u64) -> Mesh {
     Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
 }
 
-pub fn generate_carbon_mesh(seed: u64) -> Mesh {
-    use bevy::render::mesh::{Indices, PrimitiveTopology};
-    use std::f32::consts::TAU;
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_CARBON;
-    let vertex_count = rng.gen_range(12..=14);
-    let mut vertices = vec![[0.0, 0.0, 0.0]];
-    let mut normals = vec![[0.0, 0.0, 1.0]];
-    let mut uvs = vec![[0.5, 0.5]];
-    for i in 0..vertex_count {
-        let angle = (i as f32 / vertex_count as f32) * TAU;
-        // Smooth round: low variance
-        let radius = base_radius + rng.gen_range(-base_radius * 0.1..base_radius * 0.1);
-        let x = angle.cos() * radius;
-        let y = angle.sin() * radius;
-        vertices.push([x, y, 0.0]);
-        normals.push([0.0, 0.0, 1.0]);
-        uvs.push([(x / (base_radius * 2.5)) + 0.5, (y / (base_radius * 2.5)) + 0.5]);
-    }
-    let mut indices = Vec::new();
-    for i in 1..vertex_count { indices.extend_from_slice(&[0, i, i + 1]); }
-    indices.extend_from_slice(&[0, vertex_count, 1]);
-    Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
-}
 
 pub fn generate_tungsten_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -692,43 +613,18 @@ pub fn generate_tungsten_mesh(seed: u64) -> Mesh {
     Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
 }
 
-pub fn generate_titanite_mesh(seed: u64) -> Mesh {
-    use bevy::render::mesh::{Indices, PrimitiveTopology};
-    use std::f32::consts::TAU;
-    let _rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_TITANITE;
-    let vertex_count = 10;
-    let mut vertices = vec![[0.0, 0.0, 0.0]];
-    let mut normals = vec![[0.0, 0.0, 1.0]];
-    let mut uvs = vec![[0.5, 0.5]];
-    for i in 0..vertex_count {
-        let angle = (i as f32 / vertex_count as f32) * TAU;
-        let s_angle = angle.sin();
-        let radius = base_radius * (1.0 + (s_angle.abs() * 0.4)); // wider in middle
-        let x = angle.cos() * radius;
-        let y = angle.sin() * radius * 0.7; // flatter top/bottom
-        vertices.push([x, y, 0.0]);
-        normals.push([0.0, 0.0, 1.0]);
-        uvs.push([(x / (base_radius * 2.5)) + 0.5, (y / (base_radius * 2.5)) + 0.5]);
-    }
-    let mut indices = Vec::new();
-    for i in 1..vertex_count { indices.extend_from_slice(&[0, i, i + 1]); }
-    indices.extend_from_slice(&[0, vertex_count, 1]);
-    Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
-}
-
-pub fn generate_crystal_mesh(seed: u64) -> Mesh {
+pub fn generate_nickel_mesh(seed: u64) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_CRYSTAL;
-    let vertex_count = 6; // hexagonal
+    let base_radius = ASTEROID_RADIUS_NICKEL;
+    let vertex_count = rng.gen_range(10..=12);
     let mut vertices = vec![[0.0, 0.0, 0.0]];
     let mut normals = vec![[0.0, 0.0, 1.0]];
     let mut uvs = vec![[0.5, 0.5]];
     for i in 0..vertex_count {
         let angle = (i as f32 / vertex_count as f32) * TAU;
-        let radius = base_radius + rng.gen_range(-base_radius * 0.05..base_radius * 0.05);
+        let radius = base_radius + rng.gen_range(-base_radius * 0.15..base_radius * 0.15);
         let x = angle.cos() * radius;
         let y = angle.sin() * radius;
         vertices.push([x, y, 0.0]);

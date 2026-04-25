@@ -16,19 +16,15 @@ pub fn autonomous_ship_system(
         for (ship_entity, mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
-                    if station.power_cells >= POWER_COST_CYCLE_TOTAL {
-                        station.power_cells -= POWER_COST_CYCLE_TOTAL;
-                        ship.state = AutonomousShipState::Outbound;
-                        commands.entity(ship_entity).remove::<DockedAt>();
-                        add_log_entry(&mut station, "[STATION AI] Power confirmed. Dispatching autonomous unit.".to_string());
-                    }
+                    ship.state = AutonomousShipState::Outbound;
+                    commands.entity(ship_entity).remove::<DockedAt>();
+                    add_log_entry(&mut station, "[STATION AI] Dispatching autonomous unit.".to_string());
                 }
                 AutonomousShipState::Outbound => {
                     let direction = assignment.target_pos - transform.translation.truncate();
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD_MINING {
                         ship.state = AutonomousShipState::Mining;
-                        ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);
@@ -38,7 +34,6 @@ pub fn autonomous_ship_system(
                     ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
                     if ship.cargo >= CARGO_CAPACITY as f32 {
                         ship.state = AutonomousShipState::Returning;
-                        ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
                     }
                 }
                 AutonomousShipState::Returning => {
@@ -55,7 +50,6 @@ pub fn autonomous_ship_system(
                     let distance = direction.length();
                     if distance < ARRIVAL_THRESHOLD {
                         ship.state = AutonomousShipState::Unloading;
-                        ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                         
                         // Find Drone Berth entity to dock
                         if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Drone) {
@@ -74,26 +68,21 @@ pub fn autonomous_ship_system(
                     }
                 }
                 AutonomousShipState::Unloading => {
-                    let ore_name = if assignment.ore_type == OreType::Magnetite { "Magnetite" } else { "Carbon" };
+                    let ore_name = match assignment.ore_type {
+                        OreDeposit::Iron => "Iron",
+                        OreDeposit::Tungsten => "Tungsten",
+                        OreDeposit::Nickel => "Nickel",
+                    };
                     match assignment.ore_type {
-                        OreType::Magnetite => station.magnetite_reserves += ship.cargo,
-                        OreType::Carbon => station.carbon_reserves += ship.cargo,
-                        _ => {}
-                    }
-                    // [PHASE 8b] Recharge autonomous ship using station cells
-                    if station.power_cells > 0 {
-                        station.power_cells -= 1;
-                        ship.power = SHIP_POWER_MAX;
+                        OreDeposit::Iron => station.iron_reserves += ship.cargo,
+                        OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
+                        OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
                     }
 
                     let msg = format!("[STATION AI] Cargo deposited: {}. {} recovered.", assignment.sector_name, ore_name);
                     add_log_entry(&mut station, msg);
                     ship.cargo = 0.0;
                     
-                    // Return to holding or critical return
-                    if ship.power < 2.0 {
-                         add_log_entry(&mut station, "[STATION AI] Autonomous unit returned. Low power. Recharging.".to_string());
-                    }
                     ship.state = AutonomousShipState::Holding;
                 }
             }

@@ -12,8 +12,8 @@ pub fn quest_update_system(
 
     for obj in quest_log.objectives.iter_mut() {
         if obj.id == 3 && obj.state == ObjectiveState::Active {
-            // Repair the station (Objective 3) tracks power_cells
-            obj.progress_current = Some(station.power_cells);
+            // Repair the station (Objective 3) tracks iron_reserves
+            obj.progress_current = Some(station.iron_reserves as u32);
         }
     }
 }

@@ -37,16 +37,15 @@ pub fn mining_system(
                     }
 
                     target_dist = Some(dist);
-                    if ship.cargo_type == OreType::Empty {
-                        ship.cargo_type = field.ore_type;
-                    } else if ship.cargo_type != field.ore_type {
+                    if ship.cargo == 0.0 {
+                        ship.cargo_type = field.ore_deposit;
+                    } else if ship.cargo_type != field.ore_deposit {
                         continue;
                     }
                     let ore_amount = MINING_RATE * time.delta_secs();
                     ship.cargo = (ship.cargo + ore_amount).min(ship.cargo_capacity as f32);
                     if ship.cargo >= ship.cargo_capacity as f32 { 
                         ship.state = ShipState::Idle; 
-                        ship.power = (ship.power - SHIP_POWER_COST_MINING).max(0.0);
                         target_dist = None;
                         
                         if !field.depleted {
@@ -59,13 +58,10 @@ pub fn mining_system(
                         if field.depleted {
                             field.depleted = false;
                             if let Some(mat) = materials.get_mut(&mat_handle.0) {
-                                mat.color = match field.ore_deposit {
-                                    OreDeposit::Magnetite => COLOR_MAGNETITE,
+                                  mat.color = match field.ore_deposit {
                                     OreDeposit::Iron => COLOR_IRON,
-                                    OreDeposit::Carbon => COLOR_CARBON,
                                     OreDeposit::Tungsten => COLOR_TUNGSTEN,
-                                    OreDeposit::Titanite => COLOR_TITANITE,
-                                    OreDeposit::CrystalCore => COLOR_CRYSTAL,
+                                    OreDeposit::Nickel => COLOR_NICKEL,
                                 };
                             }
                         }

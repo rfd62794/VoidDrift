@@ -16,21 +16,22 @@ pub fn render_queue_card(
     queue: &mut Option<ProcessingJob>,
     op: ProcessingOperation,
     resource_cost: f32,
-    pwr_cost: f32,
     batch_time: f32,
 ) {
     let (input_name, output_name) = match op {
-        ProcessingOperation::MagnetiteRefinery => ("MAGNETITE", "POWER CELLS"),
-        ProcessingOperation::CarbonRefinery => ("CARBON", "HULL PLATES"),
+        ProcessingOperation::IronRefinery => ("IRON", "MATERIALS"),
+        ProcessingOperation::TungstenRefinery => ("TUNGSTEN", "MATERIALS"),
+        ProcessingOperation::NickelRefinery => ("NICKEL", "MATERIALS"),
         ProcessingOperation::HullForge => ("PLATES", "SHIP HULL"),
-        ProcessingOperation::CoreFabricator => ("POWER CELLS", "AI CORE"),
+        ProcessingOperation::CoreFabricator => ("NICKEL", "AI CORE"),
     };
 
     let max_possible = match op {
-        ProcessingOperation::MagnetiteRefinery => (station.magnetite_reserves / resource_cost).min(station.power / pwr_cost),
-        ProcessingOperation::CarbonRefinery => (station.carbon_reserves / resource_cost).min(station.power / pwr_cost),
-        ProcessingOperation::HullForge => (station.hull_plate_reserves as f32 / resource_cost).min(station.power / pwr_cost),
-        ProcessingOperation::CoreFabricator => (station.power_cells as f32 / resource_cost).min(station.power / pwr_cost),
+        ProcessingOperation::IronRefinery => station.iron_reserves / resource_cost,
+        ProcessingOperation::TungstenRefinery => station.tungsten_reserves / resource_cost,
+        ProcessingOperation::NickelRefinery => station.nickel_reserves / resource_cost,
+        ProcessingOperation::HullForge => station.hull_plate_reserves as f32 / resource_cost,
+        ProcessingOperation::CoreFabricator => station.nickel_reserves / resource_cost,
     }.floor() as u32;
 
     ui.group(|ui| {
@@ -40,7 +41,7 @@ pub fn render_queue_card(
             ui.label(egui::RichText::new(format!("{} → {}", input_name, output_name)).strong().size(12.0));
             
             // Header 2: Ratio
-            ui.label(egui::RichText::new(format!("Ratio: {:.0} Mat + {:.0} Pwr", resource_cost, pwr_cost))
+            ui.label(egui::RichText::new(format!("Ratio: {:.0} Mat", resource_cost))
                 .size(9.0)
                 .italics()
                 .color(egui::Color32::from_gray(160)));
@@ -75,9 +76,9 @@ pub fn render_queue_card(
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 let btn_size = egui::vec2(40.0, 32.0);
-                if ui.add_enabled(max_possible >= 1, egui::Button::new("+1").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, 1); }
-                if ui.add_enabled(max_possible >= 10, egui::Button::new("+10").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, 10); }
-                if ui.add_enabled(max_possible >= 1, egui::Button::new("MAX").min_size(btn_size)).clicked() { crate::systems::economy::queue_job(station, queue, op, max_possible); }
+                if ui.add_enabled(max_possible >= 1, egui::Button::new("+1").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, 1); */ }
+                if ui.add_enabled(max_possible >= 10, egui::Button::new("+10").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, 10); */ }
+                if ui.add_enabled(max_possible >= 1, egui::Button::new("MAX").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, max_possible); */ }
             });
 
             ui.add_space(4.0);

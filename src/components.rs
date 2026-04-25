@@ -16,14 +16,6 @@ pub enum AppState {
 }
 
 
-#[derive(PartialEq, Debug, Clone, Copy, Default)]
-pub enum OreType {
-    #[default]
-    Empty,
-    Magnetite,
-    Carbon,
-}
-
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum ShipState {
     Idle,
@@ -37,10 +29,8 @@ pub struct Ship {
     pub state: ShipState,
     pub speed: f32,
     pub cargo: f32,
-    pub cargo_type: OreType,
+    pub cargo_type: OreDeposit,
     pub cargo_capacity: u32,
-    pub power: f32,
-    pub power_cells: u32,
     pub laser_tier: LaserTier,
 }
 
@@ -52,19 +42,15 @@ pub struct AutopilotTarget {
 
 #[derive(Component)]
 pub struct AsteroidField {
-    pub ore_type: OreType,
     pub ore_deposit: OreDeposit,
     pub depleted: bool,
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Debug)]
 pub enum OreDeposit {
-    Magnetite,
     Iron,
-    Carbon,
     Tungsten,
-    Titanite,
-    CrystalCore,
+    Nickel,
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -76,23 +62,17 @@ pub enum LaserTier {
 
 pub fn ore_name(ore: &OreDeposit) -> &'static str {
     match ore {
-        OreDeposit::Magnetite  => "MAGNETITE",
-        OreDeposit::Iron       => "IRON",
-        OreDeposit::Carbon     => "CARBON",
-        OreDeposit::Tungsten   => "TUNGSTEN",
-        OreDeposit::Titanite   => "TITANITE",
-        OreDeposit::CrystalCore => "CRYSTAL",
+        OreDeposit::Iron     => "IRON",
+        OreDeposit::Tungsten => "TUNGSTEN",
+        OreDeposit::Nickel   => "NICKEL",
     }
 }
 
 pub fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
     match ore {
-        OreDeposit::Magnetite  => LaserTier::Basic,
-        OreDeposit::Iron       => LaserTier::Basic,
-        OreDeposit::Carbon     => LaserTier::Basic,
-        OreDeposit::Tungsten   => LaserTier::Tungsten,
-        OreDeposit::Titanite   => LaserTier::Tungsten,
-        OreDeposit::CrystalCore => LaserTier::Composite,
+        OreDeposit::Iron     => LaserTier::Basic,
+        OreDeposit::Tungsten => LaserTier::Tungsten,
+        OreDeposit::Nickel   => LaserTier::Basic,
     }
 }
 
@@ -100,15 +80,12 @@ pub fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
 pub struct Station {
     pub repair_progress: f32,
     pub online: bool,
-    pub magnetite_reserves: f32,
-    pub carbon_reserves: f32,
+    pub iron_reserves: f32,
+    pub tungsten_reserves: f32,
+    pub nickel_reserves: f32,
     pub hull_plate_reserves: u32,
     pub ship_hulls: u32,
     pub ai_cores: u32,
-    pub power_cells: u32,
-    pub power: f32,
-    pub maintenance_timer: Timer,
-    pub last_power_warning_time: f32,
     pub log: VecDeque<String>,
     pub rotation: f32,
     pub rotation_speed: f32,
@@ -147,8 +124,7 @@ pub enum AutonomousShipState {
 pub struct AutonomousShip {
     pub state: AutonomousShipState,
     pub cargo: f32,
-    pub cargo_type: OreType,
-    pub power: f32,
+    pub cargo_type: OreDeposit,
 }
 
 #[derive(Component)]
@@ -157,7 +133,7 @@ pub struct DockedAt(pub Entity);
 #[derive(Component)]
 pub struct AutonomousAssignment {
     pub target_pos: Vec2,
-    pub ore_type: OreType,
+    pub ore_type: OreDeposit,
     pub sector_name: String,
 }
 
@@ -341,7 +317,6 @@ pub enum ActiveStationTab {
     Station,
     Fleet,
     #[default]
-    Power,
     Cargo,
     Refinery,
     Foundry,
@@ -372,33 +347,37 @@ pub struct ProcessingJob {
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ProcessingOperation {
-    MagnetiteRefinery,   // Magnetite → Power Cells
-    CarbonRefinery,      // Carbon → Hull Plates
-    HullForge,           // Hull Plates → Ship Hull
-    CoreFabricator,      // Power Cells → AI Core
+    IronRefinery,
+    TungstenRefinery,
+    NickelRefinery,
+    HullForge,
+    CoreFabricator,
 }
 
 #[derive(Component, Default)]
 pub struct StationQueues {
-    pub magnetite_refinery: Option<ProcessingJob>,
-    pub carbon_refinery:    Option<ProcessingJob>,
+    pub iron_refinery: Option<ProcessingJob>,
+    pub tungsten_refinery: Option<ProcessingJob>,
+    pub nickel_refinery: Option<ProcessingJob>,
     pub hull_forge:         Option<ProcessingJob>,
     pub core_fabricator:    Option<ProcessingJob>,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct AutoDockSettings {
-    pub auto_unload: bool,           // default: true
-    pub auto_smelt_magnetite: bool,  // default: false
-    pub auto_smelt_carbon: bool,     // default: false
+    pub auto_unload: bool,
+    pub auto_smelt_iron: bool,
+    pub auto_smelt_tungsten: bool,
+    pub auto_smelt_nickel: bool,
 }
 
 impl Default for AutoDockSettings {
     fn default() -> Self {
         Self {
             auto_unload: true,
-            auto_smelt_magnetite: false,
-            auto_smelt_carbon: false,
+            auto_smelt_iron: false,
+            auto_smelt_tungsten: false,
+            auto_smelt_nickel: false,
         }
     }
 }

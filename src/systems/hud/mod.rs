@@ -27,8 +27,8 @@ pub fn ship_cargo_display_system(
                     Color::srgba(0.0, pulse, pulse, 1.0)
                 } else {
                     match ship.cargo_type {
-                        OreType::Magnetite => COLOR_MAGNETITE,
-                        OreType::Carbon    => COLOR_CARBON,
+                        OreDeposit::Iron => COLOR_IRON,
+                        OreDeposit::Tungsten    => COLOR_TUNGSTEN,
                         _ => Color::srgb(0.0, 1.0, 1.0),
                     }
                 };
@@ -63,9 +63,9 @@ pub fn cargo_label_system(
     for &child in children.iter() {
         if let Ok(mut ore_text) = ore_label_query.get_mut(child) {
             ore_text.0 = match ship.cargo_type {
-                OreType::Empty     => "EMPTY".to_string(),
-                OreType::Magnetite => "MAGNETITE".to_string(),
-                OreType::Carbon    => "CARBON".to_string(),
+                OreDeposit::Iron => "IRON".to_string(),
+                OreDeposit::Tungsten => "TUNGSTEN".to_string(),
+                OreDeposit::Nickel    => "NICKEL".to_string(),
             };
         }
         if let Ok(mut count_text) = count_label_query.get_mut(child) {
@@ -241,7 +241,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
-                        (ActiveStationTab::Power,    "POWER"),
                         (ActiveStationTab::Cargo,    "CARGO"),
                         (ActiveStationTab::Refinery, "REFINERY"),
                         (ActiveStationTab::Foundry,  "FOUNDRY"),

@@ -44,21 +44,10 @@ pub fn autopilot_system(
                         if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
                             ship.state = ShipState::Docked; 
                             *active_tab = ActiveStationTab::Cargo;
-                            ship.power = (ship.power - SHIP_POWER_COST_TRANSIT).max(0.0);
                             
                             // [PHASE B] Docking Sequence Trigger
                             station.dock_state = StationDockState::Resuming;
                             station.resume_timer = STATION_RESUME_DELAY;
-                            
-                            // [PHASE 8b] Reset player power for free if station has power
-                            if station.power >= STATION_POWER_FLOOR {
-                                ship.power = SHIP_POWER_MAX;
-                            }
-
-                             // [PHASE 8b] Reset player power for free if station has power
-                            if station.power >= STATION_POWER_FLOOR {
-                                ship.power = SHIP_POWER_MAX;
-                            }
 
                             info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
                             autosave_events.send(AutosaveEvent);
@@ -69,11 +58,6 @@ pub fn autopilot_system(
                         ship.state = ShipState::Docked; 
                         station.dock_state = StationDockState::Resuming;
                         station.resume_timer = STATION_RESUME_DELAY;
-                        
-                        // [PHASE 8b] Reset player power for free if station has power
-                        if station.power >= STATION_POWER_FLOOR {
-                            ship.power = SHIP_POWER_MAX;
-                        }
                         
                         info!("[Voidrift] Docking Complete: Station Hub.");
                         commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));

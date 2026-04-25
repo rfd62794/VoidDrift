@@ -39,8 +39,9 @@ pub fn tutorial_system(
     }
 
     // T-003: Processing Started (First queue activity)
-    let processing_active = queues.magnetite_refinery.is_some() 
-        || queues.carbon_refinery.is_some() 
+    let processing_active = queues.iron_refinery.is_some() 
+        || queues.tungsten_refinery.is_some() 
+        || queues.nickel_refinery.is_some()
         || queues.hull_forge.is_some() 
         || queues.core_fabricator.is_some();
     if !tutorial.shown.contains(&3) && processing_active {
@@ -53,12 +54,12 @@ pub fn tutorial_system(
         return;
     }
 
-    // T-004: Power Cells Ready (REPAIR threshold)
-    if !tutorial.shown.contains(&4) && st.power_cells >= 10 {
+    // T-004: Materials Ready (REPAIR threshold)
+    if !tutorial.shown.contains(&4) && st.iron_reserves >= 10.0 {
         tutorial.active = Some(TutorialPopup {
             id: 4,
-            title: "POWER CELLS READY".to_string(),
-            body: "You've produced enough Power Cells to begin station repairs. Go to the RESERVES tab and click REPAIR to restore station functionality.".to_string(),
+            title: "MATERIALS READY".to_string(),
+            body: "You've gathered enough materials to begin station repairs. Go to the CARGO tab and click REPAIR to restore station functionality.".to_string(),
             button_label: "ONWARD".to_string(),
         });
         return;
