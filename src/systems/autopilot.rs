@@ -42,6 +42,13 @@ pub fn autopilot_system(
                     }
                     else if let Ok(berth) = berth_query.get(target_ent) {
                         if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
+                            match ship.cargo_type {
+                                OreDeposit::Iron => station.iron_reserves += ship.cargo,
+                                OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
+                                OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
+                            }
+                            ship.cargo = 0.0;
+                            
                             ship.state = ShipState::Docked; 
                             *active_tab = ActiveStationTab::Cargo;
                             
@@ -55,6 +62,13 @@ pub fn autopilot_system(
                         }
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
                         // NO BERTH? Dock at center (Initial / Opening Sequence)
+                        match ship.cargo_type {
+                            OreDeposit::Iron => station.iron_reserves += ship.cargo,
+                            OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
+                            OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
+                        }
+                        ship.cargo = 0.0;
+
                         ship.state = ShipState::Docked; 
                         station.dock_state = StationDockState::Resuming;
                         station.resume_timer = STATION_RESUME_DELAY;
