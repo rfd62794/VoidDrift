@@ -51,6 +51,7 @@ fn main() {
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
+        .insert_resource(ShipQueue::default())
         .add_systems(Startup, (
             systems::debug_log::setup_debug_log_system,
         ))
@@ -116,7 +117,8 @@ fn main() {
             systems::ui::station_visual_system,
 
             systems::map::map_highlight_system,
-            systems::map::map_input_system,
+            systems::asteroid_input::asteroid_input_system,
+            systems::drone_queue::ship_queue_system,
             systems::map::pinch_zoom_system,
             systems::map::map_pan_system,
             systems::narrative::opening_sequence_system,

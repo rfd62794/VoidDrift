@@ -151,7 +151,7 @@ pub struct StarLayer(pub f32);
 pub struct LastHeading(pub f32);
 
 #[derive(Component)]
-pub struct PlayerShip;
+pub struct InOpeningSequence;
 
 #[derive(Component)]
 pub struct ThrusterGlow;
@@ -391,7 +391,11 @@ impl Default for ProductionToggles {
     }
 }
 
-
+#[derive(Resource, Default)]
+pub struct ShipQueue {
+    pub available_ships: Vec<Entity>,
+    pub active_ships: Vec<Entity>,
+}
 
 // ── TUTORIAL & UX ────────────────────────────────────────────────────────────
 

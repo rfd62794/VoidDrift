@@ -5,12 +5,14 @@ use crate::constants::*;
 pub fn mining_system(
     time: Res<Time>, 
     mut signal_log: ResMut<SignalLog>,
-    mut ship_query: Query<(&mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>, 
+    mut ship_query: Query<(Entity, &mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>, 
     mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>), (Without<Ship>, Without<MiningBeam>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut beam_query: Query<(Entity, &mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
-    mut materials: ResMut<Assets<ColorMaterial>>
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    station_query: Query<Entity, With<Station>>,
+    mut commands: Commands,
 ) {
-    for (mut ship, ship_transform, children) in ship_query.iter_mut() {
+    for (ship_ent, mut ship, ship_transform, children) in ship_query.iter_mut() {
         let is_mining = ship.state == ShipState::Mining;
         let mut target_dist = None;
 
@@ -45,8 +47,15 @@ pub fn mining_system(
                     let ore_amount = MINING_RATE * time.delta_secs();
                     ship.cargo = (ship.cargo + ore_amount).min(ship.cargo_capacity as f32);
                     if ship.cargo >= ship.cargo_capacity as f32 { 
-                        ship.state = ShipState::Idle; 
+                        ship.state = ShipState::Navigating; 
                         target_dist = None;
+                        
+                        if let Ok(station_ent) = station_query.get_single() {
+                            commands.entity(ship_ent).insert(AutopilotTarget {
+                                destination: STATION_POS,
+                                target_entity: Some(station_ent),
+                            });
+                        }
                         
                         if !field.depleted {
                             field.depleted = true;

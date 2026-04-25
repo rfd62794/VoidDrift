@@ -68,66 +68,6 @@ pub fn exit_map_view() {
     // Zoom persistence handled by pinch_zoom_system
 }
 
-pub fn map_input_system(
-    touches: Res<Touches>,
-    state: Res<State<GameState>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    marker_query: Query<(&Transform, Entity), (With<MapMarker>, Without<Ship>, Without<MainCamera>, Without<AutonomousShip>, Without<DestinationHighlight>, Without<StarLayer>)>,
-    mut ship_query: Query<(Entity, &mut Ship), (With<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
-    berth_query: Query<(Entity, &Berth), (Without<Ship>, Without<MainCamera>, Without<Station>, Without<AutonomousShip>, Without<AsteroidField>, Without<DestinationHighlight>, Without<StarLayer>)>,
-    opening: Res<OpeningSequence>,
-    mut active_tab: ResMut<ActiveStationTab>,
-    mut commands: Commands,
-) {
-    if opening.phase != OpeningPhase::Complete {
-        return;
-    }
-
-    // Suppress single-touch input if multi-touch is active
-    if touches.iter().count() >= 2 {
-        return;
-    }
-
-    let Ok((camera, camera_transform)) = camera_query.get_single() else { return; };
-    for touch in touches.iter_just_pressed() {
-        if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
-            for (mt, me) in marker_query.iter() {
-                let mp = mt.translation.truncate();
-                if world_pos.distance(mp) < 80.0 {
-                    let Ok((ship_entity, mut ship)) = ship_query.get_single_mut() else { continue; };
-                    
-                    if ship.state == ShipState::Docked && mp.distance(STATION_POS) < 10.0 { 
-                        continue; 
-                    }
-
-                    let mut target_ent = me;
-                    let mut destination = mp;
-
-                    if mp.distance(STATION_POS) < 10.0 {
-                        if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Player) {
-                            target_ent = b_ent;
-                            destination = STATION_POS; 
-                        }
-                    }
-
-                    ship.state = ShipState::Navigating;
-                    *active_tab = ActiveStationTab::Cargo;
-                    commands.entity(ship_entity).remove::<DockedAt>();
-                    commands.entity(ship_entity).insert(AutopilotTarget { 
-                        destination, 
-                        target_entity: Some(target_ent) 
-                    });
-
-                    if *state.get() == GameState::MapView {
-                        next_state.set(GameState::SpaceView);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-}
 
 pub fn pinch_zoom_system(
     touches: Res<Touches>,

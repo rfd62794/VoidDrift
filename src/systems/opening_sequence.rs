@@ -12,7 +12,7 @@ fn fire_signal(signal_log: &mut SignalLog, id: u32, message: &str) {
 pub fn opening_sequence_system(
     time: Res<Time>,
     mut opening: ResMut<OpeningSequence>,
-    mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<PlayerShip>, Without<AutonomousShipTag>)>,
+    mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<InOpeningSequence>, Without<AutonomousShipTag>)>,
     station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>)>,
     berth_query: Query<(Entity, &Berth), Without<Ship>>,
     mut commands: Commands,
@@ -115,6 +115,7 @@ pub fn opening_sequence_system(
             if t >= 10.5 {
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
+                commands.entity(ship_ent).remove::<InOpeningSequence>();
             }
         }
         OpeningPhase::Complete => {}

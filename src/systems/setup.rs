@@ -36,6 +36,7 @@ pub fn setup_world(
     mut signal_log: ResMut<SignalLog>,
     mut drawer_state: ResMut<DrawerState>,
     mut world_view_rect: ResMut<WorldViewRect>,
+    mut queue: ResMut<ShipQueue>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
@@ -52,7 +53,8 @@ pub fn setup_world(
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
-    spawn_player_ship(&mut commands, &mut meshes, &mut materials, &asset_server);
+    let ship1 = spawn_player_ship(&mut commands, &mut meshes, &mut materials, &asset_server);
+    queue.available_ships.push(ship1);
     spawn_station(&mut commands, &mut meshes, &mut materials);
     spawn_berths(&mut commands);
     spawn_sectors(&mut commands, &mut meshes, &mut materials, &asset_server);
@@ -180,9 +182,9 @@ fn spawn_player_ship(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     asset_server: &AssetServer,
-) {
-    commands.spawn((
-        PlayerShip,
+) -> Entity {
+    let parent_ent = commands.spawn((
+        InOpeningSequence,
         LastHeading(0.0),
         Ship {
             state: ShipState::Idle,
@@ -259,6 +261,8 @@ fn spawn_player_ship(
             Transform::from_xyz(0.0, 12.0, Z_HUD - Z_SHIP),
         ));
     });
+    
+    parent_ent.id()
 }
 
 fn spawn_station(
