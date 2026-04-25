@@ -9,20 +9,26 @@ pub fn camera_follow_system(
     mut cam_delta: ResMut<CameraDelta>,
     pan_state: Res<MapPanState>,
 ) {
-    // Always zero-out delta first — only set it if we actually move the camera
-    // this prevents stale velocity from scrolling the starfield after a ship despawns
+    // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
     cam_delta.0 = Vec2::ZERO;
 
-    let Ok(st) = ship.get_single() else { return; };
     let Ok(mut ct) = cam.get_single_mut() else { return; };
     let old_pos = ct.translation.truncate();
     
+    // Determine the target position
     let target_pos = if *state.get() == GameState::MapView {
         STATION_POS + pan_state.cumulative_offset
     } else {
         // SpaceView
+        let ship_pos = ship.get_single().map(|t| t.translation.truncate()).ok();
+        
         if pan_state.is_focused {
-            st.translation.truncate()
+            if let Some(pos) = ship_pos {
+                pos
+            } else {
+                // Default to Station if focus is active but no ship exists
+                STATION_POS
+            }
         } else {
             pan_state.cumulative_offset
         }
@@ -31,7 +37,7 @@ pub fn camera_follow_system(
     ct.translation.x = target_pos.x;
     ct.translation.y = target_pos.y;
 
-    // Write camera delta so starfield_scroll_system can parallax-scroll each layer.
+    // Calculate delta for starfield parallax
     cam_delta.0 = ct.translation.truncate() - old_pos;
 }
 
@@ -128,6 +134,9 @@ pub fn map_pan_system(
                 pan_state.is_focused = false;
                 if let Ok(st) = ship_query.get_single() {
                     pan_state.cumulative_offset = st.translation.truncate();
+                } else {
+                    // Default offset to station if focus is broken while no ship exists
+                    pan_state.cumulative_offset = STATION_POS;
                 }
             }
 

@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
-use bevy::sprite::AlphaMode2d;
-use rand::{SeedableRng, Rng};
 use crate::components::*;
 use crate::systems::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
-use crate::constants::*;
 
 #[derive(Resource, Default)]
 pub struct MainMenuState {
@@ -22,13 +19,8 @@ pub struct MainMenuState {
 
 pub fn setup_main_menu(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut menu_state: ResMut<MainMenuState>,
 ) {
-    // Spawn starfield background for main menu
-    spawn_menu_starfield(&mut commands, &mut meshes, &mut materials);
-    
     // Spawn camera for main menu
     spawn_menu_camera(&mut commands);
     
@@ -238,51 +230,6 @@ fn format_timestamp(ts: &str) -> String {
     }).unwrap_or_else(|_| ts.to_string())
 }
 
-fn spawn_menu_starfield(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-) {
-    let mut rng = rand::rngs::StdRng::seed_from_u64(0xBEEF_DEAD_u64); // Different seed for menu
-    let far_mat  = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 0.6), // More transparent for menu
-        alpha_mode: AlphaMode2d::Blend,
-        ..default()
-    });
-    let near_mat = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 0.7), // Slightly more transparent
-        alpha_mode: AlphaMode2d::Blend,
-        ..default()
-    });
-    
-    // Create more stars for menu background
-    let star_sm  = meshes.add(Rectangle::new(1.5, 1.5));
-    let star_lg  = meshes.add(Rectangle::new(2.5, 2.5));
-    
-    // Far layer stars
-    for _ in 0..200 {
-        let x: f32 = rng.gen_range(-800.0..800.0);
-        let y: f32 = rng.gen_range(-600.0..600.0);
-        commands.spawn((
-            StarLayer(0.05),
-            Mesh2d(star_sm.clone()),
-            MeshMaterial2d(far_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_FAR),
-        ));
-    }
-    
-    // Near layer stars
-    for _ in 0..80 {
-        let x: f32 = rng.gen_range(-800.0..800.0);
-        let y: f32 = rng.gen_range(-600.0..600.0);
-        commands.spawn((
-            StarLayer(0.15),
-            Mesh2d(star_lg.clone()),
-            MeshMaterial2d(near_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_NEAR),
-        ));
-    }
-}
 
 fn spawn_menu_camera(commands: &mut Commands) {
     commands.spawn((

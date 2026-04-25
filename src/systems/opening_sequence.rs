@@ -5,16 +5,15 @@ fn fire_signal(signal_log: &mut SignalLog, id: u32, message: &str) {
     if !signal_log.fired.contains(&id) {
         signal_log.fired.insert(id);
         signal_log.entries.push_back(message.to_string());
-        info!("Signal fired: {} - {}", id, message);
+        info!("SIignal fired: {} - {}", id, message);
     }
 }
 
 pub fn opening_sequence_system(
     time: Res<Time>,
     mut opening: ResMut<OpeningSequence>,
-    mut ship_query: Query<(Entity, &mut Ship, &mut Transform), (With<InOpeningSequence>, Without<AutonomousShipTag>)>,
-    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>)>,
-    berth_query: Query<(Entity, &Berth), Without<Ship>>,
+    mut ship_query: Query<(Entity, &mut Ship, &mut Transform), With<InOpeningSequence>>,
+    mut station_query: Query<(&mut Station, &Transform), (With<Station>, Without<Ship>)>,
     mut commands: Commands,
     mut signal_log: ResMut<SignalLog>,
     mut queue: ResMut<ShipQueue>,
@@ -28,23 +27,13 @@ pub fn opening_sequence_system(
     opening.beat_timer += delta;
 
     let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { return; };
-    let Ok((st, station_transform)) = station_query.get_single() else { return; };
-    
-    // Find the player berth specifically (there are multiple berths now)
-    let Some((berth_ent, berth)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Player) else { return; };
+    let Ok((mut st, station_transform)) = station_query.get_single_mut() else { return; };
 
-    // Calculate world pos from station rotation
-    let berth_pos = berth_world_pos(
-        station_transform.translation.truncate(),
-        st.rotation,
-        berth.arm_index
-    );
-
-    let dist_to_station = ship_transform.translation.truncate().distance(berth_pos);
+    let station_pos = station_transform.translation.truncate();
+    let dist_to_station = ship_transform.translation.truncate().distance(station_pos);
 
     match opening.phase {
         OpeningPhase::Adrift => {
-            // Beat 1 - Adrift narrative
             if opening.timer < 0.5 {
                 fire_signal(&mut signal_log, 1000, "> ...");
                 fire_signal(&mut signal_log, 1001, "> ...");
@@ -60,11 +49,9 @@ pub fn opening_sequence_system(
             }
         }
         OpeningPhase::SignalIdentified => {
-            // Only structural detection signals here
             if opening.timer < 0.5 {
-                fire_signal(&mut signal_log, 1001, "> SIGNAL DETECTED.");
-                fire_signal(&mut signal_log, 1002, "> PLOTTING INTERCEPT COURSE.");
-                fire_signal(&mut signal_log, 1003, "> FUEL CRITICAL - PASSIVE DRIFT ONLY.");
+                fire_signal(&mut signal_log, 1006, "> SIGNAL IDENTIFIED. CLASS: STATION.");
+                fire_signal(&mut signal_log, 1007, "> BEARING 047. CLOSING.");
             }
             if opening.timer >= 4.0 {
                 opening.phase = OpeningPhase::AutoPiloting;
@@ -73,18 +60,10 @@ pub fn opening_sequence_system(
             }
         }
         OpeningPhase::AutoPiloting => {
-            // Ship is moving — only environmental signals
             if opening.timer < 0.5 {
-                fire_signal(&mut signal_log, 1004, "> STRUCTURE DETECTED.");
-                fire_signal(&mut signal_log, 1005, "> STATION CLASS - UNKNOWN.");
-                
-                // ECHO takes the ship
+                fire_signal(&mut signal_log, 1008, "> STRUCTURE DETECTED.");
+                fire_signal(&mut signal_log, 1009, "> STATION CLASS - UNKNOWN.");
                 ship.state = ShipState::Navigating;
-                commands.entity(ship_ent).remove::<DockedAt>();
-                commands.entity(ship_ent).insert(AutopilotTarget {
-                    destination: berth_pos,
-                    target_entity: Some(berth_ent),
-                });
             }
             if dist_to_station < 300.0 {
                 opening.phase = OpeningPhase::InRange;
@@ -93,14 +72,15 @@ pub fn opening_sequence_system(
             }
         }
         OpeningPhase::InRange => {
-            if ship.state == ShipState::Docked {
+            if dist_to_station < 5.0 {
                 opening.phase = OpeningPhase::Docked;
                 opening.timer = 0.0;
                 opening.beat_timer = 0.0;
+                ship.state = ShipState::Docked;
+                st.dock_state = StationDockState::Paused;
             }
         }
         OpeningPhase::Docked => {
-            opening.beat_timer += time.delta_secs();
             let t = opening.beat_timer;
 
             if t >= 0.5  { fire_signal(&mut signal_log, 1010, "> ..."); }
@@ -112,16 +92,47 @@ pub fn opening_sequence_system(
             if t >= 7.5  { fire_signal(&mut signal_log, 1016, "> I KNOW WHERE THE ORE IS."); }
             if t >= 9.0  { fire_signal(&mut signal_log, 1017, "> THANK YOU, COMMANDER."); }
 
-            // Advance to Complete after last signal
             if t >= 10.5 {
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
-                // ECHO absorbs the ship — despawn drone, gift queue its first unit
                 commands.entity(ship_ent).despawn_recursive();
                 queue.available_count += 1;
+
+                // Resume station rotation
+                st.dock_state = StationDockState::Resuming;
+                st.resume_timer = crate::constants::STATION_RESUME_DELAY;
+
                 info!("[Voidrift] Opening complete. Drone absorbed by ECHO. Queue: {}", queue.available_count);
             }
         }
         OpeningPhase::Complete => {}
+    }
+}
+
+pub fn opening_drone_move_system(
+    time: Res<Time>,
+    opening: Res<OpeningSequence>,
+    mut ship_query: Query<(&Ship, &mut Transform, &mut LastHeading), With<InOpeningSequence>>,
+    station_query: Query<&Transform, (With<Station>, Without<Ship>, Without<InOpeningSequence>)>,
+) {
+    if opening.phase != OpeningPhase::AutoPiloting && opening.phase != OpeningPhase::InRange {
+        return;
+    }
+
+    let Ok(station_t) = station_query.get_single() else { return; };
+    let station_pos = station_t.translation.truncate();
+
+    for (ship, mut transform, mut last_heading) in ship_query.iter_mut() {
+        let current = transform.translation.truncate();
+        let dir = station_pos - current;
+        if dir.length_squared() > 1.0 {
+            // Update rotation/heading
+            let heading = dir.y.atan2(dir.x) - std::f32::consts::PI / 2.0;
+            last_heading.0 = heading;
+            
+            // Move toward station
+            let movement = dir.normalize() * ship.speed * time.delta_secs();
+            transform.translation += movement.extend(0.0);
+        }
     }
 }

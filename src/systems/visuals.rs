@@ -122,8 +122,9 @@ pub fn station_rotation_system(
         let station_pos = station_transform.translation.truncate();
         
         // [PHASE B] Approach detection
+        // Include both mission ships and the cinematic opening drone
         let ship_approaching = ship_query.iter().any(|(ship, ship_transform)| {
-            ship.state == ShipState::Navigating &&
+            (ship.state == ShipState::Navigating || ship.state == ShipState::Docked) &&
                 ship_transform.translation.truncate().distance(station_pos) < STATION_DOCK_SLOWDOWN_DISTANCE
         });
         

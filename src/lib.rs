@@ -116,6 +116,7 @@ fn main() {
             systems::map::pinch_zoom_system,
             systems::map::map_pan_system,
             systems::narrative::opening_sequence_system,
+            systems::narrative::opening_drone_move_system,
             systems::narrative::signal_system,
             systems::narrative::tutorial_system,
             systems::quest::quest_update_system,
