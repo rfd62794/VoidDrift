@@ -5,7 +5,7 @@ fn fire_signal(signal_log: &mut SignalLog, id: u32, message: &str) {
     if !signal_log.fired.contains(&id) {
         signal_log.fired.insert(id);
         signal_log.entries.push_back(message.to_string());
-        info!("SIignal fired: {} - {}", id, message);
+        info!("Signal fired: {} - {}", id, message);
     }
 }
 
