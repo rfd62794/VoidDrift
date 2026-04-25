@@ -3,6 +3,11 @@ use crate::components::*;
 use crate::constants::*;
 use crate::systems::save::AutosaveEvent;
 
+/// Moves ships with AutopilotTarget toward their destination.
+/// On arrival:
+///   - Asteroid  → transitions to Mining
+///   - Berth     → unloads cargo, despawns ship, increments ShipQueue
+///   - Station   → opening sequence hub dock (fallback only)
 pub fn autopilot_system(
     time: Res<Time>,
     mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), (Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
@@ -12,10 +17,11 @@ pub fn autopilot_system(
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
     mut autosave_events: EventWriter<AutosaveEvent>,
+    mut queue: ResMut<ShipQueue>,
 ) {
     for (mut ship, mut transform, mut target, entity) in query.iter_mut() {
         if ship.state == ShipState::Navigating {
-            // [PHASE B] Dynamic destination recalculation for Berths
+            // Recalculate berth destination dynamically (station rotates)
             if let Some(target_ent) = target.target_entity {
                 if let Ok(berth) = berth_query.get(target_ent) {
                     if let Ok((_s_ent, station, s_transform)) = station_query.get_single() {
@@ -37,46 +43,46 @@ pub fn autopilot_system(
 
             if distance < threshold {
                 if let Some(target_ent) = target.target_entity {
-                    if asteroid_query.get(target_ent).is_ok() { 
-                        ship.state = ShipState::Mining; 
-                    }
-                    else if let Ok(berth) = berth_query.get(target_ent) {
+                    if asteroid_query.get(target_ent).is_ok() {
+                        // Arrived at asteroid → start mining
+                        ship.state = ShipState::Mining;
+                    } else if berth_query.get(target_ent).is_ok() {
+                        // Arrived at berth → unload, despawn, return to queue
                         if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
                             match ship.cargo_type {
-                                OreDeposit::Iron => station.iron_reserves += ship.cargo,
+                                OreDeposit::Iron     => station.iron_reserves     += ship.cargo,
                                 OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
-                                OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
+                                OreDeposit::Nickel   => station.nickel_reserves   += ship.cargo,
                             }
-                            ship.cargo = 0.0;
-                            
-                            ship.state = ShipState::Docked; 
                             *active_tab = ActiveStationTab::Cargo;
-                            
-                            // [PHASE B] Docking Sequence Trigger
                             station.dock_state = StationDockState::Resuming;
                             station.resume_timer = STATION_RESUME_DELAY;
-
-                            info!("[Voidrift Phase B] Docking Complete: Berth {}.", berth.arm_index);
-                            autosave_events.send(AutosaveEvent);
-                            commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(target_ent));
                         }
+
+                        queue.available_count += 1;
+                        info!("[Voidrift] Ship docked & unloaded. Queue: {}", queue.available_count);
+                        autosave_events.send(AutosaveEvent);
+                        commands.entity(entity).despawn_recursive();
+                        // Entity is gone — stop processing this ship
+                        continue;
+
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
-                        // NO BERTH? Dock at center (Initial / Opening Sequence)
+                        // Hub dock (opening sequence cinematic only)
                         match ship.cargo_type {
-                            OreDeposit::Iron => station.iron_reserves += ship.cargo,
+                            OreDeposit::Iron     => station.iron_reserves     += ship.cargo,
                             OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
-                            OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
+                            OreDeposit::Nickel   => station.nickel_reserves   += ship.cargo,
                         }
                         ship.cargo = 0.0;
-
-                        ship.state = ShipState::Docked; 
+                        ship.state = ShipState::Docked;
                         station.dock_state = StationDockState::Resuming;
                         station.resume_timer = STATION_RESUME_DELAY;
-                        
-                        info!("[Voidrift] Docking Complete: Station Hub.");
+                        info!("[Voidrift] Hub dock complete (opening sequence).");
                         commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));
                     }
-                } else { ship.state = ShipState::Idle; }
+                } else {
+                    ship.state = ShipState::Idle;
+                }
             } else {
                 let movement = direction.normalize() * ship.speed * time.delta_secs();
                 transform.translation += movement.extend(0.0);
@@ -85,30 +91,15 @@ pub fn autopilot_system(
     }
 }
 
-/// [PHASE B] Locks docked ship to berth position throughout rotation
+/// Locks the opening-sequence drone to the hub while Docked.
+/// Only used during the intro cinematic — regular mission ships despawn on arrival.
 pub fn docked_ship_system(
-    mut ship_query: Query<(&Ship, &mut Transform, &DockedAt), (With<Ship>, Without<Station>, Without<Berth>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
-    berth_query: Query<&Berth>,
-    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut ship_query: Query<(&Ship, &mut Transform, &DockedAt), (With<Ship>, With<InOpeningSequence>, Without<Station>, Without<Berth>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>)>,
 ) {
     for (ship, mut transform, docked_at) in ship_query.iter_mut() {
         if ship.state == ShipState::Docked {
-            let target_ent = docked_at.0;
-            if let Ok(berth) = berth_query.get(target_ent) {
-                if let Ok((station, s_transform)) = station_query.get_single() {
-                    let pos = berth_world_pos(
-                        s_transform.translation.truncate(),
-                        station.rotation,
-                        berth.arm_index,
-                    );
-                    transform.translation = pos.extend(Z_SHIP);
-                    
-                    // Rotate ship to match arm direction:
-                    let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);
-                    transform.rotation = Quat::from_rotation_z(arm_angle - std::f32::consts::FRAC_PI_2);
-                }
-            } else if let Ok((_, s_transform)) = station_query.get(target_ent) {
-                // Docked at Hub (Station itself) - Intro sequence
+            if let Ok((_, s_transform)) = station_query.get(docked_at.0) {
                 transform.translation = s_transform.translation.truncate().extend(Z_SHIP);
             }
         }

@@ -98,6 +98,7 @@ pub struct HudParams<'w, 's> {
     pub drawer: ResMut<'w, DrawerState>,
     pub ui_layout: Res<'w, UiLayout>,
     pub world_view_rect: ResMut<'w, WorldViewRect>,
+    pub queue: Res<'w, ShipQueue>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -181,9 +182,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         *params.active_tab,
                         &mut station,
                         &mut params.toggles,
-                        &mut params.commands,
-                        &mut params.meshes,
-                        &mut params.materials,
+                        &params.queue,
                     );
                 } else {
                     ui.vertical_centered(|ui| {

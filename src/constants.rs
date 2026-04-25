@@ -99,3 +99,10 @@ pub const FORGE_THRUSTER_TIME: f32     = 5.0;  // Same as Hull
 pub const FORGE_CORE_TIME: f32         = 6.0;
 
 pub const MAP_PAN_SPEED: f32 = 1.5;
+
+// [PHASE 1c] DRONE ASSEMBLY
+pub const DRONE_BUILD_TIME: f32    = 10.0; // Seconds per drone
+pub const DRONE_BUILD_COST_HULLS: f32      = 3.0;
+pub const DRONE_BUILD_COST_THRUSTERS: f32  = 1.0;
+pub const DRONE_BUILD_COST_CORES: f32      = 1.0;
+pub const MAX_DRONE_QUEUE: u32 = 5;        // Cap to prevent runaway accumulation

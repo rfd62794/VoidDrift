@@ -85,7 +85,6 @@ fn main() {
             systems::visuals::starfield_scroll_system,
             systems::visuals::station_rotation_system,
             systems::autopilot::docked_ship_system,
-            systems::autonomous::docked_autonomous_ship_system, // Chain after rotation to avoid jitter
             systems::visuals::berth_occupancy_system,
             systems::ui::station_visual_system,
             systems::visuals::ship_rotation_system,
@@ -102,8 +101,6 @@ fn main() {
         .add_systems(Update, (
             // --- Gameplay & Logistics ---
             systems::mining::mining_system, 
-            systems::autonomous::autonomous_ship_system,
-            systems::autonomous::autonomous_beam_system.after(systems::autonomous::autonomous_ship_system),
             systems::auto_process::auto_refine_system,
             systems::auto_process::auto_forge_system,
             systems::auto_process::auto_build_drones_system,
@@ -114,10 +111,8 @@ fn main() {
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,
             systems::ui::station_visual_system,
-
             systems::map::map_highlight_system,
             systems::asteroid_input::asteroid_input_system,
-            systems::drone_queue::ship_queue_system,
             systems::map::pinch_zoom_system,
             systems::map::map_pan_system,
             systems::narrative::opening_sequence_system,

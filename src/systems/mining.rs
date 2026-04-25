@@ -9,7 +9,8 @@ pub fn mining_system(
     mut field_query: Query<(&mut AsteroidField, &Transform, &MeshMaterial2d<ColorMaterial>), (Without<Ship>, Without<MiningBeam>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut beam_query: Query<(Entity, &mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<AsteroidField>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    station_query: Query<Entity, With<Station>>,
+    station_query: Query<(&Station, &Transform), With<Station>>,
+    berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
 ) {
     for (ship_ent, mut ship, ship_transform, children) in ship_query.iter_mut() {
@@ -50,11 +51,26 @@ pub fn mining_system(
                         ship.state = ShipState::Navigating; 
                         target_dist = None;
                         
-                        if let Ok(station_ent) = station_query.get_single() {
-                            commands.entity(ship_ent).insert(AutopilotTarget {
-                                destination: STATION_POS,
-                                target_entity: Some(station_ent),
-                            });
+                        // Target nearest available berth for unloading
+                        if let Ok((station, s_transform)) = station_query.get_single() {
+                            // Find first available berth (no occupied check needed — ships despawn on dock)
+                            if let Some((berth_ent, berth)) = berth_query.iter().next() {
+                                let berth_pos = crate::components::berth_world_pos(
+                                    s_transform.translation.truncate(),
+                                    station.rotation,
+                                    berth.arm_index,
+                                );
+                                commands.entity(ship_ent).insert(AutopilotTarget {
+                                    destination: berth_pos,
+                                    target_entity: Some(berth_ent),
+                                });
+                            } else {
+                                // Fallback: dock at station hub if no berths exist
+                                commands.entity(ship_ent).insert(AutopilotTarget {
+                                    destination: s_transform.translation.truncate(),
+                                    target_entity: None,
+                                });
+                            }
                         }
                         
                         if !field.depleted {

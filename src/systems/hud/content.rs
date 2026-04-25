@@ -1,4 +1,3 @@
-use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
@@ -48,9 +47,7 @@ pub fn render_tab_content(
     active_tab: ActiveStationTab,
     station: &mut Station,
     toggles: &mut ProductionToggles,
-    commands: &mut Commands,
-    meshes: &mut Assets<Mesh>,
-    materials: &mut Assets<ColorMaterial>,
+    queue: &ShipQueue,
 ) {
     match active_tab {
         ActiveStationTab::Station => {
@@ -62,36 +59,76 @@ pub fn render_tab_content(
         ActiveStationTab::Fleet => {
             ui.heading("FLEET");
             ui.add_space(8.0);
+
+            // Ships ready
             ui.horizontal(|ui| {
-                let can_build = station.ship_hulls >= 1.0 && station.thruster_reserves >= 1.0 && station.ai_cores >= 1.0;
-                if ui.add_enabled(can_build, egui::Button::new("ASSEMBLE & DEPLOY AUTONOMOUS SHIP")).clicked() {
-                    station.ship_hulls -= 1.0;
-                    station.thruster_reserves -= 1.0;
-                    station.ai_cores -= 1.0;
-                    let (target_pos, ore, name) = if station.ai_cores >= 1.0 {
-                        (SECTOR_3_POS, OreDeposit::Nickel, "Sector 3")
-                    } else {
-                        (SECTOR_1_POS, OreDeposit::Iron, "Sector 1")
-                    };
-                    commands.spawn((
-                        AutonomousShipTag,
-                        LastHeading(0.0),
-                        AutonomousShip { state: AutonomousShipState::Holding, cargo: 0.0, cargo_type: ore },
-                        AutonomousAssignment { target_pos, ore_type: ore, sector_name: name.to_string() },
-                        Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
-                        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
-                        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_SHIP),
-                    )).with_children(|parent| {
-                        parent.spawn((ThrusterGlow, Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))), MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))), Transform::from_xyz(0.0, -18.0, 0.1), Visibility::Hidden));
-                        parent.spawn((MiningBeam, Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))), MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))), Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), Visibility::Hidden));
-                        parent.spawn((Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))), Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP)));
-                        parent.spawn((ShipCargoBarFill, Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))), MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))), Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05)));
-                        parent.spawn((MapElement, Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(12.0, 16.0))), MeshMaterial2d(materials.add(ColorMaterial { color: Color::srgb(1.0, 0.5, 0.0), alpha_mode: bevy::sprite::AlphaMode2d::Opaque, ..default() })), Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)), Visibility::Hidden));
-                    });
-                }
+                ui.label(egui::RichText::new("SHIPS READY:").color(egui::Color32::from_gray(180)));
+                ui.label(egui::RichText::new(format!("{}", queue.available_count))
+                    .color(egui::Color32::from_rgb(0, 230, 120))
+                    .strong()
+                    .size(16.0));
             });
+
             ui.add_space(8.0);
-            ui.label(format!("DRONES IN QUEUE: {:.1}", station.ship_hulls)); // Just as a simple placeholder stat
+            ui.separator();
+            ui.add_space(4.0);
+
+            // Drone assembly toggle
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut toggles.build_drones, "");
+                ui.label(egui::RichText::new("AUTO-ASSEMBLE DRONES")
+                    .color(egui::Color32::from_rgb(0, 204, 102)));
+            });
+
+            ui.add_space(4.0);
+
+            // Build progress bar
+            let progress = station.drone_build_progress;
+            let can_build = station.hull_plate_reserves >= 3.0
+                && station.thruster_reserves >= 1.0
+                && station.ai_cores >= 1.0;
+
+            let bar_color = if !toggles.build_drones {
+                egui::Color32::from_gray(60)
+            } else if can_build {
+                egui::Color32::from_rgb(0, 180, 100)
+            } else {
+                egui::Color32::from_rgb(180, 60, 0)
+            };
+
+            let progress_bar = egui::ProgressBar::new(progress)
+                .fill(bar_color)
+                .text(if !can_build {
+                    "WAITING FOR COMPONENTS".to_string()
+                } else {
+                    format!("{:.0}%", progress * 100.0)
+                });
+            ui.add(progress_bar);
+
+            ui.add_space(8.0);
+
+            // Component stock
+            egui::Grid::new("fleet_components").spacing([12.0, 4.0]).show(ui, |ui| {
+                ui.label(egui::RichText::new("HULL PLATES:").color(egui::Color32::from_gray(160)));
+                ui.label(egui::RichText::new(format!("{:.1} (need 3)", station.hull_plate_reserves))
+                    .color(if station.hull_plate_reserves >= 3.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
+                ui.end_row();
+                ui.label(egui::RichText::new("THRUSTERS:").color(egui::Color32::from_gray(160)));
+                ui.label(egui::RichText::new(format!("{:.1} (need 1)", station.thruster_reserves))
+                    .color(if station.thruster_reserves >= 1.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
+                ui.end_row();
+                ui.label(egui::RichText::new("AI CORES:").color(egui::Color32::from_gray(160)));
+                ui.label(egui::RichText::new(format!("{:.1} (need 1)", station.ai_cores))
+                    .color(if station.ai_cores >= 1.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
+                ui.end_row();
+            });
+
+            if queue.available_count >= crate::constants::MAX_DRONE_QUEUE {
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("QUEUE FULL (5/5)")
+                    .color(egui::Color32::GOLD)
+                    .italics());
+            }
         }
         ActiveStationTab::Cargo => {
             ui.vertical(|ui| {
@@ -104,7 +141,6 @@ pub fn render_tab_content(
                     ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
-                    ui.label("SHIP HULLS:"); ui.label(egui::RichText::new(format!("{:.1}", station.ship_hulls)).color(egui::Color32::GOLD)); ui.end_row();
                 });
             });
             if !station.online {

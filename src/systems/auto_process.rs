@@ -78,20 +78,59 @@ pub fn auto_forge_system(
     }
 }
 
-pub fn auto_build_drones_system(time: Res<Time>, mut station_query: Query<&mut Station>) {
+/// Continuously assembles drones from hull plates, thrusters, and AI cores.
+/// Uses a fractional accumulator — progress ticks each frame, whole drones
+/// are completed and added to the ShipQueue pool when progress >= 1.0.
+pub fn auto_build_drones_system(
+    time: Res<Time>,
+    mut station_query: Query<&mut Station>,
+    toggles: Res<ProductionToggles>,
+    mut queue: ResMut<ShipQueue>,
+) {
+    if !toggles.build_drones { return; }
     if let Ok(mut station) = station_query.get_single_mut() {
         if !station.online { return; }
-        
+
+        // Don't build beyond the cap
+        if queue.available_count >= MAX_DRONE_QUEUE { return; }
+
+        // Check if we have at least partial resources to begin building
+        let has_resources =
+            station.hull_plate_reserves >= DRONE_BUILD_COST_HULLS
+            && station.thruster_reserves >= DRONE_BUILD_COST_THRUSTERS
+            && station.ai_cores >= DRONE_BUILD_COST_CORES;
+
+        if !has_resources {
+            // Stall — don't tick progress without materials
+            return;
+        }
+
         let dt = time.delta_secs();
-        let drone_batches = (1.0 / 10.0) * dt; // 10s base build time
-        let max_hulls = station.hull_plate_reserves / 3.0;  // 3 hulls per drone
-        let max_thrusters = station.thruster_reserves / 1.0; // 1 thruster per drone
-        let max_cores = station.ai_cores / 1.0;  // 1 core per drone
-        
-        let actual_drone_batches = drone_batches.min(max_hulls).min(max_thrusters).min(max_cores);
-        station.hull_plate_reserves -= actual_drone_batches * 3.0;
-        station.thruster_reserves -= actual_drone_batches * 1.0;
-        station.ai_cores -= actual_drone_batches * 1.0;
-        station.ship_hulls += actual_drone_batches;
+        station.drone_build_progress += dt / DRONE_BUILD_TIME;
+
+        // Each time progress crosses a whole number, complete one drone
+        if station.drone_build_progress >= 1.0 {
+            let built = station.drone_build_progress.floor() as u32;
+            // Clamp to what we can actually afford and to the cap
+            let affordable = (
+                (station.hull_plate_reserves / DRONE_BUILD_COST_HULLS).floor() as u32
+            ).min(
+                (station.thruster_reserves / DRONE_BUILD_COST_THRUSTERS).floor() as u32
+            ).min(
+                (station.ai_cores / DRONE_BUILD_COST_CORES).floor() as u32
+            );
+            let space_in_queue = MAX_DRONE_QUEUE.saturating_sub(queue.available_count);
+            let actual = built.min(affordable).min(space_in_queue);
+
+            if actual > 0 {
+                station.hull_plate_reserves -= actual as f32 * DRONE_BUILD_COST_HULLS;
+                station.thruster_reserves   -= actual as f32 * DRONE_BUILD_COST_THRUSTERS;
+                station.ai_cores            -= actual as f32 * DRONE_BUILD_COST_CORES;
+                queue.available_count += actual;
+                info!("[Voidrift] Drone assembly complete: {} built. Queue: {}", actual, queue.available_count);
+            }
+
+            station.drone_build_progress -= station.drone_build_progress.floor();
+        }
     }
 }

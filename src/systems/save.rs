@@ -28,7 +28,7 @@ pub struct SaveData {
     #[serde(default)] pub nickel_ingots: f32,
     pub hull_plates: f32,
     #[serde(default)] pub thruster_reserves: f32,
-    pub ship_hulls: f32,
+    pub ship_hulls: f32,  // kept for save compat — maps to queue count on load
     pub ai_cores: f32,
     pub repair_progress: f32,
 
@@ -186,7 +186,7 @@ pub fn collect_save_data(
         nickel_ingots: station.nickel_ingots,
         hull_plates: station.hull_plate_reserves,
         thruster_reserves: station.thruster_reserves,
-        ship_hulls: station.ship_hulls,
+        ship_hulls: 0.0, // queue count is runtime-only, not persisted
         ai_cores: station.ai_cores,
         repair_progress: station.repair_progress,
         tab_power: false, // TODO: collect from tabs resource

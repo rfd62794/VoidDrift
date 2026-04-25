@@ -5,9 +5,9 @@ pub fn signal_system(
     time: Res<Time>,
     mut signal: ResMut<SignalLog>,
     opening: Res<OpeningSequence>,
-    station_query: Query<(&Station, &StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShip>)>,
-    auto_ships: Query<&AutonomousShip, With<AutonomousShipTag>>,
-    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    station_query: Query<(&Station, &StationQueues), (With<Station>, Without<Ship>)>,
+    queue: Res<ShipQueue>,
+    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
     mut quest_log: ResMut<QuestLog>,
 ) {
     let now = time.elapsed_secs();
@@ -143,8 +143,8 @@ pub fn signal_system(
                 fire_signal(&mut signal, 15, "> HULL PLATE FABRICATED. FORGE AVAILABLE.");
             }
 
-            // ID 16: Ship Hull
-            if st.ship_hulls > 0.0 {
+            // ID 16: Drone queue has a ship ready
+            if queue.available_count > 0 {
                 fire_signal(&mut signal, 16, "> SHIP HULL COMPLETE. ASSEMBLY POSSIBLE.");
             }
 
@@ -234,30 +234,13 @@ pub fn signal_system(
             );
         }
 
-        // ID 17, 18: Fleet expansion
-        let auto_count = auto_ships.iter().count();
-        if auto_count >= 1 {
-            fire_signal(&mut signal, 17, "> AUTONOMOUS UNIT LAUNCHED. SECTOR 1 ASSIGNED.");
+        // ID 17, 18: Fleet expansion — based on queue count
+        if queue.available_count >= 1 {
+            fire_signal(&mut signal, 17, "> AUTONOMOUS UNIT READY. AWAITING ASSIGNMENT.");
         }
-        if auto_count >= 2 {
-            fire_signal(&mut signal, 18, "> AUTONOMOUS UNIT LAUNCHED. SECTOR 7 ASSIGNED.");
+        if queue.available_count >= 2 {
+            fire_signal(&mut signal, 18, "> FLEET STRENGTH GROWING.");
         }
-
-        // ID 20, 21: Auto ship holding/dispatched
-        let any_holding = auto_ships.iter().any(|s| s.state == AutonomousShipState::Holding);
-        let any_active = auto_ships.iter().any(|s| s.state != AutonomousShipState::Holding);
-        let was_holding = signal.fired.contains(&20);
-
-        fire_refirable(&mut signal, 20, "> AUTONOMOUS UNIT HOLDING. POWER INSUFFICIENT.",
-            now,
-            any_holding,
-            !any_holding
-        );
-        fire_refirable(&mut signal, 21, "> AUTONOMOUS UNIT DISPATCHED.",
-            now,
-            any_active && was_holding,
-            !any_active || !was_holding
-        );
     }
 }
 

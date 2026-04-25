@@ -3,9 +3,7 @@ pub mod quest;
 pub mod visuals;
 pub mod autopilot;
 pub mod mining;
-pub mod autonomous;
 pub mod auto_process;
-pub mod drone_queue;
 pub mod asteroid_input;
 
 pub mod ui;

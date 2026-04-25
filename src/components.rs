@@ -88,8 +88,8 @@ pub struct Station {
     pub nickel_ingots: f32,
     pub hull_plate_reserves: f32,
     pub thruster_reserves: f32,
-    pub ship_hulls: f32,
     pub ai_cores: f32,
+    pub drone_build_progress: f32,  // Fractional accumulator [0.0, 1.0)
     pub log: VecDeque<String>,
     pub rotation: f32,
     pub rotation_speed: f32,
@@ -376,6 +376,7 @@ pub struct ProductionToggles {
     pub forge_hull: bool,
     pub forge_thruster: bool,
     pub forge_core: bool,
+    pub build_drones: bool,
 }
 
 impl Default for ProductionToggles {
@@ -387,14 +388,16 @@ impl Default for ProductionToggles {
             forge_hull: true,
             forge_thruster: true,
             forge_core: true,
+            build_drones: true,
         }
     }
 }
 
+/// Drone pool. Ships are spawned on dispatch and despawned on dock.
+/// available_count is the number of ships ready to be assigned.
 #[derive(Resource, Default)]
 pub struct ShipQueue {
-    pub available_ships: Vec<Entity>,
-    pub active_ships: Vec<Entity>,
+    pub available_count: u32,
 }
 
 // ── TUTORIAL & UX ────────────────────────────────────────────────────────────

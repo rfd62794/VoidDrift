@@ -325,9 +325,9 @@ pub fn ingame_startup_system(
             station.nickel_ingots       = save_data.nickel_ingots;
             station.hull_plate_reserves = save_data.hull_plates;
             station.thruster_reserves   = save_data.thruster_reserves;
-            station.ship_hulls          = save_data.ship_hulls;
+            // ship_hulls is runtime-only (queue count), not restored from save
             station.ai_cores            = save_data.ai_cores;
-            station.repair_progress   = save_data.repair_progress;
+            station.repair_progress     = save_data.repair_progress;
         }
 
         // Restore active tab

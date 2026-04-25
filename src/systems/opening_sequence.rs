@@ -17,6 +17,7 @@ pub fn opening_sequence_system(
     berth_query: Query<(Entity, &Berth), Without<Ship>>,
     mut commands: Commands,
     mut signal_log: ResMut<SignalLog>,
+    mut queue: ResMut<ShipQueue>,
 ) {
     if opening.phase == OpeningPhase::Complete {
         return;
@@ -115,7 +116,10 @@ pub fn opening_sequence_system(
             if t >= 10.5 {
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
-                commands.entity(ship_ent).remove::<InOpeningSequence>();
+                // ECHO absorbs the ship — despawn drone, gift queue its first unit
+                commands.entity(ship_ent).despawn_recursive();
+                queue.available_count += 1;
+                info!("[Voidrift] Opening complete. Drone absorbed by ECHO. Queue: {}", queue.available_count);
             }
         }
         OpeningPhase::Complete => {}

@@ -36,7 +36,6 @@ pub fn setup_world(
     mut signal_log: ResMut<SignalLog>,
     mut drawer_state: ResMut<DrawerState>,
     mut world_view_rect: ResMut<WorldViewRect>,
-    mut queue: ResMut<ShipQueue>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
@@ -53,8 +52,8 @@ pub fn setup_world(
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
-    let ship1 = spawn_player_ship(&mut commands, &mut meshes, &mut materials, &asset_server);
-    queue.available_ships.push(ship1);
+    spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server);
+    // queue starts at 0 — opening sequence will gift available_count += 1 on completion
     spawn_station(&mut commands, &mut meshes, &mut materials);
     spawn_berths(&mut commands);
     spawn_sectors(&mut commands, &mut meshes, &mut materials, &asset_server);
@@ -177,12 +176,15 @@ fn spawn_camera(commands: &mut Commands) {
     ));
 }
 
-fn spawn_player_ship(
+/// Spawns the cinematic opening drone. Tagged with InOpeningSequence.
+/// It flies to the station, docks, then despawns — ECHO "absorbs" it.
+/// The opening_sequence_system gifts available_count += 1 when despawning.
+fn spawn_opening_drone(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     asset_server: &AssetServer,
-) -> Entity {
+) {
     let parent_ent = commands.spawn((
         InOpeningSequence,
         LastHeading(0.0),
@@ -200,45 +202,42 @@ fn spawn_player_ship(
     )).id();
     
     commands.entity(parent_ent).with_children(|parent| {
-        // [Z SYSTEM] Parent Z_SHIP (1.0) + local offsets
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
             MeshMaterial2d(materials.add(Color::srgb(1.0, 0.5, 0.0))),
-            Transform::from_xyz(0.0, -18.0, 0.1), // Global 1.1
+            Transform::from_xyz(0.0, -18.0, 0.1),
             Visibility::Hidden,
         ));
         parent.spawn((
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
             MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))),
-            Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP), // Global Z_BEAM (0.8)
+            Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
             Visibility::Hidden,
         ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
-            Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP), // Global Z_CARGO_BAR (1.1)
+            Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
         ));
         parent.spawn((
             ShipCargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
             MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
-            Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05), // Slightly above bar back
+            Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
         ));
-        // [STEP 6] SHIP MAP MARKER
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
             MeshMaterial2d(materials.add(ColorMaterial {
-                color: Color::srgb(0.0, 1.0, 1.0),
+                color: Color::srgb(1.0, 0.5, 0.0),
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),
             Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)),
             Visibility::Hidden,
         ));
-        // [STEP 10] WORLD-SPACE CARGO LABELS (Phase 10)
         parent.spawn((
             CargoOreLabel,
             Text2d::new("EMPTY"),
@@ -262,8 +261,6 @@ fn spawn_player_ship(
             Transform::from_xyz(0.0, 12.0, Z_HUD - Z_SHIP),
         ));
     });
-    
-    parent_ent
 }
 
 fn spawn_station(
@@ -284,8 +281,8 @@ fn spawn_station(
             nickel_ingots: 0.0,
             hull_plate_reserves: 0.0,
             thruster_reserves: 0.0,
-            ship_hulls: 0.0,
             ai_cores: 0.0,
+            drone_build_progress: 0.0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
             rotation_speed: STATION_ROTATION_SPEED,
