@@ -4,9 +4,9 @@ use crate::components::*;
 pub fn tutorial_system(
     mut tutorial: ResMut<TutorialState>,
     opening: Res<OpeningSequence>,
-    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<AsteroidField>)>,
+    ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<ActiveAsteroid>)>,
     station_query: Query<(&Station, &StationQueues), (Without<Ship>, Without<AutonomousShipTag>)>,
-    ast_query: Query<(&AsteroidField, &Transform), (Without<Ship>, Without<Station>)>, 
+    ast_query: Query<(&ActiveAsteroid, &Transform), (Without<Ship>, Without<Station>)>, 
 ) {
     // Skip all triggers during opening sequence or if a pop-up is currently active
     if opening.phase != OpeningPhase::Complete || tutorial.active.is_some() {
@@ -78,7 +78,7 @@ pub fn tutorial_system(
 
     // T-006: Extraction Blocked (Proximity to gated asteroid)
     if !tutorial.shown.contains(&6) {
-        if let Some((_, ast_transform)) = ast_query.iter().find(|(a, _)| a.ore_deposit == OreDeposit::Tungsten) {
+        if let Some((_, ast_transform)) = ast_query.iter().find(|(a, _)| a.ore_type == OreDeposit::Tungsten) {
             if ship_transform.translation.truncate().distance(ast_transform.translation.truncate()) < 150.0 {
                 tutorial.active = Some(TutorialPopup {
                     id: 6,

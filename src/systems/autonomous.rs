@@ -6,8 +6,8 @@ use crate::systems::save::AutosaveEvent;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
-    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
-    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
+    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
     mut autosave_events: EventWriter<AutosaveEvent>,
@@ -91,8 +91,8 @@ pub fn autonomous_ship_system(
 }
 
 pub fn autonomous_beam_system(
-    ship_query: Query<(&AutonomousShip, &Transform, &AutonomousAssignment, &Children), (Without<MiningBeam>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
-    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AutonomousShip>, Without<Station>, Without<AsteroidField>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
+    ship_query: Query<(&AutonomousShip, &Transform, &AutonomousAssignment, &Children), (Without<MiningBeam>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
+    mut beam_query: Query<(&mut Transform, &mut Visibility), (With<MiningBeam>, Without<AutonomousShip>, Without<Station>, Without<ActiveAsteroid>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
 ) {
     for (ship, transform, assignment, children) in ship_query.iter() {
         for &child in children.iter() {
@@ -115,7 +115,7 @@ pub fn autonomous_beam_system(
 pub fn docked_autonomous_ship_system(
     mut ship_query: Query<(&AutonomousShip, &mut Transform, &DockedAt), (With<AutonomousShip>, Without<Ship>, Without<Station>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     berth_query: Query<&Berth>,
-    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<AsteroidField>, Without<Berth>)>,
+    station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
 ) {
     for (ship, mut transform, docked_at) in ship_query.iter_mut() {
         if ship.state == AutonomousShipState::Unloading || ship.state == AutonomousShipState::Holding {

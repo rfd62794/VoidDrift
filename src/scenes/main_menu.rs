@@ -351,6 +351,7 @@ pub fn ingame_startup_system(
                     cargo_type: ore_type,
                     cargo_capacity: crate::constants::CARGO_CAPACITY,
                     laser_tier: LaserTier::Basic,
+                    current_mining_target: None,
                 },
                 AutonomousShipTag,
                 LastHeading(d.heading),

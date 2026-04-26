@@ -32,6 +32,7 @@ pub struct Ship {
     pub cargo_type: OreDeposit,
     pub cargo_capacity: u32,
     pub laser_tier: LaserTier,
+    pub current_mining_target: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -40,10 +41,25 @@ pub struct AutopilotTarget {
     pub target_entity: Option<Entity>,
 }
 
+
 #[derive(Component)]
-pub struct AsteroidField {
-    pub ore_deposit: OreDeposit,
-    pub depleted: bool,
+pub struct ActiveAsteroid {
+    pub ore_type: OreDeposit,
+    pub ore_remaining: f32,
+    pub lifespan_timer: f32,
+}
+
+#[derive(Resource)]
+pub struct AsteroidRespawnTimer {
+    pub timer: Timer,
+}
+
+impl Default for AsteroidRespawnTimer {
+    fn default() -> Self {
+        Self {
+            timer: Timer::from_seconds(0.0, TimerMode::Once),
+        }
+    }
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Debug)]

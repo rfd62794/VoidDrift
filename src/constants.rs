@@ -43,6 +43,13 @@ pub const COLOR_TUNGSTEN: Color   = Color::srgb(0.72, 0.68, 0.35);  // Yellow-gr
 pub const COLOR_NICKEL: Color     = Color::srgb(0.75, 0.75, 0.75);  // Silver
 pub const COLOR_DEPLETED: Color   = Color::srgb(0.18, 0.18, 0.18);  // Very dark grey
 
+// Asteroid Lifecycle
+pub const ASTEROID_MAX_LIFESPAN_SECS: f32 = 40.0;       // 40 seconds before disintegration
+pub const ASTEROID_RESPAWN_TIMER_SECS: f32 = 5.0;       // New asteroid every 5 seconds
+pub const ASTEROID_BASE_ORE: f32 = 100.0;               // Base piece ore amount
+pub const ASTEROID_MAX_PER_FIELD: usize = 1;            // Max asteroids per sector
+pub const ASTEROID_MIN_SPAWN_DISTANCE: f32 = 50.0;      // Min distance between asteroids
+
 // ── Z-LAYER SYSTEM ───────────────────────────────────────────────────────────
 pub const Z_STARS_FAR: f32     = -100.0;
 pub const Z_STARS_NEAR: f32    = -50.0;

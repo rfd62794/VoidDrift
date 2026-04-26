@@ -10,10 +10,10 @@ use crate::systems::save::AutosaveEvent;
 ///   - Station   → opening sequence hub dock (fallback only)
 pub fn autopilot_system(
     time: Res<Time>,
-    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), (Without<Station>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), (Without<Station>, Without<ActiveAsteroid>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     berth_query: Query<&Berth>,
-    asteroid_query: Query<&AsteroidField>,
-    mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<AsteroidField>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    asteroid_query: Query<&ActiveAsteroid>,
+    mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<ActiveAsteroid>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
     mut autosave_events: EventWriter<AutosaveEvent>,

@@ -52,6 +52,7 @@ fn main() {
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
         .insert_resource(ShipQueue::default())
+        .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             systems::debug_log::setup_debug_log_system,
         ))
@@ -76,6 +77,7 @@ fn main() {
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
             systems::setup::setup_world,
+            systems::asteroid_spawn::spawn_initial_asteroids,
             systems::debug_log::setup_debug_log_system,
             scenes::main_menu::ingame_startup_system,
         ).chain())
@@ -100,13 +102,15 @@ fn main() {
         ))
         .add_systems(Update, (
             // --- Gameplay & Logistics ---
+            systems::asteroid_spawn::asteroid_respawn_system,
+            systems::asteroid_lifecycle::asteroid_lifecycle_system,
             systems::mining::mining_system, 
             systems::auto_process::auto_refine_system,
             systems::auto_process::auto_forge_system,
             systems::auto_process::auto_build_drones_system,
             systems::ui::ship_cargo_display_system,
             systems::ui::cargo_label_system,
-        ).run_if(in_state(AppState::InGame)))
+        ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
             systems::ui::hud_ui_system,

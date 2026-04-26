@@ -2,12 +2,10 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
 
-/// Reads touch input in MapView, finds the tapped asteroid marker,
-/// and spawns a fresh Ship entity headed for it (decrementing the queue count).
 pub fn asteroid_input_system(
     touches: Res<Touches>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    marker_query: Query<(&GlobalTransform, Entity, &AsteroidField), With<MapMarker>>,
+    marker_query: Query<(&GlobalTransform, Entity, &ActiveAsteroid), With<MapMarker>>,
     mut queue: ResMut<ShipQueue>,
     mut commands: Commands,
     opening: Res<OpeningSequence>,
@@ -33,7 +31,7 @@ pub fn asteroid_input_system(
 
     for touch in touches.iter_just_pressed() {
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
-            for (marker_gtransform, asteroid_ent, asteroid_field) in marker_query.iter() {
+            for (marker_gtransform, asteroid_ent, active_asteroid) in marker_query.iter() {
                 let mp = marker_gtransform.translation().truncate();
 
                 // Ignore clicks on station (near origin)
@@ -42,6 +40,8 @@ pub fn asteroid_input_system(
                 }
 
                 if world_pos.distance(mp) < 80.0 {
+                    let ore_type = active_asteroid.ore_type;
+
                     // Spawn a fresh ship at the station hub
                     let spawn_pos = if let Ok((_, s_transform)) = station_query.get_single() {
                         s_transform.translation.truncate()
@@ -55,9 +55,10 @@ pub fn asteroid_input_system(
                             state: ShipState::Navigating,
                             speed: SHIP_SPEED,
                             cargo: 0.0,
-                            cargo_type: asteroid_field.ore_deposit,
+                            cargo_type: ore_type,
                             cargo_capacity: CARGO_CAPACITY,
                             laser_tier: LaserTier::Basic,
+                            current_mining_target: None,
                         },
                         AutonomousShipTag,
                         LastHeading(0.0),

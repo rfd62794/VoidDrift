@@ -5,6 +5,8 @@ pub mod autopilot;
 pub mod mining;
 pub mod auto_process;
 pub mod asteroid_input;
+pub mod asteroid_spawn;
+pub mod asteroid_lifecycle;
 
 pub mod ui;
 pub mod hud;

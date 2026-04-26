@@ -205,6 +205,7 @@ fn spawn_opening_drone(
             cargo_type: OreDeposit::Iron,
             cargo_capacity: CARGO_CAPACITY,
             laser_tier: LaserTier::Basic,
+            current_mining_target: None,
         },
         AutonomousShipTag,
         Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
@@ -454,9 +455,10 @@ fn spawn_asteroid_field(
 
     let asteroid_entity = commands.spawn((
         MapMarker,
-        AsteroidField { 
-            ore_deposit: ore,
-            depleted: false 
+        ActiveAsteroid {
+            ore_type: ore,
+            ore_remaining: ASTEROID_BASE_ORE,
+            lifespan_timer: ASTEROID_MAX_LIFESPAN_SECS,
         },
         Mesh2d(meshes.add(generate_ore_mesh(&ore, seed))),
         MeshMaterial2d(materials.add(final_color)),
