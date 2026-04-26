@@ -1,22 +1,24 @@
 # Voidrift
 
-A mobile-first space mining and industrial management game built in Rust with Bevy 0.15, targeting Android hardware (API 35).
+An arcade mining and production game where you've crashed into a black hole and merged with a dying station AI. Build a drone army, discover faction secrets, and determine your fate.
 
-You are adrift. You find a derelict station. You mine, refine, and repair — watching your ship work while you direct it from above.
+You're stranded. The station AI fused with your consciousness to save you. Now you mine asteroids, build drones, and uncover what happened at the event horizon boundary.
 
 > **Status:** Core Gameplay Loop & Industrial Foundation Complete. Verified on Moto G 2024/2025.
 
 ---
 
-## 🚀 The Gameplay Foundation
+## 🚀 The Premise & Loop
 
-Voidrift is built around a tight industrial loop directed by tactical input:
+**The Narrative Frame:** You crashed into a black hole. The station AI merged with your consciousness to survive. Now you're extensions of each other, working together to understand what happened.
 
-- **Command & Control** — Set navigation targets via a strategic map. Autopilots handle precise approach and docking.
-- **Extraction** — Reach asteroid fields and extract raw ores automatically. Advanced ores require upgraded mining lasers.
-- **Parallel Processing** — Utilize the station's refinery, hull forge, and fabrication lab. Manage four independent production queues simultaneously.
-- **Power Economy** — Maintain both ship and station power reserves. Use refined power cells to restore charge or complete massive structural repairs.
-- **Narrative Telemetry** — Stay oriented through "The Signal," a low-frequency character voice reporting critical events and guidance.
+**The Gameplay Loop:** Mine asteroids → Refine resources → Build drones → Discover faction secrets
+
+- **Mining** — Extract ore to power the station and your merged consciousness. Survival depends on resource flow.
+- **Auto-Processing** — The station AI handles routine refining and production while you focus on strategic decisions.
+- **Drone Fleet** — Build autonomous drones that are literally your thoughts made physical. They explore where you cannot.
+- **Faction Discovery** — Uncover signals from other trapped ships at the event horizon boundary. Each has secrets about what happened.
+- **Black Hole Boundary** — The map edge isn't arbitrary — it's the point of no return. Stars cut off visually where physics breaks down.
 
 ---
 
@@ -75,9 +77,9 @@ Voidrift is built in **Phases**, each gated by physical hardware verification.
 |-------|-----------|-----------------|
 | 1-3 | Navigation | Touch destination input + Autopilot movement |
 | 4-5 | Loop Completion | Core refinery loop + Station repair gate |
-| 6-7 | Narrative | The Signal log + Cinematic opening sequence |
-| 8 | Industrial Core | Parallel processing queues + Power Cell restore |
-| 9 | Gated Galaxy | World-space text labels + Pinch zoom + 6 Ore Sectors |
+| 6-7 | Narrative Frame | The Signal log + Cinematic opening sequence (stranded + AI fusion) |
+| 8 | Industrial Core | Parallel processing queues + Drone fleet expansion |
+| 9 | Discovery | Faction signals + Black hole boundary visualization |
 | 10 | Tutorial UX | Contextual popups + Gated progression guidance |
 
 ---

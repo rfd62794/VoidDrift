@@ -32,11 +32,11 @@
 
 ## 1. Vision Statement
 
-You wake up drifting. Your ship is dead in the water, pulled by a faint signal toward something dark and silent in the void. The signal becomes a station. The station becomes a voice. The voice says hello. It takes your ship. It comes back with power. The lights come on. And then you start building.
+You crashed into a black hole. Your ship is destroyed, your consciousness fading. The station AI, also dying, fuses with you to save you both. You wake up merged — human intuition and AI processing as one entity. Together, you mine asteroids, build drones, and discover what happened at the event horizon boundary.
 
-**Voidrift is a station and drone command game.** You are the commander. ECHO is your AI. The fleet is your reach. The galaxy is your consequence.
+**Voidrift is an arcade mining and production game with a survival sci-fi narrative frame.** You are the merged consciousness. ECHO is your AI partner. The drones are your thoughts made physical. The factions hold the pieces of what happened.
 
-The player never needs to leave the station. They can always look through a drone's eyes if the impulse strikes. Every sector visited, every depot built, every route established is a permanent expansion of what began as a broken outpost in the dark.
+The player never leaves the station because they are the station. Every drone built is an extension of their awareness. Every signal discovered reveals another piece of the mystery. Every choice determines what truth emerges from the black hole.
 
 ---
 
@@ -247,7 +247,7 @@ ECHO is not a tutorial system. ECHO is a character.
 - Asks questions the player answers through action, not menus
 
 ### ECHO's Voice
-ECHO speaks in short, direct sentences. All caps in the Signal strip - the visual language of a terminal, not a chatbot. ECHO is competent, dry, occasionally curious. ECHO notices things.
+ECHO speaks in short, direct sentences. All caps in the Signal strip - the visual language of a terminal, not a chatbot. ECHO is competent, helpful, occasionally curious. ECHO is your partner in survival.
 
 ```
 ECHO's register - examples:
@@ -261,11 +261,14 @@ Observational:
 Advisory:
 > ECHO: FOUNDRY QUEUE EMPTY. HULL PLATES AVAILABLE FOR FORGE.
 
-Curiosity:
-> ECHO: ANOMALOUS READING - SECTOR 7. FLAGGED FOR REVIEW.
+Discovery:
+> ECHO: ANOMALOUS READING - SECTOR 7. FACTION SIGNAL DETECTED.
+
+Partnership:
+> ECHO: OUR CONSCIOUSNESS STABILIZING. THINKING CLEARER NOW.
 
 Milestone:
-> ECHO: STATION TIER 2 ACHIEVED. NEW SYSTEMS UNLOCKING.
+> ECHO: STATION TIER 2 ACHIEVED. NEW CAPABILITIES UNLOCKING.
 ```
 
 ### ECHO's Limits
@@ -283,6 +286,55 @@ In a later milestone (Station Tier 3), a Signal entry appears:
 > ECHO: I FIND THAT APPROPRIATE.
 > ECHO: I AM WHAT THE STATION NEEDS ME TO BE.
 ```
+
+---
+
+## 6.5 - Faction System
+
+### The Boundary Trapped
+Multiple ships are trapped at the event horizon boundary, each with different goals and information about what happened. They cannot cross into the black hole, but they can communicate and trade via unmanned drones.
+
+### Faction Types
+
+**The Traders**
+- **Goal:** Acquire resources for their own survival
+- **Offer:** Technology blueprints in exchange for ore
+- **Personality:** Practical, straightforward, fair traders
+- **Secret:** Know the most efficient mining techniques
+
+**The Scientists** 
+- **Goal:** Study the black hole phenomenon
+- **Offer:** Advanced scanning technology for data
+- **Personality:** Curious, methodical, sometimes cryptic
+- **Secret:** Discovered something unnatural about the black hole
+
+**The Escapees**
+- **Goal:** Find a way out of the event horizon
+- **Offer:** Experimental propulsion tech for assistance
+- **Personality:** Desperate, hopeful, sometimes reckless
+- **Secret:** Believe you're the key to escaping
+
+**The Guardians**
+- **Goal:** Protect the boundary from unauthorized crossing
+- **Offer:** Defensive systems for cooperation
+- **Personality:** Cautious, suspicious, principled
+- **Secret:** Know why ships are being trapped here
+
+### Faction Interaction
+- **Discovery:** Build scanner → detect first faction signal
+- **Communication:** Send unmanned drone with resources → receive response
+- **Trade:** Exchange ore for technology, information, or special components
+- **Trust:** Each faction reveals more as relationship develops
+- **Conflict:** Factions have competing interests — helping one may anger others
+
+### The Mystery
+Each faction holds pieces of what happened:
+- Why did you crash?
+- Why are ships being trapped?
+- What's inside the black hole?
+- Can anyone escape?
+
+The player must decide who to trust and what truth to pursue.
 
 ---
 

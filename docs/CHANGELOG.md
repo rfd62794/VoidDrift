@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Narrative Realignment] — Survival Sci-Fi Frame — 2026-04-26
+### Changed
+- **Narrative Scope:** Clarified that survival sci-fi is narrative justification for mechanics, not horror genre
+- **Documentation Alignment:** Updated README, GDD, and created NARRATIVE_JUSTIFICATION.md
+- **ECHO AI:** Reframed as helpful partner, not threatening presence
+- **Faction System:** Added comprehensive faction design to GDD
+### Added
+- **ADR-010:** Survival narrative as mechanical justification (locks scope decision)
+- **NARRATIVE_JUSTIFICATION.md:** Explains why each mechanic exists narratively
+### Design Philosophy
+- **Frame, Not Genre:** Black hole setting explains why mechanics exist
+- **Mystery over Horror:** Focus on discovery, not dread or terror
+- **Mechanical Coherence:** Every system has narrative justification
+- **No Code Changes:** This was documentation realignment only
+
+---
+
 ## [Phase 10] — Tutorial UX & Map Pan — 2026-04-20
 ### Added
 - **Contextual Tutorial System**: 6 instructional popups (T-001 to T-006) triggered by game state.
