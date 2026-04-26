@@ -120,7 +120,7 @@ pub fn mining_system(
                 }
             }
 
-            let return_to_station = ship.cargo >= ship.cargo_capacity as f32 || (ship.current_mining_target.is_none() && ship.cargo > 0.0);
+            let return_to_station = ship.cargo >= ship.cargo_capacity as f32 || ship.current_mining_target.is_none();
 
             if return_to_station {
                 ship.state = ShipState::Navigating;
@@ -146,8 +146,6 @@ pub fn mining_system(
                         });
                     }
                 }
-            } else if ship.current_mining_target.is_none() {
-                ship.state = ShipState::Idle;
             }
         }
         

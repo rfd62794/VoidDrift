@@ -1,21 +1,8 @@
 pub mod setup;
-pub mod quest;
-pub mod visuals;
-pub mod autopilot;
-pub mod mining;
-pub mod auto_process;
-pub mod asteroid_input;
-pub mod asteroid_spawn;
-pub mod asteroid_lifecycle;
-
+pub mod game_loop;
+pub mod ship_control;
+pub mod asteroid;
 pub mod ui;
-pub mod hud;
-pub mod debug_log;
-pub mod station_tabs;
-pub mod map;
+pub mod persistence;
 pub mod narrative;
-pub mod opening_sequence;
-pub mod signal;
-pub mod tutorial;
-pub mod save;
-pub mod viewport;
+pub mod visuals;

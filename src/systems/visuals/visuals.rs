@@ -73,8 +73,8 @@ pub fn ship_rotation_system(
 /// Scrolls star entities with parallax and wraps them around the camera.
 /// On wrap, stars are redistributed randomly within bounds — no hard edges at any zoom.
 pub fn starfield_scroll_system(
-    cam_query: Query<(&Transform, &OrthographicProjection), (With<MainCamera>, Without<StarLayer>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<ActiveAsteroid>, Without<Berth>)>,
-    mut star_query: Query<(&StarLayer, &mut Transform), (Without<MainCamera>, Without<Ship>, Without<AutonomousShip>, Without<Station>, Without<ActiveAsteroid>, Without<Berth>)>,
+    cam_query: Query<(&Transform, &OrthographicProjection), VisualsCameraFilter>,
+    mut star_query: Query<(&StarLayer, &mut Transform), VisualsStarFilter>,
     cam_delta: Res<CameraDelta>,
 ) {
     let Ok((cam_transform, proj)) = cam_query.get_single() else { return; };
@@ -113,10 +113,10 @@ pub fn starfield_scroll_system(
 
 pub fn station_rotation_system(
     time: Res<Time>,
-    mut station_query: Query<(&mut Station, &Transform), (Without<Ship>, Without<AutonomousShip>, Without<StationVisualsContainer>, Without<ActiveAsteroid>, Without<Berth>)>,
-    mut visual_query: Query<&mut Transform, (With<StationVisualsContainer>, Without<Station>, Without<Ship>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>)>,
-    ship_query: Query<(&Ship, &Transform), (Without<Station>, Without<StationVisualsContainer>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>)>,
-    autonomous_query: Query<(&AutonomousShip, &Transform), (Without<Station>, Without<StationVisualsContainer>, Without<Ship>, Without<ActiveAsteroid>, Without<Berth>)>,
+    mut station_query: Query<(&mut Station, &Transform), VisualsStationFilter>,
+    mut visual_query: Query<&mut Transform, VisualsContainerFilter>,
+    ship_query: Query<(&Ship, &Transform), VisualsShipFilter>,
+    autonomous_query: Query<(&AutonomousShip, &Transform), VisualsAutoShipFilter>,
 ) {
     if let Ok((mut station, station_transform)) = station_query.get_single_mut() {
         let station_pos = station_transform.translation.truncate();

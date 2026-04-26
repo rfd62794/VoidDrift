@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use crate::systems::save::AutosaveEvent;
+use crate::systems::persistence::save::AutosaveEvent;
 
 /// Moves ships with AutopilotTarget toward their destination.
 /// On arrival:
@@ -10,10 +10,10 @@ use crate::systems::save::AutosaveEvent;
 ///   - Station   → opening sequence hub dock (fallback only)
 pub fn autopilot_system(
     time: Res<Time>,
-    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), (Without<Station>, Without<ActiveAsteroid>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), BaseShipFilter>,
     berth_query: Query<&Berth>,
     asteroid_query: Query<&ActiveAsteroid>,
-    mut station_query: Query<(Entity, &mut Station, &Transform), (Without<Ship>, Without<ActiveAsteroid>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
+    mut station_query: Query<(Entity, &mut Station, &Transform), BaseStationFilter>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
     mut autosave_events: EventWriter<AutosaveEvent>,
@@ -79,6 +79,10 @@ pub fn autopilot_system(
                         station.resume_timer = STATION_RESUME_DELAY;
                         info!("[Voidrift] Hub dock complete (opening sequence).");
                         commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));
+                    } else {
+                        // Target entity no longer exists (asteroid despawned before arrival).
+                        // Transition to mining anyway so the mining system can retarget or send it home.
+                        ship.state = ShipState::Mining;
                     }
                 } else {
                     ship.state = ShipState::Idle;

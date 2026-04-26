@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
-use crate::systems::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
+use crate::systems::persistence::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
 
 #[derive(Resource, Default)]
 pub struct MainMenuState {
@@ -416,7 +416,7 @@ pub fn save_overlay_system(
     mut contexts: EguiContexts,
     mut menu_state: ResMut<MainMenuState>,
     mut next_state: ResMut<NextState<AppState>>,
-    mut save_events: EventWriter<crate::systems::save::SaveRequestEvent>,
+    mut save_events: EventWriter<crate::systems::persistence::save::SaveRequestEvent>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -456,9 +456,9 @@ pub fn save_overlay_system(
                     } else {
                         menu_state.save_name_input.clone()
                     };
-                    save_events.send(crate::systems::save::SaveRequestEvent {
+                    save_events.send(crate::systems::persistence::save::SaveRequestEvent {
                         name,
-                        category: crate::systems::save::SaveCategory::Play,
+                        category: crate::systems::persistence::save::SaveCategory::Play,
                         description: String::new(),
                     });
                     menu_state.show_save_overlay = false;
@@ -472,9 +472,9 @@ pub fn save_overlay_system(
                                 .color(egui::Color32::from_rgb(200, 160, 0))
                         )).clicked() {
                         if !menu_state.save_name_input.is_empty() {
-                            save_events.send(crate::systems::save::SaveRequestEvent {
+                            save_events.send(crate::systems::persistence::save::SaveRequestEvent {
                                 name: menu_state.save_name_input.clone(),
-                                category: crate::systems::save::SaveCategory::Stage,
+                                category: crate::systems::persistence::save::SaveCategory::Stage,
                                 description: format!("Stage save - {}", chrono::Local::now().format("%Y-%m-%d %H:%M")),
                             });
                             menu_state.show_save_overlay = false;

@@ -54,7 +54,7 @@ fn main() {
         .insert_resource(ShipQueue::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
-            systems::debug_log::setup_debug_log_system,
+            systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
             scenes::main_menu::setup_main_menu,
@@ -68,67 +68,67 @@ fn main() {
         .add_systems(Update, (
             scenes::main_menu::save_overlay_system,
         ).run_if(in_state(AppState::InGame)))
-        .add_event::<systems::save::AutosaveEvent>()
-        .add_event::<systems::save::SaveRequestEvent>()
+        .add_event::<systems::persistence::save::AutosaveEvent>()
+        .add_event::<systems::persistence::save::SaveRequestEvent>()
         .add_systems(Update, (
-            systems::save::autosave_system,
-            systems::save::save_request_system,
+            systems::persistence::save::autosave_system,
+            systems::persistence::save::save_request_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
             systems::setup::setup_world,
-            systems::asteroid_spawn::spawn_initial_asteroids,
-            systems::debug_log::setup_debug_log_system,
+            systems::asteroid::spawn::spawn_initial_asteroids,
+            systems::visuals::debug_log::setup_debug_log_system,
             scenes::main_menu::ingame_startup_system,
         ).chain())
         .add_systems(Update, (
-            systems::autopilot::autopilot_system, 
-            systems::map::camera_follow_system,                
-            systems::visuals::starfield_scroll_system,
-            systems::visuals::station_rotation_system,
-            systems::autopilot::docked_ship_system,
-            systems::visuals::berth_occupancy_system,
-            systems::ui::station_visual_system,
-            systems::visuals::ship_rotation_system,
-            systems::visuals::thruster_glow_system,
+            systems::ship_control::autopilot::autopilot_system, 
+            systems::visuals::map::camera_follow_system,                
+            systems::visuals::visuals::starfield_scroll_system,
+            systems::visuals::visuals::station_rotation_system,
+            systems::ship_control::autopilot::docked_ship_system,
+            systems::visuals::visuals::berth_occupancy_system,
+            systems::ui::hud::station_visual_system,
+            systems::visuals::visuals::ship_rotation_system,
+            systems::visuals::visuals::thruster_glow_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
-            systems::map::enter_map_view,
-            systems::map::show_map_elements,
+            systems::visuals::map::enter_map_view,
+            systems::visuals::map::show_map_elements,
         ))
         .add_systems(OnExit(GameState::MapView), (
-            systems::map::exit_map_view,
-            systems::map::hide_map_elements,
+            systems::visuals::map::exit_map_view,
+            systems::visuals::map::hide_map_elements,
         ))
         .add_systems(Update, (
             // --- Gameplay & Logistics ---
-            systems::asteroid_spawn::asteroid_respawn_system,
-            systems::asteroid_lifecycle::asteroid_lifecycle_system,
-            systems::mining::mining_system, 
-            systems::auto_process::auto_refine_system,
-            systems::auto_process::auto_forge_system,
-            systems::auto_process::auto_build_drones_system,
-            systems::ui::ship_cargo_display_system,
-            systems::ui::cargo_label_system,
+            systems::asteroid::spawn::asteroid_respawn_system,
+            systems::asteroid::lifecycle::asteroid_lifecycle_system,
+            systems::game_loop::mining::mining_system, 
+            systems::game_loop::auto_process::auto_refine_system,
+            systems::game_loop::auto_process::auto_forge_system,
+            systems::game_loop::auto_process::auto_build_drones_system,
+            systems::ui::hud::ship_cargo_display_system,
+            systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
-            systems::ui::hud_ui_system,
-            systems::ui::station_visual_system,
-            systems::map::map_highlight_system,
-            systems::asteroid_input::asteroid_input_system,
-            systems::map::pinch_zoom_system,
-            systems::map::map_pan_system,
-            systems::narrative::opening_sequence_system,
-            systems::narrative::opening_drone_move_system,
-            systems::narrative::signal_system,
-            systems::narrative::tutorial_system,
-            systems::quest::quest_update_system,
+            systems::ui::hud::hud_ui_system,
+            systems::ui::hud::station_visual_system,
+            systems::visuals::map::map_highlight_system,
+            systems::ship_control::asteroid_input::asteroid_input_system,
+            systems::visuals::map::pinch_zoom_system,
+            systems::visuals::map::map_pan_system,
+            systems::narrative::opening_sequence::opening_sequence_system,
+            systems::narrative::opening_sequence::opening_drone_move_system,
+            systems::narrative::signal::signal_system,
+            systems::ui::tutorial::tutorial_system,
+            systems::narrative::quest::quest_update_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
-            systems::viewport::ui_layout_system,
-            systems::viewport::drawer_viewport_system
-                .after(systems::viewport::ui_layout_system),
+            systems::visuals::viewport::ui_layout_system,
+            systems::visuals::viewport::drawer_viewport_system
+                .after(systems::visuals::viewport::ui_layout_system),
         ).run_if(in_state(AppState::InGame)))
         .run();
 }
