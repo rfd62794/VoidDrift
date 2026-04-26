@@ -904,18 +904,11 @@ All architectural decisions made during development. Referenced by future direct
 | ADR-003 | EGUI_SCALE=3.0 (dynamic scaling deferred) | Locked |
 | ADR-004 | Bevy 0.15 pinned | Locked |
 | ADR-005 | Autonomous agents as dedicated systems | Locked |
-| ADR-006 | lib.rs app-setup-only | Locked |
+| ADR-006 | Module structure | Locked |
 | ADR-007 | System tuple partitioning (20-system limit) | Locked |
 | ADR-008 | Universal Disjointness (Without<T> on all &mut Transform) | Locked |
 | ADR-009 | Tutorial trigger pattern (one-time HashSet) | Locked |
-| ADR-010 | Starfield shader capped at 4 layers (Mali-G57 MC2 performance gate) | Locked |
-| ADR-011 | Two distinct upgrade paths - Station and Fleet. Never overlap. | Locked |
-| ADR-012 | Ship progression is type-based, not equipment-based | Locked |
-| ADR-013 | Routes operate at galactic scale only. Local sectors use drone assignments. | Locked |
-| ADR-014 | Two scales - local (solar system, drone assignments) and galactic (Scout dispatch) | Locked |
-| ADR-015 | Discovery gate - one visit required before management access | Locked |
-| ADR-016 | Station AI activation automatic on hull repair. No player confirmation. | Locked |
-| ADR-017 | Three camera controls - FOCUS, LOCK, UNLOCK. No others. | Locked |
+| ADR-010 | Survival narrative as mechanical justification | Locked |
 
 ---
 
