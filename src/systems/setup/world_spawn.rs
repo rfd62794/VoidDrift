@@ -68,8 +68,6 @@ pub fn setup_world(
     // queue starts at 0 — opening sequence will gift available_count += 1 on completion
     spawn_station(&mut commands, &mut meshes, &mut materials);
     spawn_berths(&mut commands);
-    spawn_sectors(&mut commands, &mut meshes, &mut materials, &asset_server);
-    spawn_map_connectors(&mut commands, &mut meshes, &mut materials);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
 }
 

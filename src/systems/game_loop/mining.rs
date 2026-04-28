@@ -47,7 +47,13 @@ pub fn mining_system(
                             continue; // Should not happen, but safeguard
                         }
 
-                        let ore_amount = MINING_RATE * time.delta_secs();
+                        let power_multiplier = if let Ok((station, _)) = station_query.get_single() {
+                            station.power_multiplier
+                        } else {
+                            1.0
+                        };
+                        let effective_mining_rate = MINING_RATE * power_multiplier;
+                        let ore_amount = effective_mining_rate * time.delta_secs();
                         ship.cargo = (ship.cargo + ore_amount).min(ship.cargo_capacity as f32);
                         asteroid.ore_remaining -= ore_amount;
 
