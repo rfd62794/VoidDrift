@@ -16,7 +16,10 @@ pub struct DockedAt(pub Entity);
 pub struct ShipCargoBarFill;
 
 #[derive(Component)]
-pub struct StarLayer(pub f32);
+pub struct StarLayer {
+    pub layer: f32,
+    pub orig_pos: Vec2,
+}
 
 #[derive(Component)]
 pub struct LastHeading(pub f32);

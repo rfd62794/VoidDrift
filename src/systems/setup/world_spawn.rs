@@ -100,7 +100,7 @@ fn spawn_starfield(
         let x = angle.cos() * distance;
         let y = angle.sin() * distance;
         commands.spawn((
-            StarLayer(0.05),
+            StarLayer { layer: 0.05, orig_pos: Vec2::new(x, y) },
             Mesh2d(star_sm.clone()),
             MeshMaterial2d(far_mat.clone()),
             Transform::from_xyz(x, y, Z_STARS_FAR),
@@ -112,7 +112,7 @@ fn spawn_starfield(
         let x = angle.cos() * distance;
         let y = angle.sin() * distance;
         commands.spawn((
-            StarLayer(0.15),
+            StarLayer { layer: 0.15, orig_pos: Vec2::new(x, y) },
             Mesh2d(star_lg.clone()),
             MeshMaterial2d(near_mat.clone()),
             Transform::from_xyz(x, y, Z_STARS_NEAR),
