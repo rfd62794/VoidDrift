@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use rand::Rng;
 
 pub fn thruster_glow_system(
     mut query: Query<(&Parent, &mut Visibility), With<ThrusterGlow>>,
@@ -73,41 +72,14 @@ pub fn ship_rotation_system(
 /// Scrolls star entities with parallax and wraps them around the camera.
 /// On wrap, stars are redistributed randomly within bounds — no hard edges at any zoom.
 pub fn starfield_scroll_system(
-    cam_query: Query<(&Transform, &OrthographicProjection), VisualsCameraFilter>,
+    _cam_query: Query<(&Transform, &OrthographicProjection), VisualsCameraFilter>,
     mut star_query: Query<(&StarLayer, &mut Transform), VisualsStarFilter>,
     cam_delta: Res<CameraDelta>,
 ) {
-    let Ok((cam_transform, proj)) = cam_query.get_single() else { return; };
-    let cam_pos = cam_transform.translation.truncate();
-    let mut rng = rand::thread_rng();
-
-    // Half-extents scale with zoom so stars always fill the view.
-    let wrap_x = 900.0_f32 * proj.scale.max(1.0);
-    let wrap_y = 1000.0_f32 * proj.scale.max(1.0);
-
     for (layer, mut transform) in star_query.iter_mut() {
+        // Apply parallax shift based on camera movement
         transform.translation.x += cam_delta.0.x * (1.0 - layer.0);
         transform.translation.y += cam_delta.0.y * (1.0 - layer.0);
-
-        let rel_x = transform.translation.x - cam_pos.x;
-        let rel_y = transform.translation.y - cam_pos.y;
-
-        // On wrap: scatter to a random position on the opposite side
-        // so there's never a visible edge or empty region.
-        if rel_x > wrap_x {
-            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..-wrap_x * 0.5);
-            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..wrap_y);
-        } else if rel_x < -wrap_x {
-            transform.translation.x = cam_pos.x + rng.gen_range(wrap_x * 0.5..wrap_x);
-            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..wrap_y);
-        }
-        if rel_y > wrap_y {
-            transform.translation.y = cam_pos.y + rng.gen_range(-wrap_y..-wrap_y * 0.5);
-            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..wrap_x);
-        } else if rel_y < -wrap_y {
-            transform.translation.y = cam_pos.y + rng.gen_range(wrap_y * 0.5..wrap_y);
-            transform.translation.x = cam_pos.x + rng.gen_range(-wrap_x..wrap_x);
-        }
     }
 }
 

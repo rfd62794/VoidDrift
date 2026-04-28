@@ -91,9 +91,14 @@ fn spawn_starfield(
     // and avoid Z-fighting/shimmering on mobile hardware.
     let star_sm  = meshes.add(Rectangle::new(2.0, 2.0));
     let star_lg  = meshes.add(Rectangle::new(3.0, 3.0));
-    for _ in 0..200 {
-        let x: f32 = rng.gen_range(-900.0..900.0);
-        let y: f32 = rng.gen_range(-1000.0..1000.0);
+    
+    let radius = 2400.0;
+    
+    for _ in 0..800 {
+        let angle = rng.gen_range(0.0..std::f32::consts::TAU);
+        let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
+        let x = angle.cos() * distance;
+        let y = angle.sin() * distance;
         commands.spawn((
             StarLayer(0.05),
             Mesh2d(star_sm.clone()),
@@ -101,9 +106,11 @@ fn spawn_starfield(
             Transform::from_xyz(x, y, Z_STARS_FAR),
         ));
     }
-    for _ in 0..80 {
-        let x: f32 = rng.gen_range(-900.0..900.0);
-        let y: f32 = rng.gen_range(-1000.0..1000.0);
+    for _ in 0..300 {
+        let angle = rng.gen_range(0.0..std::f32::consts::TAU);
+        let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
+        let x = angle.cos() * distance;
+        let y = angle.sin() * distance;
         commands.spawn((
             StarLayer(0.15),
             Mesh2d(star_lg.clone()),
