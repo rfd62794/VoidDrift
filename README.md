@@ -1,5 +1,7 @@
 # VoidDrift
 
+*Asteroids meets Event Horizon.*
+
 A mobile arcade mining game built in Rust/Bevy for Android. Mine asteroid debris at the edge of a black hole, build a drone fleet, and receive contact from factions you don't understand.
 
 > **Status:** Phase 2 Complete — `v2.2.0-docs-phase2-complete` — Verified on Moto G 2025
