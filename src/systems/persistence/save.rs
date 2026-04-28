@@ -50,6 +50,10 @@ pub struct SaveData {
     // UI state
     pub active_tab: String,
     pub drawer_state: String,
+    
+    // Requests state
+    #[serde(default)]
+    pub collected_requests: Vec<CollectedRequest>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -174,6 +178,7 @@ pub fn collect_save_data(
     active_tab: &ActiveStationTab,
     queue: &ShipQueue,
     drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    requests_tab: &RequestsTabState,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -219,6 +224,7 @@ pub fn collect_save_data(
         sectors_discovered: vec![], // TODO: collect from world
         active_tab: format!("{:?}", active_tab),
         drawer_state: "default".to_string(),
+        collected_requests: requests_tab.collected_requests.clone(),
     }
 }
 
@@ -239,6 +245,7 @@ pub fn autosave_system(
     active_tab: Res<ActiveStationTab>,
     queue: Res<ShipQueue>,
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    requests_tab: Res<RequestsTabState>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -251,6 +258,7 @@ pub fn autosave_system(
                 &active_tab,
                 &queue,
                 &drone_query,
+                &requests_tab,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -267,6 +275,7 @@ pub fn save_request_system(
     active_tab: Res<ActiveStationTab>,
     queue: Res<ShipQueue>,
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    requests_tab: Res<RequestsTabState>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for event in events.read() {
@@ -279,6 +288,7 @@ pub fn save_request_system(
                 &active_tab,
                 &queue,
                 &drone_query,
+                &requests_tab,
             );
             
             if let Err(e) = save_game(&data) {

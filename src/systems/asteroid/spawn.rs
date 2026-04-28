@@ -29,13 +29,8 @@ pub fn spawn_asteroid(
 ) -> bool {
     let mut rng = rand::thread_rng();
     
-    // Base position based on ore type
-    let base_pos = match ore_type {
-        OreDeposit::Iron => SECTOR_1_POS,
-        OreDeposit::Tungsten => SECTOR_2_POS,
-        OreDeposit::Nickel => SECTOR_3_POS,
-        OreDeposit::Aluminum => Vec2::new(100.0, -800.0), // Need a sector 4 pos? Wait, I'll just use a dummy pos
-    };
+    // Base position is the station (0,0)
+    let base_pos = Vec2::ZERO;
 
     let mut position = Vec2::ZERO;
     let mut found_spot = false;
@@ -43,9 +38,9 @@ pub fn spawn_asteroid(
     // Try to find a valid spot
     for _ in 0..10 {
         let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-        let distance = rng.gen_range(50.0..150.0);
-        let offset = Vec2::new(angle.cos() * distance, angle.sin() * distance);
-        let candidate_pos = base_pos + offset;
+        // Using existing radial boundary distances (roughly ~200.0 to 500.0 from origin)
+        let distance = rng.gen_range(200.0..500.0);
+        let candidate_pos = base_pos + Vec2::new(angle.cos() * distance, angle.sin() * distance);
 
         let mut too_close = false;
         for existing_transform in existing_asteroids.iter() {
@@ -180,33 +175,26 @@ pub fn asteroid_respawn_system(
     existing_asteroids: Query<(Entity, &ActiveAsteroid, &Transform)>,
     transform_query: Query<&Transform, With<ActiveAsteroid>>,
     asset_server: Res<AssetServer>,
+    station_query: Query<&Station>,
 ) {
     respawn_timer.timer.tick(time.delta());
     
     if respawn_timer.timer.finished() {
+        let Ok(station) = station_query.get_single() else { return; };
+        
+        let active_count = existing_asteroids.iter().count() as u32;
+        if active_count >= station.max_active_asteroids {
+            respawn_timer.timer.reset();
+            return;
+        }
+
         let mut rng = rand::thread_rng();
-        // Pick a random ore type to spawn
-        let target_ore_type = match rng.gen_range(0..3) {
+        let target_ore_type = match rng.gen_range(0..4) {
             0 => OreDeposit::Iron,
             1 => OreDeposit::Tungsten,
-            _ => OreDeposit::Nickel,
+            2 => OreDeposit::Nickel,
+            _ => OreDeposit::Aluminum,
         };
-
-        // Check cap for this field
-        let mut field_asteroids: Vec<(Entity, f32)> = Vec::new();
-        for (entity, asteroid, _transform) in existing_asteroids.iter() {
-            if asteroid.ore_type == target_ore_type {
-                field_asteroids.push((entity, asteroid.lifespan_timer));
-            }
-        }
-
-        if field_asteroids.len() >= ASTEROID_MAX_PER_FIELD {
-            // Remove the oldest (lowest lifespan)
-            field_asteroids.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
-            if let Some((oldest_entity, _)) = field_asteroids.first() {
-                commands.entity(*oldest_entity).despawn_recursive();
-            }
-        }
 
         spawn_asteroid(&mut commands, &mut meshes, &mut materials, &transform_query, &asset_server, target_ore_type);
         respawn_timer.timer.reset();

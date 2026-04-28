@@ -65,6 +65,7 @@ pub fn autopilot_system(
                             
                             // Check if carrying bottle
                             if carrying_query.get(entity).is_ok() {
+                                bevy::log::info!("CarryingBottle unload branch reached");
                                 // Narrative Event!
                                 signal_log.entries.push_back("SIGNAL RECEIVED — ORIGIN UNKNOWN\nFrequency matched. You were expected.\nWe have observed your work. It is... acceptable.\nA proposal follows.".to_string());
                                 if signal_log.entries.len() > 10 {
@@ -75,6 +76,7 @@ pub fn autopilot_system(
                                     faction: FactionId::Signal,
                                     fulfilled: false,
                                 });
+                                commands.entity(entity).remove::<CarryingBottle>();
                             }
                         }
 
@@ -99,41 +101,38 @@ pub fn autopilot_system(
                         station.resume_timer = STATION_RESUME_DELAY;
                         info!("[Voidrift] Hub dock complete (opening sequence).");
                         commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));
+                    } else if bottle_query.get(target_ent).is_ok() {
+                        // Arrived at bottle -> collect and return
+                        commands.entity(target_ent).despawn_recursive();
+                        ship.state = ShipState::Navigating;
+                        commands.entity(entity).insert(CarryingBottle(target_ent));
+                        
+                        // Target nearest available berth for unloading
+                        if let Ok((_ent, station, s_transform)) = station_query.get_single() {
+                            if let Some((berth_ent, berth)) = berth_query.iter().next() {
+                                let berth_pos = crate::components::berth_world_pos(
+                                    s_transform.translation.truncate(),
+                                    station.rotation,
+                                    berth.arm_index,
+                                );
+                                commands.entity(entity).insert(AutopilotTarget {
+                                    destination: berth_pos,
+                                    target_entity: Some(berth_ent),
+                                });
+                            } else {
+                                commands.entity(entity).insert(AutopilotTarget {
+                                    destination: s_transform.translation.truncate(),
+                                    target_entity: None,
+                                });
+                            }
+                        }
+                        continue;
                     } else {
                         // Target entity no longer exists (asteroid despawned before arrival).
                         // Transition to mining anyway so the mining system can retarget or send it home.
                         ship.state = ShipState::Mining;
                     }
                 } else {
-                    if let Some(target_ent) = target.target_entity {
-                        if bottle_query.get(target_ent).is_ok() {
-                            // Arrived at bottle -> collect and return
-                            commands.entity(target_ent).despawn_recursive();
-                            ship.state = ShipState::Navigating;
-                            commands.entity(entity).insert(CarryingBottle(target_ent));
-                            
-                            // Target nearest available berth for unloading
-                            if let Ok((_ent, station, s_transform)) = station_query.get_single() {
-                                if let Some((berth_ent, berth)) = berth_query.iter().next() {
-                                    let berth_pos = crate::components::berth_world_pos(
-                                        s_transform.translation.truncate(),
-                                        station.rotation,
-                                        berth.arm_index,
-                                    );
-                                    commands.entity(entity).insert(AutopilotTarget {
-                                        destination: berth_pos,
-                                        target_entity: Some(berth_ent),
-                                    });
-                                } else {
-                                    commands.entity(entity).insert(AutopilotTarget {
-                                        destination: s_transform.translation.truncate(),
-                                        target_entity: None,
-                                    });
-                                }
-                            }
-                            continue;
-                        }
-                    }
                     ship.state = ShipState::Idle;
                 }
             } else {

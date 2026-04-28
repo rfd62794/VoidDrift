@@ -66,20 +66,20 @@ pub struct RequestsTabState {
     pub collected_requests: Vec<CollectedRequest>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
 pub struct CollectedRequest {
     pub id: RequestId,
     pub faction: FactionId,
     pub fulfilled: bool,
 }
 
-#[derive(PartialEq, Debug, Clone, Copy, Default)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, Copy, Default)]
 pub enum FactionId {
     #[default]
     Signal,
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug, Clone, Copy)]
 pub enum RequestId {
     FirstLight,
 }

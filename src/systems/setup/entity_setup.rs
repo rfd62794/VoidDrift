@@ -122,6 +122,7 @@ pub fn spawn_station(
             ship_speed_multiplier: 1.0,
             power_multiplier: 1.0,
             max_drones: 5,
+            max_active_asteroids: 3,
         },
         StationQueues::default(),
         Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),

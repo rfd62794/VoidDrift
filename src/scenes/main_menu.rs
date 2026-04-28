@@ -264,6 +264,7 @@ pub fn ingame_startup_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
+    mut requests_tab: ResMut<RequestsTabState>,
 ) {
     if let Some(save_data) = menu_state.pending_load.take() {
         // LOAD PATH — apply save data, skip opening sequence
@@ -319,6 +320,9 @@ pub fn ingame_startup_system(
             "Requests"   => ActiveStationTab::Requests,
             _            => ActiveStationTab::Cargo,
         };
+
+        // Restore requests state
+        requests_tab.collected_requests = save_data.collected_requests.clone();
 
         signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
         signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
