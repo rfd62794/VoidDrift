@@ -1,107 +1,134 @@
-# Voidrift
+# VoidDrift
 
-An arcade mining and production game where you've crashed into a black hole and merged with a dying station AI. Build a drone army, discover faction secrets, and determine your fate.
+A mobile arcade mining game built in Rust/Bevy for Android. Mine asteroid debris at the edge of a black hole, build a drone fleet, and receive contact from factions you don't understand.
 
-You're stranded. The station AI fused with your consciousness to save you. Now you mine asteroids, build drones, and uncover what happened at the event horizon boundary.
-
-> **Status:** Core Gameplay Loop & Industrial Foundation Complete. Verified on Moto G 2024/2025.
+> **Status:** Phase 2 Complete — `v2.2.0-docs-phase2-complete` — Verified on Moto G 2025
 
 ---
 
-## 🚀 The Premise & Loop
+## The Game
 
-**The Narrative Frame:** You crashed into a black hole. The station AI merged with your consciousness to survive. Now you're extensions of each other, working together to understand what happened.
+The asteroid fields are debris from what the black hole eats. You mine them. The station has been here longer than you. It should have been consumed. It has not been. You don't know why.
 
-**The Gameplay Loop:** Mine asteroids → Refine resources → Build drones → Discover faction secrets
+Factions send bottles across the event horizon. You don't know how. Resources deduct. Upgrades apply. What happens in between is outside the frame.
 
-- **Mining** — Extract ore to power the station and your merged consciousness. Survival depends on resource flow.
-- **Auto-Processing** — The station AI handles routine refining and production while you focus on strategic decisions.
-- **Drone Fleet** — Build autonomous drones that are literally your thoughts made physical. They explore where you cannot.
-- **Faction Discovery** — Uncover signals from other trapped ships at the event horizon boundary. Each has secrets about what happened.
-- **Black Hole Boundary** — The map edge isn't arbitrary — it's the point of no return. Stars cut off visually where physics breaks down.
+There is no win condition. There is no escape. The horizon is a one-way membrane.
+
+**The loop:**
+- Drones mine asteroids autonomously
+- Ore refines and forges into components
+- Bottles arrive — you collect them, read the signal, fulfill requests
+- Upgrades accelerate the loop
+- The loop continues
 
 ---
 
-## 🛠️ Technical Architecture
+## What's Working
 
-### Hardware-Hardened Design
-Voidrift's architecture is a direct response to constraints discovered on physical Mali-G57 GPU hardware. We follow **Universal Disjointness** (ADR-008) to prevent runtime crashes and use dedicated egui render passes (ADR-003) for UI stability.
+| System | State |
+|--------|-------|
+| Autonomous drone fleet (mine → return → unload) | ✅ Live |
+| PRODUCTION tab — Iron / Tungsten / Nickel / Aluminum | ✅ Live |
+| REQUESTS tab — Signal faction, First Light request | ✅ Live |
+| Bottle collection mechanic — drift, tap, dual output | ✅ Live |
+| Random radial asteroid spawning, global cap enforced | ✅ Live |
+| `power_multiplier` wired to mining rate (+25% after First Light) | ✅ Live |
+| Circular star map, station-centered, absolute parallax | ✅ Live |
+| Save / load persistence including RequestsTabState | ✅ Live |
+| Opening cinematic sequence | ✅ Live |
+
+---
+
+## Technical Architecture
+
+Built for the **Moto G 2025 (720×1604, Mali-G57 GPU)**. Every architectural decision is made for that specific device.
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Language | Rust | Performance, memory safety, aarch64 target |
-| Engine | Bevy 0.15 | ECS-first architecture, partitioned update schedule |
-| UI | bevy_egui 0.33 | High-fidelity text/HUD rendering on mobile |
+| Language | Rust | Performance, memory safety, `aarch64` target |
+| Engine | Bevy 0.15.3 (pinned) | ECS-first, partitioned update schedule |
+| UI | bevy_egui 0.33 | Stable text rendering on Mali GPU |
 | Build | cargo-ndk r29 | Native Android binary generation |
-| Target | API 35 | moto g play - 2024 (primary test device) |
+| Target | Android API 35 | Moto G 2025 primary test device |
 
-### Key ADRs
-Nine Architectural Decision Records govern the project. See [`docs/adr/`](docs/adr/) for detailed logic.
+11 Architectural Decision Records govern the project. See [`docs/adr/`](docs/adr/).
 
-- **ADR-003**: `bevy_egui` for all HUD elements (Mali GPU stabilization).
-- **ADR-007**: System Partitioning (bypassing Bevy's 20-tuple limit).
-- **ADR-008**: Universal Disjointness (Total Lockdown pattern for Transform queries).
-- **ADR-009**: Tutorial Trigger Pattern (one-time contextual instructional logic).
+Key ADRs:
+- **ADR-003**: `bevy_egui` for all HUD (Mali GPU stabilization)
+- **ADR-007**: System partitioning (Bevy's 20-tuple schedule limit)
+- **ADR-008**: Universal Disjointness — `Without<T>` filter standard for all `&mut Transform` queries
+- **ADR-010**: Narrative scope — what gets explained and what stays unexplained
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```
 VoidDrift/
 ├── src/
-│   ├── lib.rs              # App entry & system partitioning groups
-│   ├── constants.rs        # Centralized game & balance constants
-│   ├── components.rs       # ECS components & global resources
-│   └── systems/            # Modular logic by domain (mining, economy, etc.)
-├── android/                # Gradle wrapper for Android APK packaging
-├── assets/                 # Mesh data, materials, and fonts
+│   ├── lib.rs                  # App entry & system scheduling
+│   ├── constants.rs            # All game & balance constants
+│   ├── components/             # ECS components & resources (split by domain)
+│   │   ├── game_state.rs       # Station, Ship, AutonomousShip, Berth
+│   │   ├── markers.rs          # Marker components (StarLayer, MapMarker, etc.)
+│   │   ├── resources.rs        # ECS Resources (SignalLog, ShipQueue, etc.)
+│   │   ├── ui_state.rs         # UI-only state (DrawerState, RequestsTabState)
+│   │   └── utilities.rs        # Helper functions (ore_name, berth_world_pos)
+│   └── systems/                # Modular logic by domain
+│       ├── asteroid/           # Spawn, lifecycle, cap enforcement
+│       ├── game_loop/          # Mining, auto-process, autonomous drones
+│       ├── ship_control/       # Autopilot, asteroid input
+│       ├── ui/                 # egui HUD, tabs, tutorial
+│       ├── narrative/          # Opening sequence, signal, bottle, quest
+│       ├── persistence/        # Save / load
+│       └── visuals/            # Starfield, station rotation, map, viewport
+├── android/                    # Gradle wrapper for Android APK packaging
+├── assets/                     # Fonts
 ├── docs/
-│   ├── adr/                # 9 Structural Architectural Decisions
-│   ├── directives/         # Past implementation blue-prints and SDDs
-│   ├── phases/             # Detailed archival summaries per phase
-│   ├── state/              # [current.md] Always-accurate codebase audit
-│   ├── ARCHITECTURE.md     # Deep technical dive into data flow
-│   └── CHANGELOG.md        # Reconstruction of all development cycles
-├── build_android.ps1       # One-click build + deploy + logs pipeline
+│   ├── adr/                    # 11 Architectural Decision Records
+│   ├── directives/             # Implementation directives (agent contracts)
+│   ├── phases/                 # Phase-by-phase archival summaries
+│   ├── narrative_canon.md      # Locked narrative foundation
+│   ├── ARCHITECTURE.md         # Deep technical reference
+│   ├── GDD.md                  # Game Design Document
+│   └── CHANGELOG.md            # Full development history
+├── build_android.ps1           # One-click build + deploy pipeline
 └── Cargo.toml
 ```
 
 ---
 
-## 🚢 Development Roadmap
+## Roadmap
 
-Voidrift is built in **Phases**, each gated by physical hardware verification.
-
-| Phase | Milestone | Key Deliverable |
-|-------|-----------|-----------------|
-| 1-3 | Navigation | Touch destination input + Autopilot movement |
-| 4-5 | Loop Completion | Core refinery loop + Station repair gate |
-| 6-7 | Narrative Frame | The Signal log + Cinematic opening sequence (stranded + AI fusion) |
-| 8 | Industrial Core | Parallel processing queues + Drone fleet expansion |
-| 9 | Discovery | Faction signals + Black hole boundary visualization |
-| 10 | Tutorial UX | Contextual popups + Gated progression guidance |
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | ✅ Complete | Core mining → refining → drone building loop |
+| Phase 1c | ✅ Complete | Asteroid lifecycle, lifespan timers, stuck-ship safety |
+| Phase 2 | ✅ Complete | UI refactor, Requests framework, bottle mechanic, random spawn |
+| Phase 3 | 🚧 Next | Architectural refactor — SRP / event bus, decouple narrative from simulation |
+| Phase 4 | 🔮 Planned | Narrative drops — memory fragments, faction voice differentiation |
 
 ---
 
-## 🏗️ Building for Android
+## Building for Android
 
 ### Prerequisites
-- Rust 1.95+
-- Android SDK/NDK r26+
+- Rust 1.85+
+- Android SDK + NDK r29
 - `cargo-ndk` (`cargo install cargo-ndk`)
+- Connected Android device with USB debugging enabled
 
-### Execution
-Run the automated pipeline to compile, package, and deploy directly to a connected device:
+### Build & Deploy
 
 ```powershell
 .\build_android.ps1
 ```
 
-*Flags for Android 15+: The build automatically applies `max-page-size=16384` for 16kb page compatibility.*
+Compiles, packages, and deploys directly to the connected device. Logcat output follows automatically.
+
+*Applies `max-page-size=16384` for Android 15+ 16kb page compatibility.*
 
 ---
 
-## ⚖️ License
-MIT — Dedicated to local mobile-first Rust engineering.  
-*Built by [RFD IT Services Ltd.](https://rfditservices.com) — April 2026*
+## License
+MIT — *Built by [RFD IT Services Ltd.](https://rfditservices.com) — April 2026*
