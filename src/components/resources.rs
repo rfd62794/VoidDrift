@@ -127,8 +127,10 @@ pub enum ProcessingOperation {
     IronRefinery,
     TungstenRefinery,
     NickelRefinery,
+    AluminumRefinery,
     HullForge,
     CoreFabricator,
+    AluminumCanisterForge,
 }
 
 #[derive(Resource, Clone)]
@@ -136,9 +138,11 @@ pub struct ProductionToggles {
     pub refine_iron: bool,
     pub refine_tungsten: bool,
     pub refine_nickel: bool,
+    pub refine_aluminum: bool,
     pub forge_hull: bool,
     pub forge_thruster: bool,
     pub forge_core: bool,
+    pub forge_aluminum_canister: bool,
     pub build_drones: bool,
 }
 
@@ -148,9 +152,11 @@ impl Default for ProductionToggles {
             refine_iron: true,
             refine_tungsten: true,
             refine_nickel: true,
+            refine_aluminum: true,
             forge_hull: true,
             forge_thruster: true,
             forge_core: true,
+            forge_aluminum_canister: true,
             build_drones: true,
         }
     }

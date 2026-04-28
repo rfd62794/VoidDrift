@@ -24,6 +24,8 @@ pub fn render_queue_card(
         ProcessingOperation::NickelRefinery => ("NICKEL", "MATERIALS"),
         ProcessingOperation::HullForge => ("PLATES", "SHIP HULL"),
         ProcessingOperation::CoreFabricator => ("NICKEL", "AI CORE"),
+        ProcessingOperation::AluminumRefinery => ("ALUMINUM", "ALUMINUM INGOT"),
+        ProcessingOperation::AluminumCanisterForge => ("ALUMINUM INGOT", "CANISTER"),
     };
 
     let max_possible = match op {
@@ -32,6 +34,8 @@ pub fn render_queue_card(
         ProcessingOperation::NickelRefinery => station.nickel_reserves / resource_cost,
         ProcessingOperation::HullForge => station.hull_plate_reserves as f32 / resource_cost,
         ProcessingOperation::CoreFabricator => station.nickel_reserves / resource_cost,
+        ProcessingOperation::AluminumRefinery => station.aluminum_reserves / resource_cost,
+        ProcessingOperation::AluminumCanisterForge => station.aluminum_ingots / resource_cost,
     }.floor() as u32;
 
     ui.group(|ui| {

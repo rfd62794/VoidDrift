@@ -72,11 +72,13 @@ pub fn autonomous_ship_system(
                         OreDeposit::Iron => "Iron",
                         OreDeposit::Tungsten => "Tungsten",
                         OreDeposit::Nickel => "Nickel",
+                        OreDeposit::Aluminum => "Aluminum",
                     };
                     match assignment.ore_type {
                         OreDeposit::Iron => station.iron_reserves += ship.cargo,
                         OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
                         OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
+                        OreDeposit::Aluminum => station.aluminum_reserves += ship.cargo,
                     }
 
                     let msg = format!("[STATION AI] Cargo deposited: {}. {} recovered.", assignment.sector_name, ore_name);

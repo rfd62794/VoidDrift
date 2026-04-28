@@ -51,6 +51,7 @@ pub fn cargo_label_system(
                     OreDeposit::Iron => "IRON".to_string(),
                     OreDeposit::Tungsten => "TUNGSTEN".to_string(),
                     OreDeposit::Nickel    => "NICKEL".to_string(),
+                    OreDeposit::Aluminum  => "ALUMINUM".to_string(),
                 };
             }
             if let Ok(mut count_text) = count_label_query.get_mut(child) {
@@ -99,6 +100,8 @@ pub struct HudParams<'w, 's> {
     pub ui_layout: Res<'w, UiLayout>,
     pub world_view_rect: ResMut<'w, WorldViewRect>,
     pub queue: Res<'w, ShipQueue>,
+    pub prod_tab: ResMut<'w, ProductionTabState>,
+    pub req_tab: ResMut<'w, RequestsTabState>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -183,6 +186,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &mut station,
                         &mut params.toggles,
                         &params.queue,
+                        &mut params.prod_tab,
+                        &mut params.req_tab,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
@@ -206,15 +211,13 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             .exact_height(layout.secondary_tab_height)
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
-                let tab_w = ui.available_width() / 5.0;
+                let tab_w = ui.available_width() / 3.0;
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
                         (ActiveStationTab::Cargo,    "CARGO"),
-                        (ActiveStationTab::Iron,     "IRON"),
-                        (ActiveStationTab::Tungsten, "TUNGSTEN"),
-                        (ActiveStationTab::Nickel,   "NICKEL"),
-                        (ActiveStationTab::Upgrades, "UPGRADES"),
+                        (ActiveStationTab::Production, "PRODUCTION"),
+                        (ActiveStationTab::Requests, "REQUESTS"),
                     ] {
                         if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
                             *params.active_tab = tab;

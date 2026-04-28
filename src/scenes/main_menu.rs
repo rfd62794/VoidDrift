@@ -314,14 +314,10 @@ pub fn ingame_startup_system(
 
         // Restore active tab
         *active_tab = match save_data.active_tab.as_str() {
-            "Station"  => ActiveStationTab::Station,
-            "Fleet"    => ActiveStationTab::Fleet,
-            "Cargo"    => ActiveStationTab::Cargo,
-            "Iron"     => ActiveStationTab::Iron,
-            "Tungsten" => ActiveStationTab::Tungsten,
-            "Nickel"   => ActiveStationTab::Nickel,
-            "Upgrades" => ActiveStationTab::Upgrades,
-            _          => ActiveStationTab::Cargo,
+            "Cargo"      => ActiveStationTab::Cargo,
+            "Production" => ActiveStationTab::Production,
+            "Requests"   => ActiveStationTab::Requests,
+            _            => ActiveStationTab::Cargo,
         };
 
         signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());

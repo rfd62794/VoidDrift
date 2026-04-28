@@ -2,14 +2,10 @@ use bevy::prelude::*;
 
 #[derive(Resource, Default, PartialEq, Debug, Clone, Copy)]
 pub enum ActiveStationTab {
-    Station,
-    Fleet,
     #[default]
     Cargo,
-    Iron,
-    Tungsten,
-    Nickel,
-    Upgrades,
+    Production,
+    Requests,
 }
 
 #[derive(Resource, PartialEq, Debug, Clone, Copy, Default)]
@@ -42,4 +38,48 @@ impl Default for UiLayout {
             content_height: 358.0,
         }
     }
+}
+
+#[derive(Resource, Debug, Clone, PartialEq)]
+pub struct ProductionTabState {
+    pub selected_ore: OreType,
+}
+
+impl Default for ProductionTabState {
+    fn default() -> Self {
+        Self { selected_ore: OreType::Iron }
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
+pub enum OreType {
+    #[default]
+    Iron,
+    Tungsten,
+    Nickel,
+    Aluminum,
+}
+
+#[derive(Resource, Debug, Clone, Default)]
+pub struct RequestsTabState {
+    pub selected_faction: FactionId,
+    pub collected_requests: Vec<CollectedRequest>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CollectedRequest {
+    pub id: RequestId,
+    pub faction: FactionId,
+    pub fulfilled: bool,
+}
+
+#[derive(PartialEq, Debug, Clone, Copy, Default)]
+pub enum FactionId {
+    #[default]
+    Signal,
+}
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum RequestId {
+    FirstLight,
 }

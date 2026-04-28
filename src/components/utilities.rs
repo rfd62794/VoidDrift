@@ -6,6 +6,7 @@ pub fn ore_name(ore: &OreDeposit) -> &'static str {
         OreDeposit::Iron     => "IRON",
         OreDeposit::Tungsten => "TUNGSTEN",
         OreDeposit::Nickel   => "NICKEL",
+        OreDeposit::Aluminum => "ALUMINUM",
     }
 }
 
@@ -14,6 +15,7 @@ pub fn ore_laser_required(ore: &OreDeposit) -> LaserTier {
         OreDeposit::Iron     => LaserTier::Basic,
         OreDeposit::Tungsten => LaserTier::Basic,
         OreDeposit::Nickel   => LaserTier::Basic,
+        OreDeposit::Aluminum => LaserTier::Basic,
     }
 }
 

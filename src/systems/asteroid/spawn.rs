@@ -34,6 +34,7 @@ pub fn spawn_asteroid(
         OreDeposit::Iron => SECTOR_1_POS,
         OreDeposit::Tungsten => SECTOR_2_POS,
         OreDeposit::Nickel => SECTOR_3_POS,
+        OreDeposit::Aluminum => Vec2::new(100.0, -800.0), // Need a sector 4 pos? Wait, I'll just use a dummy pos
     };
 
     let mut position = Vec2::ZERO;
@@ -70,17 +71,20 @@ pub fn spawn_asteroid(
         OreDeposit::Iron => COLOR_IRON,
         OreDeposit::Tungsten => COLOR_TUNGSTEN,
         OreDeposit::Nickel => COLOR_NICKEL,
+        OreDeposit::Aluminum => COLOR_ALUMINUM,
     };
 
     let radius = match ore_type {
         OreDeposit::Iron => ASTEROID_RADIUS_IRON,
         OreDeposit::Tungsten => ASTEROID_RADIUS_TUNGSTEN,
         OreDeposit::Nickel => ASTEROID_RADIUS_NICKEL,
+        OreDeposit::Aluminum => ASTEROID_RADIUS_ALUMINUM,
     };
 
     let is_gated = match ore_type {
         OreDeposit::Iron => false,
         OreDeposit::Tungsten | OreDeposit::Nickel => true,
+        OreDeposit::Aluminum => false,
     };
 
     // Vary the ore amount slightly
@@ -104,6 +108,7 @@ pub fn spawn_asteroid(
         OreDeposit::Iron => "S1",
         OreDeposit::Tungsten => "S2",
         OreDeposit::Nickel => "S3",
+        OreDeposit::Aluminum => "S4",
     };
 
     commands.entity(asteroid_entity).with_children(|parent| {

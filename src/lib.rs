@@ -52,6 +52,9 @@ fn main() {
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
         .insert_resource(ShipQueue::default())
+        .insert_resource(RequestsTabState::default())
+        .insert_resource(ProductionTabState::default())
+        .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             systems::visuals::debug_log::setup_debug_log_system,
@@ -124,6 +127,8 @@ fn main() {
             systems::narrative::signal::signal_system,
             systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
+            systems::narrative::bottle::bottle_spawn_system,
+            systems::narrative::bottle::bottle_input_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,

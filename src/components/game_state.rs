@@ -32,6 +32,7 @@ pub enum OreDeposit {
     Iron,
     Tungsten,
     Nickel,
+    Aluminum,
 }
 
 #[derive(PartialEq, Clone, Copy, Debug)]
@@ -51,6 +52,9 @@ pub struct Station {
     pub tungsten_ingots: f32,
     pub nickel_reserves: f32,
     pub nickel_ingots: f32,
+    pub aluminum_reserves: f32,
+    pub aluminum_ingots: f32,
+    pub aluminum_canisters: f32,
     pub hull_plate_reserves: f32,
     pub thruster_reserves: f32,
     pub ai_cores: f32,
@@ -60,6 +64,10 @@ pub struct Station {
     pub rotation_speed: f32,
     pub dock_state: StationDockState,
     pub resume_timer: f32,
+    pub cargo_capacity_multiplier: f32,
+    pub ship_speed_multiplier: f32,
+    pub power_multiplier: f32,
+    pub max_drones: u32,
 }
 
 #[derive(PartialEq, Debug, Default, Copy, Clone)]
@@ -99,6 +107,8 @@ pub struct StationQueues {
     pub iron_refinery: Option<crate::components::ProcessingJob>,
     pub tungsten_refinery: Option<crate::components::ProcessingJob>,
     pub nickel_refinery: Option<crate::components::ProcessingJob>,
+    pub aluminum_refinery: Option<crate::components::ProcessingJob>,
     pub hull_forge:         Option<crate::components::ProcessingJob>,
     pub core_fabricator:    Option<crate::components::ProcessingJob>,
+    pub canister_forge:     Option<crate::components::ProcessingJob>,
 }

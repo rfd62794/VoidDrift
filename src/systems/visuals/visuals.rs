@@ -211,8 +211,8 @@ pub fn berth_occupancy_system(
     for (visual, material_handle) in berth_visual_query.iter() {
         if let Some(material) = materials.get_mut(&material_handle.0) {
             material.color = match occupancy[visual.0 as usize] {
-                BerthType::Player => Color::srgb(0.0, 0.67, 1.0),   // Cyan
-                BerthType::Drone  => Color::srgb(1.0, 0.53, 0.0),   // Orange
+                crate::components::BerthType::Player => Color::srgb(0.0, 0.67, 1.0),   // Cyan
+                crate::components::BerthType::Drone  => Color::srgb(1.0, 0.53, 0.0),   // Orange
                 _ => Color::srgb(0.4, 0.4, 0.4),                    // Grey
             };
         }

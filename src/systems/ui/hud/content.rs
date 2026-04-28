@@ -48,88 +48,10 @@ pub fn render_tab_content(
     station: &mut Station,
     toggles: &mut ProductionToggles,
     queue: &ShipQueue,
+    prod_tab: &mut ProductionTabState,
+    req_tab: &mut RequestsTabState,
 ) {
     match active_tab {
-        ActiveStationTab::Station => {
-            ui.heading("VOIDRIFT STATION");
-            ui.add_space(8.0);
-            ui.label(egui::RichText::new("ECHO: STATION AI - OPERATIONAL")
-                .color(egui::Color32::from_rgb(0, 204, 102)));
-        }
-        ActiveStationTab::Fleet => {
-            ui.heading("FLEET");
-            ui.add_space(8.0);
-
-            // Ships ready
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("SHIPS READY:").color(egui::Color32::from_gray(180)));
-                ui.label(egui::RichText::new(format!("{}", queue.available_count))
-                    .color(egui::Color32::from_rgb(0, 230, 120))
-                    .strong()
-                    .size(16.0));
-            });
-
-            ui.add_space(8.0);
-            ui.separator();
-            ui.add_space(4.0);
-
-            // Drone assembly toggle
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut toggles.build_drones, "");
-                ui.label(egui::RichText::new("AUTO-ASSEMBLE DRONES")
-                    .color(egui::Color32::from_rgb(0, 204, 102)));
-            });
-
-            ui.add_space(4.0);
-
-            // Build progress bar
-            let progress = station.drone_build_progress;
-            let can_build = station.hull_plate_reserves >= 3.0
-                && station.thruster_reserves >= 1.0
-                && station.ai_cores >= 1.0;
-
-            let bar_color = if !toggles.build_drones {
-                egui::Color32::from_gray(60)
-            } else if can_build {
-                egui::Color32::from_rgb(0, 180, 100)
-            } else {
-                egui::Color32::from_rgb(180, 60, 0)
-            };
-
-            let progress_bar = egui::ProgressBar::new(progress)
-                .fill(bar_color)
-                .text(if !can_build {
-                    "WAITING FOR COMPONENTS".to_string()
-                } else {
-                    format!("{:.0}%", progress * 100.0)
-                });
-            ui.add(progress_bar);
-
-            ui.add_space(8.0);
-
-            // Component stock
-            egui::Grid::new("fleet_components").spacing([12.0, 4.0]).show(ui, |ui| {
-                ui.label(egui::RichText::new("HULL PLATES:").color(egui::Color32::from_gray(160)));
-                ui.label(egui::RichText::new(format!("{:.1} (need 3)", station.hull_plate_reserves))
-                    .color(if station.hull_plate_reserves >= 3.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
-                ui.end_row();
-                ui.label(egui::RichText::new("THRUSTERS:").color(egui::Color32::from_gray(160)));
-                ui.label(egui::RichText::new(format!("{:.1} (need 1)", station.thruster_reserves))
-                    .color(if station.thruster_reserves >= 1.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
-                ui.end_row();
-                ui.label(egui::RichText::new("AI CORES:").color(egui::Color32::from_gray(160)));
-                ui.label(egui::RichText::new(format!("{:.1} (need 1)", station.ai_cores))
-                    .color(if station.ai_cores >= 1.0 { egui::Color32::WHITE } else { egui::Color32::DARK_RED }));
-                ui.end_row();
-            });
-
-            if queue.available_count >= crate::constants::MAX_DRONE_QUEUE {
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new("QUEUE FULL (5/5)")
-                    .color(egui::Color32::GOLD)
-                    .italics());
-            }
-        }
         ActiveStationTab::Cargo => {
             ui.vertical(|ui| {
                 ui.heading("CARGO BAY");
@@ -138,9 +60,11 @@ pub fn render_tab_content(
                     ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1}", station.iron_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1}", station.tungsten_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("NICKEL:"); ui.label(egui::RichText::new(format!("{:.1}", station.nickel_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
+                    ui.label("CANISTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_canisters)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("FLEET READY:"); ui.label(egui::RichText::new(format!("{}", queue.available_count)).color(egui::Color32::from_rgb(0, 230, 120)).strong()); ui.end_row();
                 });
 
@@ -173,58 +97,90 @@ pub fn render_tab_content(
                 }
             }
         }
-        ActiveStationTab::Iron => {
-            ui.heading("IRON");
-            render_ore_pipeline(
-                ui,
-                "IRON ORE",
-                station.iron_reserves,
-                "IRON INGOTS",
-                station.iron_ingots,
-                "HULLS",
-                station.hull_plate_reserves,
-                1.0 / REFINERY_RATIO as f32,
-                HULL_PLATE_COST_IRON as f32,
-                &mut toggles.refine_iron,
-                &mut toggles.forge_hull,
-            );
-        }
-        ActiveStationTab::Tungsten => {
-            ui.heading("TUNGSTEN");
-            render_ore_pipeline(
-                ui,
-                "TUNGSTEN ORE",
-                station.tungsten_reserves,
-                "TUNGSTEN INGOTS",
-                station.tungsten_ingots,
-                "THRUSTERS",
-                station.thruster_reserves,
-                1.0 / REFINERY_RATIO as f32,
-                THRUSTER_COST_TUNGSTEN as f32,
-                &mut toggles.refine_tungsten,
-                &mut toggles.forge_thruster,
-            );
-        }
-        ActiveStationTab::Nickel => {
-            ui.heading("NICKEL");
-            render_ore_pipeline(
-                ui,
-                "NICKEL ORE",
-                station.nickel_reserves,
-                "NICKEL INGOTS",
-                station.nickel_ingots,
-                "AI CORES",
-                station.ai_cores,
-                1.0 / REFINERY_RATIO as f32,
-                AI_CORE_COST_NICKEL as f32,
-                &mut toggles.refine_nickel,
-                &mut toggles.forge_core,
-            );
-        }
-        ActiveStationTab::Upgrades => {
-            ui.heading("UPGRADES");
+        ActiveStationTab::Production => {
+            ui.heading("PRODUCTION PIPELINE");
             ui.add_space(8.0);
-            ui.label("System upgrades offline. Awaiting Phase 2 implementation.");
+            
+            egui::ComboBox::from_id_salt("ore_combo")
+                .selected_text(match prod_tab.selected_ore {
+                    OreType::Iron => "Iron Pipeline",
+                    OreType::Tungsten => "Tungsten Pipeline",
+                    OreType::Nickel => "Nickel Pipeline",
+                    OreType::Aluminum => "Aluminum Pipeline",
+                })
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut prod_tab.selected_ore, OreType::Iron, "Iron Pipeline").on_hover_text("Process Iron");
+                    ui.selectable_value(&mut prod_tab.selected_ore, OreType::Tungsten, "Tungsten Pipeline").on_hover_text("Process Tungsten");
+                    ui.selectable_value(&mut prod_tab.selected_ore, OreType::Nickel, "Nickel Pipeline").on_hover_text("Process Nickel");
+                    ui.selectable_value(&mut prod_tab.selected_ore, OreType::Aluminum, "Aluminum Pipeline").on_hover_text("Process Aluminum");
+                });
+            
+            ui.add_space(16.0);
+            
+            match prod_tab.selected_ore {
+                OreType::Iron => {
+                    render_ore_pipeline(ui, "IRON ORE", station.iron_reserves, "IRON INGOTS", station.iron_ingots, "HULLS", station.hull_plate_reserves, 1.0 / REFINERY_RATIO as f32, HULL_PLATE_COST_IRON as f32, &mut toggles.refine_iron, &mut toggles.forge_hull);
+                }
+                OreType::Tungsten => {
+                    render_ore_pipeline(ui, "TUNGSTEN ORE", station.tungsten_reserves, "TUNGSTEN INGOTS", station.tungsten_ingots, "THRUSTERS", station.thruster_reserves, 1.0 / REFINERY_RATIO as f32, THRUSTER_COST_TUNGSTEN as f32, &mut toggles.refine_tungsten, &mut toggles.forge_thruster);
+                }
+                OreType::Nickel => {
+                    render_ore_pipeline(ui, "NICKEL ORE", station.nickel_reserves, "NICKEL INGOTS", station.nickel_ingots, "AI CORES", station.ai_cores, 1.0 / REFINERY_RATIO as f32, AI_CORE_COST_NICKEL as f32, &mut toggles.refine_nickel, &mut toggles.forge_core);
+                }
+                OreType::Aluminum => {
+                    render_ore_pipeline(ui, "ALUMINUM ORE", station.aluminum_reserves, "ALUMINUM INGOTS", station.aluminum_ingots, "CANISTERS", station.aluminum_canisters, 1.0 / REFINERY_RATIO as f32, ALUMINUM_CANISTER_COST_ALUMINUM as f32, &mut toggles.refine_aluminum, &mut toggles.forge_aluminum_canister);
+                }
+            }
+        }
+        ActiveStationTab::Requests => {
+            ui.heading("SIGNAL DECRYPTION");
+            ui.add_space(8.0);
+            
+            egui::ComboBox::from_id_salt("faction_combo")
+                .selected_text("FACTION: SIGNAL")
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut req_tab.selected_faction, FactionId::Signal, "FACTION: SIGNAL");
+                });
+                
+            ui.add_space(16.0);
+            
+            let mut filtered: Vec<&mut CollectedRequest> = req_tab.collected_requests.iter_mut().filter(|r| r.faction == req_tab.selected_faction).collect();
+            
+            if filtered.is_empty() {
+                ui.label(egui::RichText::new("No signals received.").color(egui::Color32::GRAY));
+                ui.label(egui::RichText::new("Something may be out there.").color(egui::Color32::GRAY).italics());
+            } else {
+                for req in filtered.iter_mut().rev() {
+                    ui.group(|ui| {
+                        ui.vertical(|ui| {
+                            match req.id {
+                                RequestId::FirstLight => {
+                                    ui.heading(egui::RichText::new("First Light").color(egui::Color32::GOLD));
+                                    ui.label(egui::RichText::new("Something has been noticed about you.").italics());
+                                    ui.add_space(8.0);
+                                    ui.label("Requires: 25 Iron Ingots");
+                                    ui.label(egui::RichText::new("Reward: Power +25%").color(egui::Color32::CYAN));
+                                    ui.add_space(8.0);
+                                    
+                                    if req.fulfilled {
+                                        ui.label(egui::RichText::new("COMPLETE").strong().color(egui::Color32::GREEN));
+                                    } else {
+                                        let can_afford = station.iron_ingots >= 25.0;
+                                        if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
+                                            station.iron_ingots -= 25.0;
+                                            station.power_multiplier += 0.25;
+                                            req.fulfilled = true;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    ui.add_space(8.0);
+                }
+            }
         }
     }
 }

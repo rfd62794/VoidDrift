@@ -113,3 +113,14 @@ pub const DRONE_BUILD_COST_HULLS: f32      = 3.0;
 pub const DRONE_BUILD_COST_THRUSTERS: f32  = 1.0;
 pub const DRONE_BUILD_COST_CORES: f32      = 1.0;
 pub const MAX_DRONE_QUEUE: u32 = 5;        // Cap to prevent runaway accumulation
+
+// Aluminum Mechanics
+pub const ASTEROID_RADIUS_ALUMINUM: f32 = 20.0;
+pub const COLOR_ALUMINUM: Color = Color::srgb(0.65, 0.75, 0.85);
+pub const REFINERY_ALUMINUM_TIME: f32 = 4.0;
+pub const FORGE_ALUMINUM_CANISTER_TIME: f32 = 8.0;
+pub const ALUMINUM_CANISTER_COST_ALUMINUM: u32 = 2;
+
+// Narrative Bottle Mechanics
+pub const BOTTLE_SPAWN_DELAY: f32 = 45.0;
+pub const COLOR_BOTTLE: Color = Color::srgb(0.8, 0.2, 0.8);

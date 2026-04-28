@@ -106,6 +106,9 @@ pub fn spawn_station(
             tungsten_ingots: 0.0,
             nickel_reserves: 0.0,
             nickel_ingots: 0.0,
+            aluminum_reserves: 0.0,
+            aluminum_ingots: 0.0,
+            aluminum_canisters: 0.0,
             hull_plate_reserves: 0.0,
             thruster_reserves: 0.0,
             ai_cores: 0.0,
@@ -115,6 +118,10 @@ pub fn spawn_station(
             rotation_speed: STATION_ROTATION_SPEED,
             dock_state: StationDockState::Rotating,
             resume_timer: 0.0,
+            cargo_capacity_multiplier: 1.0,
+            ship_speed_multiplier: 1.0,
+            power_multiplier: 1.0,
+            max_drones: 5,
         },
         StationQueues::default(),
         Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
@@ -244,6 +251,7 @@ fn spawn_asteroid_field(
         OreDeposit::Iron => COLOR_IRON,
         OreDeposit::Tungsten => COLOR_TUNGSTEN,
         OreDeposit::Nickel => COLOR_NICKEL,
+        OreDeposit::Aluminum => COLOR_ALUMINUM,
     };
 
     let is_gated = ore_laser_required(&ore) != LaserTier::Basic;
@@ -264,6 +272,7 @@ fn spawn_asteroid_field(
         OreDeposit::Iron => ASTEROID_RADIUS_IRON,
         OreDeposit::Tungsten => ASTEROID_RADIUS_TUNGSTEN,
         OreDeposit::Nickel => ASTEROID_RADIUS_NICKEL,
+        OreDeposit::Aluminum => ASTEROID_RADIUS_ALUMINUM,
     };
 
     let asteroid_entity = commands.spawn((
@@ -389,6 +398,7 @@ pub fn generate_ore_mesh(ore: &OreDeposit, seed: u64) -> Mesh {
         OreDeposit::Iron     => generate_iron_mesh(seed),
         OreDeposit::Tungsten => generate_tungsten_mesh(seed),
         OreDeposit::Nickel   => generate_nickel_mesh(seed),
+        OreDeposit::Aluminum => generate_iron_mesh(seed),
     }
 }
 

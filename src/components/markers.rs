@@ -79,3 +79,6 @@ pub struct AutopilotTarget {
 
 #[derive(Component)] pub struct CargoOreLabel;
 #[derive(Component)] pub struct CargoCountLabel;
+
+#[derive(Component)] pub struct ActiveBottle;
+#[derive(Component)] pub struct CarryingBottle(pub Entity);
