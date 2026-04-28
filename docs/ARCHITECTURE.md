@@ -24,22 +24,40 @@ Bevy is configured with `default-features = false`. Active features: `bevy_winit
 
 ## Module Structure
 
+*Reflects post-Phase 5 refactor. Each file has a single, documented responsibility.*
+
 | File | Lines | Responsibility |
 | :--- | :--- | :--- |
-| `src/lib.rs` | 96 | App setup, plugin registration, resource init, system registration only. No logic. |
-| `src/constants.rs` | 129 | All game constants — single source of truth for tuning. |
-| `src/components.rs` | 384 | All Component and Resource structs. No logic. |
-| `src/systems/mod.rs` | 11 | Module declarations only. |
-| `src/systems/setup.rs` | 676 | Entity spawning, mesh generation, berth setup. Oversized — split planned. |
-| `src/systems/ui.rs` | 454 | egui HUD: signal strip, left panel, tabs, quest, tutorial popup, cargo bars. |
-| `src/systems/narrative.rs` | 450 | Opening sequence, signal system (33 IDs), tutorial popups (6 IDs). |
-| `src/systems/economy.rs` | 239 | Processing queues, maintenance, power management, auto-dock. |
-| `src/systems/autonomous.rs` | 146 | AI drone FSM (5 states), beam visuals, docked position sync. |
-| `src/systems/autopilot.rs` | 116 | Player ship navigation, arrival detection, docking resolution. |
-| `src/systems/visuals.rs` | 210 | Starfield parallax, station rotation FSM, ship heading, thruster glow, berth colors. |
-| `src/systems/map.rs` | 200 | Camera follow, map visibility, touch input, pinch zoom, map pan. |
-| `src/systems/mining.rs` | 92 | Ore extraction, laser tier gate, beam scaling, depletion coloring. |
-| `src/systems/quest.rs` | 20 | Quest progress bar update (Objective 3 only). |
+| `src/lib.rs` | ~140 | App setup, plugin registration, resource init, system scheduling only. No logic. |
+| `src/constants.rs` | ~130 | All game constants — single source of truth for tuning. |
+| `src/components/` | — | Split across focused files (see below). No logic in any file. |
+| `src/components/game_state.rs` | — | `Station`, `Ship`, `AutonomousShip`, `Berth`, `StationQueues` structs. |
+| `src/components/markers.rs` | — | Marker components: `StarLayer`, `MapMarker`, `MapElement`, `AutopilotTarget`, etc. |
+| `src/components/resources.rs` | — | ECS Resources: `SignalLog`, `ShipQueue`, `CameraDelta`, `RequestsTabState`, etc. |
+| `src/components/ui_state.rs` | — | UI-only state structs: `ActiveStationTab`, `DrawerState`, `ProductionTabState`, `CollectedRequest`. |
+| `src/components/utilities.rs` | — | Helper functions: `ore_name`, `ore_laser_required`, `berth_world_pos`. |
+| `src/systems/setup/entity_setup.rs` | — | Station, berth, opening drone, destination highlight spawn functions. |
+| `src/systems/setup/world_spawn.rs` | — | `setup_world` entry point, starfield, camera spawn. |
+| `src/systems/setup/quest_init.rs` | — | Quest log initialization. |
+| `src/systems/asteroid/spawn.rs` | — | `spawn_initial_asteroids`, `asteroid_respawn_system`, `spawn_asteroid`. |
+| `src/systems/asteroid/lifecycle.rs` | — | `asteroid_lifecycle_system` — lifespan timer, despawn, drone-target pause. |
+| `src/systems/game_loop/mining.rs` | — | Ore extraction, laser tier gate, beam scaling, depletion coloring. `power_multiplier` applied here. |
+| `src/systems/game_loop/auto_process.rs` | — | Auto-refine, auto-forge, auto-build-drones. |
+| `src/systems/game_loop/autonomous.rs` | — | Autonomous drone FSM (Outbound / Mining / Returning / Unloading / Holding). |
+| `src/systems/ship_control/autopilot.rs` | — | Player ship navigation, arrival detection, docking, bottle collection (⚠️ Phase 3 target for extraction). |
+| `src/systems/ship_control/asteroid_input.rs` | — | Touch input for manual asteroid targeting. |
+| `src/systems/ui/hud/mod.rs` | — | egui HUD entry: signal strip, drawer, tab routing. |
+| `src/systems/ui/hud/content.rs` | — | PRODUCTION and REQUESTS tab content, fulfillment logic, upgrade writes. |
+| `src/systems/ui/station_tabs.rs` | — | Station drawer tab definitions. |
+| `src/systems/ui/tutorial.rs` | — | Tutorial popup system. |
+| `src/systems/narrative/opening_sequence.rs` | — | Opening cinematic FSM and drone movement. |
+| `src/systems/narrative/signal.rs` | — | Signal log fire conditions and quest advancement. |
+| `src/systems/narrative/bottle.rs` | — | Bottle spawn timer, tap input, collection output. |
+| `src/systems/narrative/quest.rs` | — | Quest log update system. |
+| `src/systems/persistence/save.rs` | — | `SaveData`, autosave system, save request handler. |
+| `src/systems/visuals/visuals.rs` | — | Starfield parallax (absolute positioning), station rotation FSM, ship heading, thruster glow, berth colors. |
+| `src/systems/visuals/map.rs` | — | Camera follow, map visibility, pinch zoom, map pan. |
+| `src/systems/visuals/viewport.rs` | — | `ui_layout_system`, `drawer_viewport_system`. |
 
 ---
 
@@ -282,10 +300,12 @@ Camera is placed at Z = 1000.0 with `far = 1200.0` to see `Z_STARS_FAR`.
 All background mesh entities use `AlphaMode2d::Opaque`. On Mali-G57 (Moto G 2025), `Blend` mode triggers depth-sort flicker that cannot be resolved by Z-layer adjustment. Color value is used to achieve visual dimming instead of alpha channel.
 
 ### Starfield
-- 150 far stars (2×2 px, factor 0.05) at `Z_STARS_FAR`
-- 50 near stars (3×3 px, factor 0.15) at `Z_STARS_NEAR`
+- 800 far stars (2×2 px, factor 0.05) at `Z_STARS_FAR`
+- 300 near stars (3×3 px, factor 0.15) at `Z_STARS_NEAR`
 - Seeded with `0xDEAD_BEEF` for deterministic layout
-- Wrapped at ±700 / ±500 relative to camera position
+- Generated within circular radius of 2400.0 world units centered on Station
+- Positioned using absolute offset formula: `pos = orig_pos + cam_pos * (1.0 - layer)` — no wrapping, no delta accumulation
+- `StarLayer` component stores `{ layer: f32, orig_pos: Vec2 }` — `orig_pos` is the generation-time world position
 
 ---
 
@@ -314,3 +334,31 @@ TouchInput event (raw)
 
 ### Opening Sequence Input Lock
 All touch input systems check `opening.phase != OpeningPhase::Complete` and return early during the cinematic intro.
+
+---
+
+## Known Architectural Strain (Phase 3 Target)
+
+The following patterns were identified during Phase 2 and are queued for Phase 3 refactor:
+
+**1. God Systems**
+`autopilot.rs` handles navigation geometry, state machine transitions, docking sequences, AND narrative bottle collection. A bracket in the wrong place broke the narrative pipeline silently — the `CarryingBottle` branch was unreachable for the entire Phase 2 sprint. Systems with multiple unrelated responsibilities produce bugs that compile correctly and fail at runtime.
+
+**2. UI as Business Logic**
+`content.rs` directly mutates `station.power_multiplier += 0.25` on fulfillment. No central economy system enforces what that mutation means downstream. The multiplier was written by the UI and read by nothing for multiple sprints before it was manually wired to `mining.rs`.
+
+**3. Hardcoded Fallbacks**
+Mining and autopilot systems implicitly rescue drones when things go wrong (e.g., defaulting to `ShipState::Mining` when an entity disappears). This creates silent error-recovery loops that look correct until they accumulate.
+
+**4. Initialization Scatter**
+Legacy `spawn_sectors` and new `spawn_initial_asteroids` ran simultaneously in the same schedule phase without coordination, causing 5–6 asteroids to spawn instead of 3. Fixed in Phase 2 by removing the legacy spawner.
+
+**Phase 3 Target Architecture:**
+```
+Event bus pattern:
+  autopilot.rs fires ArrivedAtTarget(Entity)
+  → narrative system checks if entity is Bottle → fires collection event
+  → upgrade system listens for fulfillment event → applies multipliers
+  UI writes intent only → economy system enforces meaning
+  Initialization: spawn_initial_asteroids is sole asteroid spawner
+```

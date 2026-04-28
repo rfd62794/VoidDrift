@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-27
+### Fixed
+- Starfield parallax system refactored from delta accumulation to absolute offset
+- Stars now anchored to station world center, not camera position
+- Opening sequence no longer drags starfield with ship movement
+- Generation radius doubled to 2400.0 units (1,100 stars) for genuine circular coverage
+- `StarLayer` component extended with `orig_pos: Vec2` to enable absolute positioning
+
+---
+
+## [2.0.0] - 2026-04-27
+### Added
+- PRODUCTION tab: collapses Iron/Tungsten/Nickel/Aluminum into single tab with ComboBox
+- REQUESTS tab: collected message system replacing UPGRADES placeholder
+- Faction system: Signal (Ancient) as initial faction; architecture supports future additions
+- Bottle collection mechanic: drifting entities, tap-to-dispatch drone, dual output to Signal Log + REQUESTS
+- First Contact event: Signal Log entry + First Light request card on first Bottle collection
+- Aluminum ore type: full pipeline (Ore → Ingot → AluminumCanister), included in random spawn pool
+- Random radial asteroid spawning: all four ore types, equal probability, 200–500 unit range from station
+- Global asteroid cap: `station.max_active_asteroids` (default 3), enforceable via future requests
+- Request fulfillment: resource deduction, upgrade application, COMPLETE state persists
+- `power_multiplier` on `Station` wired to base mining rate in `mining.rs`
+- `RequestsTabState` persistence across save/load cycles
+- Faction ComboBox in REQUESTS tab with empty state before first Bottle collected
+- `narrative_canon.md`: locked narrative foundation document
+
+### Removed
+- Fixed sector spawn positions (SECTOR_1_POS, SECTOR_2_POS, SECTOR_3_POS)
+- Legacy `spawn_sectors` and `spawn_map_connectors` systems
+- Dedicated Iron/Tungsten/Nickel tab variants
+- UPGRADES placeholder tab
+- Dead Station and Fleet tab code
+
+### Fixed
+- `CarryingBottle` unload branch unreachable due to incorrect `else` nesting in `autopilot.rs`
+- Dual spawn system conflict causing 5–6 asteroids at startup instead of 3
+- `power_multiplier` written by UI but never read by any downstream system
+
+---
+
 ## [Narrative Realignment] — Survival Sci-Fi Frame — 2026-04-26
 ### Changed
 - **Narrative Scope:** Clarified that survival sci-fi is narrative justification for mechanics, not horror genre

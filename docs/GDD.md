@@ -289,52 +289,41 @@ In a later milestone (Station Tier 3), a Signal entry appears:
 
 ---
 
-## 6.5 - Faction System
+## 6.5 - Faction System — Locked Design
 
-### The Boundary Trapped
-Multiple ships are trapped at the event horizon boundary, each with different goals and information about what happened. They cannot cross into the black hole, but they can communicate and trade via unmanned drones.
+### Overview
+Four factions contact the player via Bottles — physical objects that drift into range and are collected by drone. Each Bottle delivers a Signal Log entry and a Request card in the REQUESTS tab. The transaction mechanism (how resources leave, how rewards arrive) is never explained. Do not explain it.
 
-### Faction Types
+Factions unlock progressively as their first Bottle arrives. The player does not browse a faction list — factions find them.
 
-**The Traders**
-- **Goal:** Acquire resources for their own survival
-- **Offer:** Technology blueprints in exchange for ore
-- **Personality:** Practical, straightforward, fair traders
-- **Secret:** Know the most efficient mining techniques
+### The Four Factions
 
-**The Scientists** 
-- **Goal:** Study the black hole phenomenon
-- **Offer:** Advanced scanning technology for data
-- **Personality:** Curious, methodical, sometimes cryptic
-- **Secret:** Discovered something unnatural about the black hole
+| Faction | Archetype | Upgrade Branch | Nature |
+|---|---|---|---|
+| **Signal** | Ancient | Power (drill/mining rate) | May be the black hole itself, or what is beyond it. Was here before. Knows the full arc. First contact is recognition, not introduction. |
+| **[Human — name TBD]** | Human | Capacity (cargo hold) | What the player was. Familiar. Interacting with them is interacting with memory. Want the player to survive because they are one of them. |
+| **[Borg — name TBD]** | Borg | Fleet (max drones) | What the station is becoming. Collective efficiency. They don't explain because explanation is unnecessary. |
+| **[Pirate — name TBD]** | Pirate | Speed (ship movement) | Transactional. Honest about it. No pretense. They see the player clearly and don't care. Useful is enough. |
 
-**The Escapees**
-- **Goal:** Find a way out of the event horizon
-- **Offer:** Experimental propulsion tech for assistance
-- **Personality:** Desperate, hopeful, sometimes reckless
-- **Secret:** Believe you're the key to escaping
+### Contact Mechanic — Bottles
+- Bottles drift into range on a spawn timer (45 seconds after game start for First Light)
+- Player taps Bottle on screen to dispatch a drone for collection
+- On collection: Signal Log entry fires, Request card added to REQUESTS tab
+- REQUESTS tab Faction ComboBox filters by faction; empty before first Bottle
 
-**The Guardians**
-- **Goal:** Protect the boundary from unauthorized crossing
-- **Offer:** Defensive systems for cooperation
-- **Personality:** Cautious, suspicious, principled
-- **Secret:** Know why ships are being trapped here
+### Upgrade Branches — One Per Faction
+Each faction owns one exclusive upgrade track. Fulfilling requests advances that track. The four tracks do not overlap.
 
-### Faction Interaction
-- **Discovery:** Build scanner → detect first faction signal
-- **Communication:** Send unmanned drone with resources → receive response
-- **Trade:** Exchange ore for technology, information, or special components
-- **Trust:** Each faction reveals more as relationship develops
-- **Conflict:** Factions have competing interests — helping one may anger others
+- **Power (Signal):** Mining rate multiplier. `station.power_multiplier` applied to base mining rate in `mining.rs`.
+- **Capacity (Human):** Cargo hold size. `station.cargo_capacity_multiplier`. Wired in Phase 3.
+- **Fleet (Borg):** Max active drones. `station.max_drones`. Upgradeable via requests.
+- **Speed (Pirate):** Ship movement speed. `station.ship_speed_multiplier`. Wired in Phase 3.
 
-### The Mystery
-Each faction holds pieces of what happened:
-- Why did you crash?
-- Why are ships being trapped?
-- What's inside the black hole?
-- Can anyone escape?
-
-The player must decide who to trust and what truth to pursue.
+### What Stays Unexplained — By Design
+- How resources leave the station after fulfillment
+- How factions send Bottles across the event horizon
+- Whether the factions are real or constructs
+- What Signal actually is
 
 ---
 
@@ -560,42 +549,43 @@ Drones are always Miners. Their tier is upgraded through station progression, no
 
 ---
 
-## 11. Two Upgrade Paths
+## 11. Upgrade System — Faction Rewards
 
-### Path 1 - Station Upgrades
-*You are building something.*
+### Overview
+Upgrades are not a standalone system. They are rewards for fulfilling faction Requests. There is no upgrade shop. The upgrade arrives when the faction decides you have earned it.
 
-Station upgrades are permanent infrastructure investments. They cost processed resources, take time, and change the station forever. The player is constructing a facility, not improving a character.
+Four independent upgrade tracks, one per faction. Multipliers live on the `Station` component as global modifiers read by the relevant systems.
 
-```
-STATION UPGRADE EXAMPLES
-  Hull Repair - 25 Power Cells -> unlocks Tier 2
-  Mining Depot - 10 Hull Plates + 5 Power Cells -> sector depot
-  Floating Forge - 15 Hull Plates + 1 Ship Hull -> remote processing
-  Drone Berth Mk II - 1 Ship Hull + 20 Power Cells -> third drone slot
-  Relay Station - 3 Ship Hulls + 1 AI Core -> galactic reach
-```
-
-Resources used: Power Cells, Hull Plates, Ship Hulls (processed/crafted materials).
-
-### Path 2 - Fleet Upgrades
-*You are equipping your reach.*
-
-Fleet upgrades improve the drone fleet's capability. They come from the Foundry using Tier 2+ materials that only become available through Surveyor exploration.
+### Upgrade Tracks
 
 ```
-FLEET UPGRADE EXAMPLES
-  AI Core Install - extends ECHO to a new drone hull
-  Drone Cargo Mk II - Tungsten + Iron -> drone carries 250 ore
-  Mining Rig Mk II - Tungsten + Power Cell -> yield +50%
-  Route Optimizer - Crystal + AI Core -> drone cycle time -20%
-  Scout Ship - 2 Ship Hulls + 1 AI Core -> galactic dispatch
+Power (Signal faction)
+  station.power_multiplier
+  Applied in: mining.rs against MINING_RATE constant
+  Default: 1.0
+  First Light reward: 1.25 (mining rate +25%)
+
+Capacity (Human faction)
+  station.cargo_capacity_multiplier
+  Applied in: ship cargo capacity calculation
+  Default: 1.0
+  Wired: Phase 3
+
+Fleet (Borg faction)
+  station.max_drones
+  Applied in: drone build system cap check
+  Default: 5
+  Upgradeable via Borg requests
+
+Speed (Pirate faction)
+  station.ship_speed_multiplier
+  Applied in: autopilot navigation speed
+  Default: 1.0
+  Wired: Phase 3
 ```
 
-Resources used: Tungsten, Crystal, Titanite (Tier 2+ materials from explored sectors).
-
-### Why These Paths Don't Conflict
-Station upgrades consume production output - Power Cells and Hull Plates that come from the basic refinery loop. Fleet upgrades consume exploration materials - Tungsten and Crystal that only flow in after Surveyor work. The two resource pools are separate. The two progressions never compete for the same inputs.
+### Asteroid Field Capacity
+`station.max_active_asteroids` controls the global asteroid cap. Default 3. Upgradeable via future Borg requests (not yet implemented). This is separate from drone count — it governs the field, not the fleet.
 
 ---
 
@@ -643,6 +633,34 @@ Anomaly Core + AI Core -> Scout Ship Core
 
 ### Helium - Passive Yield
 Secondary yield from all asteroid mining. Approximately 2 units per 100 ore mined. Accumulates passively. Future use: Fuel Cells for Scout Ship propulsion (post-MVP). Currently stored in CARGO, displayed as passive accumulation.
+
+---
+
+## 12.5 - Asteroid Spawn System — Phase 2 Implementation
+
+### Spawn Model
+Asteroids spawn at random radial positions from the station origin (200–500 units). No fixed sector positions. No per-type caps.
+
+- **Ore types:** Iron, Tungsten, Nickel, Aluminum — equal probability (25% each)
+- **Global cap:** `station.max_active_asteroids` (default 3)
+- **Respawn:** `asteroid_respawn_system` fires on a timer, checks active count against cap, spawns if below cap
+- **Initial spawn:** `spawn_initial_asteroids` runs on game start, fills to cap
+- **Lifespan:** Each asteroid has a `lifespan_timer`; paused while actively targeted by a drone
+
+### Ore Pipeline Summary
+```
+Iron      -> Iron Ingot      -> (various)
+Tungsten  -> Tungsten Ingot  -> (gated, requires Tungsten laser)
+Nickel    -> Nickel Ingot    -> (gated, requires Tungsten laser)
+Aluminum  -> Aluminum Ingot  -> AluminumCanister
+```
+
+### Aluminum Pipeline
+Aluminum is the Phase 2 addition. Full pipeline:
+```
+Aluminum Ore -> Aluminum Ingot (auto-refine) -> AluminumCanister (auto-forge)
+```
+AluminumCanister seeds the Phase 3 Helium farming loop. Auto-refine and auto-forge toggles for Aluminum are in the PRODUCTION tab alongside Iron, Tungsten, and Nickel controls.
 
 ---
 

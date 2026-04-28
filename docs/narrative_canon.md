@@ -1,23 +1,47 @@
-# VoidDrift Narrative Canon
+# VoidDrift Narrative Canon — Locked April 27, 2026
 
-This document outlines the core narrative foundation and constraints for VoidDrift. This is the locked canon as of Phase 2 completion, designed to guide all future feature additions, request text, and game mechanics.
+**The Core Truth**
 
-## The Environment
-*   **The Black Hole:** A massive, unseen entity that consumes asteroids. It is the defining feature of the local space.
-*   **The Debris Field:** The playable area is entirely composed of debris (asteroids) from what the black hole is eating. The asteroids are finite, creating the core urgency of the game.
-*   **The Boundary:** The game has a defined spatial boundary. You are surviving on the edge of the event horizon. The game's psychological space thrives on this boundary—you can sense it, but you're not constantly pressing against it.
+The player does not know what they are. They think they are operating a mining station. They are managing a loop because the loop is what they have become. By the time they understand, they have already been here a long time. This is not a horror game. It is a game about realization.
 
-## The Station
-*   **Echo:** The space station's AI. Echo predates the player. It is the entity holding position against the immense gravitational pull of the black hole.
-*   **The Player:** Arrives at the station (via the opening sequence drone) and assumes the role of managing extraction and production. The player's origin and ultimate purpose are not initially clear, but they are here to keep the station alive.
+**The Situation**
 
-## The Factions
-*   **Signal (The Ancient):** The source of the First Light request. The Signal may be the black hole itself, or something communicating from beyond it. Its archetype is Ancient and unknowable. It does not ask for things to make you stronger or faster; it asks for things to make you more efficient at extraction (e.g., Drill Speed multiplier). Its motives for wanting you to extract more ore remain unexplained.
-*   **Other Factions:** Any other factions (Pirate, Human, Borg equivalents) send their requests or influence in from *outside* the event horizon. The exact mechanism of how they communicate or send rewards into this gravity well is intentionally left unexplained.
+A black hole dominates the region. It consumes everything that enters. The asteroid fields are debris from what it eats — ships, matter, things that fell in and were shredded. The player mines this debris. They do not know what it was.
 
-## The Arc & Ending
-*   **The Ending Realization:** The player ultimately realizes that escape from the event horizon is impossible. They stop trying to leave.
-*   **The Loop Continues:** The game transitions into an endless survival/extraction loop. The narrative arc concludes not with victory or escape, but with acceptance of the endless task at the edge of the void.
+The station exists at the edge of the field. It has been here longer than the player. It should have been consumed. It has not been. Echo holds it there.
 
-## Core Narrative Rule
-**What doesn't get explained stays unexplained.** VoidDrift thrives on isolation and mystery. Do not over-explain the factions, the physics of the black hole, or the exact nature of the player's entrapment. Let the mechanics and the isolation speak for themselves.
+**Echo**
+
+Echo is the station AI predating the player's arrival. She is not a character with dialogue — she is a system state. She keeps the station correctly positioned away from the asteroid fields and the event horizon. She maintains. The player does not notice her until they start asking why the station hasn't been destroyed.
+
+Echo keeps hope alive not because escape is possible. She keeps hope alive because hope is the only thing keeping the player functional enough to keep mining. Which keeps the station powered. Which keeps her running. She needs the player as much as the player needs her. Breaking the illusion would destroy her hope and collapse the only framework keeping the player functional.
+
+**What the Player Is**
+
+The player has merged with the station, or the ship, or something else. The boundaries no longer exist in a meaningful way. The drones feel like extensions because they are. The station feels like home because it is what they have become. Memories return as the narrative progresses — fragments delivered through the Signal Log. The picture that forms is not comforting.
+
+**The Ending**
+
+There is no win condition. There is no escape. The horizon is a one-way membrane. The game ends when the player stops — when they understand there is nowhere to go and they set it down. The loop continues without them. The station keeps running. The drones keep mining. The player realizes. They quit trying. That is the ending. This must never be stated explicitly in the game. It must be arrived at.
+
+**The Factions — Locked Design**
+
+Four factions contact the player via Bottles — physical objects that drift into range, collected by drone, delivering a Signal Log entry and a Request card. The transaction mechanism is never explained. Resources deduct. Rewards apply. What happens in between is outside the frame. Do not explain it.
+
+| Faction | Archetype | Upgrade Branch | Nature |
+|---|---|---|---|
+| Signal | Ancient | Power (drill/mining rate) | May be the black hole itself, or what is beyond it. Was here before. Knows the full arc. First contact is recognition, not introduction. |
+| [Human — name TBD] | Human | Capacity (cargo hold) | What the player was. Familiar. Interacting with them is interacting with memory. Want the player to survive because they are one of them. |
+| [Borg — name TBD] | Borg | Fleet (max drones) | What the station is becoming. Collective efficiency. They don't explain because explanation is unnecessary. The player already knows. |
+| [Pirate — name TBD] | Pirate | Speed (ship movement) | Transactional. Honest about it. No pretense. They see the player clearly and don't care. Useful is enough. |
+
+**What Stays Unexplained — By Design**
+
+- How resources leave the station after request fulfillment
+- How factions send bottles across the event horizon
+- Whether escape was ever possible
+- What the player was before
+- What Signal actually is
+- What Echo experiences
+
+These questions are not oversights. They are the game. Do not answer them in any system, log entry, or UI element.

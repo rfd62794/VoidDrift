@@ -4,99 +4,106 @@
 
 ---
 
-## Current Sprint
+## Current State
 
-**Sprint:** Phase 1b Complete, Phase 1c Queued  
-**Status:** Core loop working, narrative frame locked  
-**Timeline:** April 18-25 (completed), April 26-May 3 (next)  
+**Sprint:** Phase 3 Planning  
+**Status:** Phase 2 complete and tagged. Codebase stable. Physical device verified.  
+**Last Tag:** `v2.1.0-starmap-parallax-fix` — April 27, 2026
 
 **What's Working Now:**
 - ✅ Mining → Refining → Drone building loop
-- ✅ Survival sci-fi narrative frame (not horror)
-- ✅ Unified ship queue system
-- ✅ Bottom drawer UI with station tabs
-- ✅ Save/load persistence
+- ✅ Autonomous drone fleet with bottle collection
+- ✅ PRODUCTION tab (Iron / Tungsten / Nickel / Aluminum with ComboBox)
+- ✅ REQUESTS tab (Signal faction, First Light, fulfillment logic)
+- ✅ Random radial asteroid spawning, global cap enforced
+- ✅ `power_multiplier` wired to mining rate
+- ✅ Star map: circular, station-centered, proper parallax
+- ✅ Save/load persistence including RequestsTabState
 
 ---
 
 ## Phase Breakdown
 
 ### Phase 1: Core Loop Foundation ✅ COMPLETE
-**Timeline:** April 18, 2026 - April 25, 2026  
+**Completed:** April 18–25, 2026  
 **Goal:** Establish mining → refining → drone building loop  
 
-**Deliverables:**
 - [x] Mining system with laser beams
-- [x] Auto-refining (phase 0b)
+- [x] Auto-refining
 - [x] Drone building and fleet management
-- [x] Unified ship queue (phase 1b)
+- [x] Unified ship queue
 - [x] Save/load persistence
 - [x] Narrative frame establishment
 
-### Phase 1c: Asteroid Lifecycle 🚧 QUEUED
-**Timeline:** April 26 - May 3, 2026  
-**Goal:** Finite ore per asteroid, respawn cycle  
+### Phase 1c: Asteroid Lifecycle ✅ COMPLETE
+**Completed:** April 26, 2026  
+**Goal:** Finite ore per asteroid, respawn cycle, stuck-ship safety  
+
+- [x] Asteroid inventory system (ore_remaining)
+- [x] Lifespan timer paused while drone is targeting
+- [x] Respawn cycle with cap enforcement
+- [x] Stuck-ship safety system
+
+### Phase 2: UI Refactor + Requests + Arcade Loop ✅ COMPLETE
+**Completed:** April 27, 2026  
+**Tag:** `v2.0.0-phase2-complete`, `v2.1.0-starmap-parallax-fix`  
+**Goal:** Arcade loop hardened, faction contact system live, UI restructured  
+
+- [x] PRODUCTION tab: all four ore types under single ComboBox
+- [x] REQUESTS tab: replaces UPGRADES placeholder
+- [x] Signal faction (Ancient): First Light request and fulfillment
+- [x] Bottle collection mechanic: spawn, tap-to-collect, dual output
+- [x] Aluminum full pipeline: Ore → Ingot → AluminumCanister
+- [x] Random radial asteroid spawning (200–500 units), 4 ore types, equal probability
+- [x] Global asteroid cap (`station.max_active_asteroids = 3`) enforced
+- [x] `power_multiplier` wired to mining rate in `mining.rs`
+- [x] RequestsTabState persistence across save/load
+- [x] Starfield: circular generation, station-centered, absolute parallax (no delta drift)
+- [x] Legacy sector spawn systems removed
+
+### Phase 3: Architectural Refactor (SRP / Event Bus) 🚧 NEXT
+**Goal:** Decouple narrative logic from core simulation before adding new features. Fix structural strain identified during Phase 2.  
+**Prerequisite:** Phase 2 physical device verification complete.
+
+**Known issues to resolve:**
+- `autopilot.rs` handles navigation geometry, state machine transitions, docking sequences, AND narrative bottle collection — too many responsibilities
+- UI systems directly mutate core game state (e.g. `station.power_multiplier += 0.25`) — no central upgrade/economy system
+- Hardcoded fallback behaviors create silent failure modes
+- Initialization logic scattered across multiple systems (legacy dual-spawn bug)
+
+**Target architecture:**
+- Event bus pattern: systems fire events, narrative/economy systems listen and respond
+- `autopilot.rs` fires `ArrivedAtTarget(Entity)` — separate narrative system handles what that means
+- Central upgrade system reads multipliers and applies them — UI only writes intent
+- Clean initialization order, no overlapping responsibilities
 
 **Deliverables:**
-- [ ] Asteroid inventory system (ore count)
-- [ ] Depletion mechanic (asteroid disappears when mined out)
-- [ ] Respawn timer (new asteroids spawn periodically)
-- [ ] Natural gameplay cycle (player manages resource flow)
+- [ ] `ArrivedAtTarget` event type and handler system
+- [ ] Bottle collection extracted from `autopilot.rs` into `narrative/bottle.rs` event handler
+- [ ] Central upgrade application system (reads `Station` multipliers, applies downstream)
+- [ ] UI fulfillment writes intent only — upgrade system applies
+- [ ] Initialization order audit: `spawn_initial_asteroids` is sole asteroid spawner
+- [ ] `cargo check` clean, zero warnings
+- [ ] Physical device verification
 
-**Estimated:** 1 week  
-**Blocker:** None (ready to start)
+### Phase 4: Narrative Drops 🔮 PLANNED
+**Goal:** Signal Log earns its place as the primary narrative surface.  
 
-### Phase 2: Station Expansion 📋 PLANNED
-**Timeline:** May 4 - May 17, 2026  
-**Goal:** Progression through station modules  
+- [ ] Memory fragments delivered through bottle collection
+- [ ] Faction voices differentiated through log entry tone
+- [ ] Additional Signal requests with escalating narrative weight
+- [ ] First Human and Pirate faction bottles
+- [ ] No dialogue trees, no cutscenes — fragments only
 
-**Deliverables:**
-- [ ] Module system (upgrades unlock new capabilities)
-- [ ] Upgrade costs (escalating, meaningful progression)
-- [ ] Unlock gates (module A enables asteroid type B)
-- [ ] Visual feedback (station grows as upgraded)
-
-**Estimated:** 2 weeks  
-**Dependency:** Phase 1c complete
-
-### Phase 3: Faction System 📋 PLANNED
-**Timeline:** May 18 - May 31, 2026  
-**Goal:** First NPC interaction, trade mechanics  
-
-**Deliverables:**
-- [ ] Faction appearance (unmanned drone at boundary)
-- [ ] Trade board (specific resource requests)
-- [ ] Reputation system (trades affect standing)
-- [ ] Story hints (dialogue reveals mystery)
-
-**Estimated:** 2 weeks  
-**Dependency:** Phase 2 complete (need surplus production)
-
-### Phase 4: Discovery & Narrative 🔮 FUTURE
-**Timeline:** June 1 - June 21, 2026  
-**Goal:** Uncover what happened, factions reveal conflicts  
-
-**Deliverables:**
-- [ ] Faction conflicts emerge
-- [ ] Story logs discovered
-- [ ] Multiple faction paths available
-- [ ] Endgame direction clarifies
-
-**Estimated:** 3 weeks  
-**Dependency:** Phase 3 complete
-
-### Phase 5: Codebase Refactor 🔮 FUTURE
-**Timeline:** June 22 - July 5, 2026  
-**Goal:** Organize code for maintainability  
-
-**Deliverables:**
-- [ ] Component cleanup (split bloated components)
-- [ ] System organization (group related systems)
-- [ ] Documentation (explain architecture)
-- [ ] Test coverage (add missing tests)
-
-**Estimated:** 2 weeks  
-**Dependency:** Phase 4 complete (lock gameplay first)
+### Future Intentions (not yet phased)
+- Remaining multiplier wiring: cargo capacity, ship speed
+- Faction name finalization (Human, Borg, Pirate placeholders)
+- Additional faction Bottles and request cards per faction
+- Upgrade cap expansion via requests (spawn rate, lifespan, drone count)
+- Scanning mechanic (ore identification before mining)
+- Circular galaxy starmap UI overlay
+- Viewport scroll bounding
+- Play Store public release prep
 
 ---
 
@@ -163,14 +170,15 @@
 
 ## Milestones
 
-| Milestone | Target Date | Status | Notes |
-|-----------|------------|--------|-------|
-| Phase 1c Complete | May 3, 2026 | On track | Asteroid lifecycle working |
-| Phase 2 Complete | May 17, 2026 | Planned | Station modules |
-| Phase 3 Complete | May 31, 2026 | Planned | Faction system |
-| Phase 4 Complete | June 21, 2026 | Planned | Story reveals |
-| Phase 5 Complete | July 5, 2026 | Planned | Codebase refactor |
-| v1.0 Ready | July 1, 2026 | Planned | Feature complete |
+| Milestone | Date | Status |
+|-----------|------|--------|
+| Phase 1 Complete | April 25, 2026 | ✅ Done |
+| Phase 1c Complete | April 26, 2026 | ✅ Done |
+| Phase 2 Complete | April 27, 2026 | ✅ Done — `v2.0.0-phase2-complete` |
+| Starmap Parallax Fix | April 27, 2026 | ✅ Done — `v2.1.0-starmap-parallax-fix` |
+| Phase 3 Complete | TBD | 🚧 Next |
+| Phase 4 Complete | TBD | 🔮 Planned |
+| Play Store Release | TBD | 🔮 Future |
 
 ---
 
@@ -258,5 +266,4 @@
 
 ---
 
-*Last updated: April 26, 2026*  
-*Next update: May 3, 2026 (Phase 1c completion)*
+*Last updated: April 27, 2026 — Phase 2 complete, Phase 3 planning begins.*
