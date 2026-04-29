@@ -65,6 +65,9 @@ fn main() {
         .add_systems(OnExit(AppState::MainMenu), (
             scenes::main_menu::cleanup_menu,
         ))
+        .add_systems(OnExit(AppState::InGame), (
+            cleanup_world_entities,
+        ))
         .add_systems(Update, (
             scenes::main_menu::main_menu_system,
             scenes::main_menu::menu_star_drift_system,
