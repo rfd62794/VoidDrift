@@ -23,49 +23,38 @@ pub fn cleanup_world_entities(
     }
 }
 
-/// Resets runtime resources to a clean state (call on OnExit(InGame))
+/// Resets all runtime resources to a clean state before world spawn.
 pub fn reset_game_resources(
     mut queue: ResMut<ShipQueue>,
     mut cam_delta: ResMut<CameraDelta>,
     mut signal_log: ResMut<SignalLog>,
+    mut map_pan_state: ResMut<MapPanState>,
+    mut opening_sequence: ResMut<OpeningSequence>,
+    mut drawer_state: ResMut<DrawerState>,
+    mut world_view_rect: ResMut<WorldViewRect>,
 ) {
     *queue = ShipQueue::default();
     *cam_delta = CameraDelta::default();
     *signal_log = SignalLog::default();
+    *map_pan_state = MapPanState::default();
+    *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
+    *drawer_state = DrawerState::Collapsed;
+    *world_view_rect = WorldViewRect::default();
 }
 
-/// Spawns the world objects, ship, and HUD.
+/// Spawns the world objects, ship, and HUD. Resource reset handled by reset_game_resources.
 pub fn setup_world(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
-    mut camera_delta: ResMut<CameraDelta>,
-    mut map_pan_state: ResMut<MapPanState>,
-    mut opening_sequence: ResMut<OpeningSequence>,
-    mut signal_log: ResMut<SignalLog>,
-    mut drawer_state: ResMut<DrawerState>,
-    mut world_view_rect: ResMut<WorldViewRect>,
-    mut queue: ResMut<ShipQueue>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
-
-    // Reset resources to clean state
-    *camera_delta = CameraDelta::default();
-    *map_pan_state = MapPanState::default();
-    *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
-    *drawer_state = DrawerState::Collapsed;
-    *world_view_rect = WorldViewRect::default();
-    *queue = ShipQueue::default(); // Always start with 0 — opening sequence gifts count=1 on complete
-    
-    // Reset SignalLog completely
-    *signal_log = SignalLog::default();
 
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
     spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server);
-    // queue starts at 0 — opening sequence will gift available_count += 1 on completion
     spawn_station(&mut commands, &mut meshes, &mut materials);
     spawn_berths(&mut commands);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);

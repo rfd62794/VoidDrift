@@ -79,12 +79,15 @@ fn main() {
         .add_event::<RepairStationEvent>()
         .add_event::<OpeningCompleteEvent>()
         .add_event::<DroneDispatched>()
+        .add_event::<InsufficientLaserEvent>()
+        .add_event::<SignalFired>()
         .add_systems(Update, (
             systems::persistence::save::autosave_system,
             systems::persistence::save::save_request_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
+            systems::setup::reset_game_resources,
             systems::setup::setup_world,
             systems::asteroid::spawn::spawn_initial_asteroids,
             systems::visuals::debug_log::setup_debug_log_system,
@@ -132,6 +135,7 @@ fn main() {
             systems::narrative::opening_sequence::opening_sequence_system,
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
+            systems::narrative::quest::quest_signal_system,
             systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,

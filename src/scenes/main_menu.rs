@@ -267,154 +267,176 @@ pub fn ingame_startup_system(
     mut requests_tab: ResMut<RequestsTabState>,
 ) {
     if let Some(save_data) = menu_state.pending_load.take() {
-        // LOAD PATH — apply save data, skip opening sequence
-        // Restore opening phase
-        opening.phase = match save_data.opening_phase.as_str() {
-            "Adrift"           => OpeningPhase::Adrift,
-            "SignalIdentified" => OpeningPhase::SignalIdentified,
-            "AutoPiloting"     => OpeningPhase::AutoPiloting,
-            "InRange"          => OpeningPhase::InRange,
-            "Docked"           => OpeningPhase::Docked,
-            "Complete"         => OpeningPhase::Complete,
-            _                  => OpeningPhase::Complete,
-        };
-        opening.timer = 0.0;
+        restore_save_state(
+            &save_data,
+            &mut opening,
+            &mut signal_log,
+            &mut station_query,
+            &mut active_tab,
+            &mut queue,
+            &opening_drone_query,
+            &mut commands,
+            &mut requests_tab,
+        );
+        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
+    }
+    // NEW GAME PATH: opening sequence runs normally — no state to restore.
 
-        // Only despawn the opening drone if the intro is actually finished
-        if opening.phase == OpeningPhase::Complete {
-            for ent in opening_drone_query.iter() {
-                commands.entity(ent).despawn_recursive();
-            }
+    apply_dev_mode_signal(&mut menu_state, &mut signal_log);
+}
+
+/// Restores all game state from a save file. No entity spawning.
+fn restore_save_state(
+    save_data: &SaveData,
+    opening: &mut OpeningSequence,
+    signal_log: &mut SignalLog,
+    station_query: &mut Query<&mut Station, (With<Station>, Without<Ship>)>,
+    active_tab: &mut ActiveStationTab,
+    queue: &mut ShipQueue,
+    opening_drone_query: &Query<Entity, With<InOpeningSequence>>,
+    commands: &mut Commands,
+    requests_tab: &mut RequestsTabState,
+) {
+    opening.phase = match save_data.opening_phase.as_str() {
+        "Adrift"           => OpeningPhase::Adrift,
+        "SignalIdentified" => OpeningPhase::SignalIdentified,
+        "AutoPiloting"     => OpeningPhase::AutoPiloting,
+        "InRange"          => OpeningPhase::InRange,
+        "Docked"           => OpeningPhase::Docked,
+        "Complete"         => OpeningPhase::Complete,
+        _                  => OpeningPhase::Complete,
+    };
+    opening.timer = 0.0;
+
+    if opening.phase == OpeningPhase::Complete {
+        for ent in opening_drone_query.iter() {
+            commands.entity(ent).despawn_recursive();
         }
-
-        // Restore the queue count from save
-        queue.available_count = save_data.ship_hulls as u32;
-
-        // Emergency sanity check: if intro is skipped/finished but fleet is 0, gift 1 drone
-        if opening.phase == OpeningPhase::Complete && queue.available_count == 0 {
-            queue.available_count = 1;
-            info!("[Voidrift] Load sanity check: Gifting emergency drone to empty fleet.");
-        }
-
-        // Restore station state to the just-spawned station entity
-        if let Ok(mut station) = station_query.get_single_mut() {
-            station.online            = save_data.station_online;
-            station.iron_reserves       = save_data.iron;
-            station.iron_ingots         = save_data.iron_ingots;
-            station.tungsten_reserves   = save_data.tungsten;
-            station.tungsten_ingots     = save_data.tungsten_ingots;
-            station.nickel_reserves     = save_data.nickel;
-            station.nickel_ingots       = save_data.nickel_ingots;
-            station.aluminum_reserves   = save_data.aluminum;
-            station.aluminum_ingots     = save_data.aluminum_ingots;
-            station.aluminum_canisters  = save_data.aluminum_canisters;
-            station.hull_plate_reserves = save_data.hull_plates;
-            station.thruster_reserves   = save_data.thruster_reserves;
-            // ship_hulls restored to queue above
-            station.ai_cores            = save_data.ai_cores;
-            station.repair_progress     = save_data.repair_progress;
-            station.drone_build_progress = save_data.drone_build_progress;
-            station.power_multiplier    = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
-        }
-
-        // Restore active tab
-        *active_tab = match save_data.active_tab.as_str() {
-            "Cargo"      => ActiveStationTab::Cargo,
-            "Production" => ActiveStationTab::Production,
-            "Requests"   => ActiveStationTab::Requests,
-            _            => ActiveStationTab::Cargo,
-        };
-
-        // Restore requests state
-        requests_tab.collected_requests = save_data.collected_requests.clone();
-
-        // Restore signal log fired IDs so already-seen signals don't replay
-        signal_log.fired = save_data.signal_fired_ids.iter().copied().collect();
-
-        signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
-        signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
-
-        // ── RESTORE ACTIVE DRONES ──
-        for d in save_data.drones.iter() {
-            let state = match d.state.as_str() {
-                "Idle"       => ShipState::Idle,
-                "Navigating" => ShipState::Navigating,
-                "Mining"     => ShipState::Mining,
-                "Docked"     => ShipState::Docked,
-                _            => ShipState::Navigating,
-            };
-            let ore_type = match d.ore_type.as_str() {
-                "Iron"     => OreDeposit::Iron,
-                "Tungsten" => OreDeposit::Tungsten,
-                "Nickel"   => OreDeposit::Nickel,
-                _          => OreDeposit::Iron,
-            };
-
-            let ship_ent = commands.spawn((
-                Ship {
-                    state,
-                    speed: crate::constants::SHIP_SPEED,
-                    cargo: d.cargo,
-                    cargo_type: ore_type,
-                    cargo_capacity: crate::constants::CARGO_CAPACITY,
-                    laser_tier: LaserTier::Basic,
-                    current_mining_target: None,
-                },
-                AutonomousShipTag,
-                LastHeading(d.heading),
-                Transform::from_xyz(d.pos_x, d.pos_y, crate::constants::Z_SHIP),
-                Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
-                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
-            )).id();
-
-            // If it had a destination, restore Autopilot
-            if d.assignment_pos_x != 0.0 || d.assignment_pos_y != 0.0 {
-                commands.entity(ship_ent).insert(AutopilotTarget {
-                    destination: Vec2::new(d.assignment_pos_x, d.assignment_pos_y),
-                    target_entity: None, // Asteroid entity link is lost, but position is enough
-                });
-            }
-
-            commands.entity(ship_ent).with_children(|parent| {
-                parent.spawn((
-                    ThrusterGlow,
-                    Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-                    MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
-                    Transform::from_xyz(0.0, -18.0, 0.1),
-                    Visibility::Hidden,
-                ));
-                parent.spawn((
-                    MiningBeam,
-                    Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-                    MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))),
-                    Transform::from_xyz(0.0, 0.0, crate::constants::Z_BEAM - crate::constants::Z_SHIP),
-                    Visibility::Hidden,
-                ));
-                parent.spawn((
-                    Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
-                    MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
-                    Transform::from_xyz(0.0, 24.0, crate::constants::Z_CARGO_BAR - crate::constants::Z_SHIP),
-                ));
-                parent.spawn((
-                    ShipCargoBarFill,
-                    Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
-                    MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
-                    Transform::from_xyz(0.0, 24.0, (crate::constants::Z_CARGO_BAR - crate::constants::Z_SHIP) + 0.05),
-                ));
-            });
-        }
-    } else {
-        // NEW GAME PATH — opening sequence runs normally
     }
 
-    // Developer mode signal (only once per session)
+    queue.available_count = save_data.ship_hulls as u32;
+    if opening.phase == OpeningPhase::Complete && queue.available_count == 0 {
+        queue.available_count = 1;
+        info!("[Voidrift] Load sanity check: Gifting emergency drone to empty fleet.");
+    }
+
+    if let Ok(mut station) = station_query.get_single_mut() {
+        station.online               = save_data.station_online;
+        station.iron_reserves        = save_data.iron;
+        station.iron_ingots          = save_data.iron_ingots;
+        station.tungsten_reserves    = save_data.tungsten;
+        station.tungsten_ingots      = save_data.tungsten_ingots;
+        station.nickel_reserves      = save_data.nickel;
+        station.nickel_ingots        = save_data.nickel_ingots;
+        station.aluminum_reserves    = save_data.aluminum;
+        station.aluminum_ingots      = save_data.aluminum_ingots;
+        station.aluminum_canisters   = save_data.aluminum_canisters;
+        station.hull_plate_reserves  = save_data.hull_plates;
+        station.thruster_reserves    = save_data.thruster_reserves;
+        station.ai_cores             = save_data.ai_cores;
+        station.repair_progress      = save_data.repair_progress;
+        station.drone_build_progress = save_data.drone_build_progress;
+        station.power_multiplier     = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
+    }
+
+    *active_tab = match save_data.active_tab.as_str() {
+        "Cargo"      => ActiveStationTab::Cargo,
+        "Production" => ActiveStationTab::Production,
+        "Requests"   => ActiveStationTab::Requests,
+        _            => ActiveStationTab::Cargo,
+    };
+
+    requests_tab.collected_requests = save_data.collected_requests.clone();
+
+    signal_log.fired = save_data.signal_fired_ids.iter().copied().collect();
+    signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
+    signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
+}
+
+/// Spawns saved drone entities from save data. State restore only — no game logic.
+fn spawn_saved_drones(
+    save_data: &SaveData,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    use crate::components::{OreDeposit, Ship, ShipState, LaserTier, AutonomousShipTag, LastHeading, AutopilotTarget, ThrusterGlow, MiningBeam, ShipCargoBarFill};
+    use crate::constants::*;
+
+    for d in save_data.drones.iter() {
+        let state = match d.state.as_str() {
+            "Idle"       => ShipState::Idle,
+            "Navigating" => ShipState::Navigating,
+            "Mining"     => ShipState::Mining,
+            "Docked"     => ShipState::Docked,
+            _            => ShipState::Navigating,
+        };
+        let ore_type = match d.ore_type.as_str() {
+            "Iron"     => OreDeposit::Iron,
+            "Tungsten" => OreDeposit::Tungsten,
+            "Nickel"   => OreDeposit::Nickel,
+            _          => OreDeposit::Iron,
+        };
+
+        let ship_ent = commands.spawn((
+            Ship {
+                state,
+                speed: SHIP_SPEED,
+                cargo: d.cargo,
+                cargo_type: ore_type,
+                cargo_capacity: CARGO_CAPACITY,
+                laser_tier: LaserTier::Basic,
+                current_mining_target: None,
+            },
+            AutonomousShipTag,
+            LastHeading(d.heading),
+            Transform::from_xyz(d.pos_x, d.pos_y, Z_SHIP),
+            Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
+            MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+        )).id();
+
+        if d.assignment_pos_x != 0.0 || d.assignment_pos_y != 0.0 {
+            commands.entity(ship_ent).insert(AutopilotTarget {
+                destination: Vec2::new(d.assignment_pos_x, d.assignment_pos_y),
+                target_entity: None,
+            });
+        }
+
+        commands.entity(ship_ent).with_children(|parent| {
+            parent.spawn((
+                ThrusterGlow,
+                Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
+                MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
+                Transform::from_xyz(0.0, -18.0, 0.1),
+                Visibility::Hidden,
+            ));
+            parent.spawn((
+                MiningBeam,
+                Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
+                MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))),
+                Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
+                Visibility::Hidden,
+            ));
+            parent.spawn((
+                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
+            ));
+            parent.spawn((
+                ShipCargoBarFill,
+                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
+                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+                Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
+            ));
+        });
+    }
+}
+
+/// Writes developer mode signal log entries (once per session).
+fn apply_dev_mode_signal(menu_state: &mut MainMenuState, signal_log: &mut SignalLog) {
     if menu_state.developer_mode && !menu_state.dev_mode_signal_fired {
-        signal_log.entries.push_back(
-            "ECHO: DEVELOPER MODE ENABLED.".to_string()
-        );
-        signal_log.entries.push_back(
-            "ECHO: STAGE SAVES NOW ACCESSIBLE.".to_string()
-        );
+        signal_log.entries.push_back("ECHO: DEVELOPER MODE ENABLED.".to_string());
+        signal_log.entries.push_back("ECHO: STAGE SAVES NOW ACCESSIBLE.".to_string());
         menu_state.dev_mode_signal_fired = true;
     }
 }

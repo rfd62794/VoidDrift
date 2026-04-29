@@ -3,9 +3,9 @@ use crate::components::*;
 use crate::constants::*;
 
 pub fn mining_system(
-    time: Res<Time>, 
-    mut signal_log: ResMut<SignalLog>,
-    mut ship_query: Query<(Entity, &mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<ActiveAsteroid>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>, 
+    time: Res<Time>,
+    mut ship_query: Query<(Entity, &mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<ActiveAsteroid>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
+    mut insufficient_laser_events: EventWriter<InsufficientLaserEvent>, 
     mut asteroid_query: Query<(Entity, &mut ActiveAsteroid, &Transform, Option<&MeshMaterial2d<ColorMaterial>>), (Without<Ship>, Without<MiningBeam>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut beam_query: Query<(Entity, &mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<ActiveAsteroid>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -35,7 +35,7 @@ pub fn mining_system(
                         };
 
                         if !can_mine {
-                            signal_log.entries.push_front("> INSUFFICIENT LASER RATING. UPGRADE REQUIRED.".to_string());
+                            insufficient_laser_events.send(InsufficientLaserEvent { ship_entity: ship_ent });
                             ship.state = ShipState::Idle;
                             continue;
                         }

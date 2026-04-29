@@ -39,3 +39,17 @@ pub struct OpeningCompleteEvent;
 /// economy.rs decrements queue.available_count on receive.
 #[derive(Event)]
 pub struct DroneDispatched;
+
+/// Fired by mining_system when a ship cannot mine its target due to insufficient laser tier.
+/// narrative_events.rs writes the signal log entry.
+#[derive(Event)]
+pub struct InsufficientLaserEvent {
+    pub ship_entity: Entity,
+}
+
+/// Fired by signal_system each time a new signal is committed to the log.
+/// quest_update_system reacts to update quest objective states.
+#[derive(Event)]
+pub struct SignalFired {
+    pub signal_id: u32,
+}

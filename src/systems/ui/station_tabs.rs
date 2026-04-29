@@ -78,14 +78,6 @@ pub fn render_queue_card(
             }
 
             ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                let btn_size = egui::vec2(40.0, 32.0);
-                if ui.add_enabled(max_possible >= 1, egui::Button::new("+1").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, 1); */ }
-                if ui.add_enabled(max_possible >= 10, egui::Button::new("+10").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, 10); */ }
-                if ui.add_enabled(max_possible >= 1, egui::Button::new("MAX").min_size(btn_size)).clicked() { /* crate::systems::economy::queue_job(station, queue, op, max_possible); */ }
-            });
-
-            ui.add_space(4.0);
             if let Some(job) = queue {
                 if ui.add(egui::Button::new("CLEAR QUEUE").min_size(egui::vec2(160.0, 30.0))).clicked() {
                     job.batches = 1; job.clearing = true;
