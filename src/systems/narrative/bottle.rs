@@ -24,7 +24,14 @@ pub fn bottle_spawn_system(
     mut bottle_timer: ResMut<BottleSpawnTimer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    requests_tab: Res<RequestsTabState>,
 ) {
+    // On load: if FirstLight card already exists, bottle was already collected.
+    // Set spawned=true so the timer never fires again.
+    if requests_tab.collected_requests.iter().any(|r| r.id == RequestId::FirstLight) {
+        bottle_timer.spawned = true;
+    }
+
     if bottle_timer.spawned {
         return;
     }
