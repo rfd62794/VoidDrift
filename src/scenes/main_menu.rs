@@ -256,7 +256,7 @@ fn spawn_menu_starfield(
     let star_lg = meshes.add(Rectangle::new(3.0, 3.0));
     let radius = 1200.0;
 
-    for _ in 0..600 {
+    for _ in 0..1600 {
         let angle = rng.gen_range(0.0..std::f32::consts::TAU);
         let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
         let x = angle.cos() * distance;
@@ -268,7 +268,7 @@ fn spawn_menu_starfield(
             Transform::from_xyz(x, y, Z_STARS_FAR),
         ));
     }
-    for _ in 0..200 {
+    for _ in 0..600 {
         let angle = rng.gen_range(0.0..std::f32::consts::TAU);
         let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
         let x = angle.cos() * distance;
@@ -279,6 +279,26 @@ fn spawn_menu_starfield(
             MeshMaterial2d(near_mat.clone()),
             Transform::from_xyz(x, y, Z_STARS_NEAR),
         ));
+    }
+}
+
+pub fn menu_star_drift_system(
+    time: Res<Time>,
+    mut star_query: Query<&mut Transform, With<MenuStar>>,
+) {
+    let drift = Vec2::new(8.0, -3.0) * time.delta_secs();
+    let wrap_radius = 1200.0;
+
+    for mut transform in star_query.iter_mut() {
+        transform.translation.x += drift.x;
+        transform.translation.y += drift.y;
+
+        // Wrap: if star drifts outside the spawn radius, teleport back to opposite edge
+        let pos = transform.translation.truncate();
+        if pos.length() > wrap_radius {
+            transform.translation.x = -pos.x * 0.9;
+            transform.translation.y = -pos.y * 0.9;
+        }
     }
 }
 

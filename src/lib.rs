@@ -67,6 +67,7 @@ fn main() {
         ))
         .add_systems(Update, (
             scenes::main_menu::main_menu_system,
+            scenes::main_menu::menu_star_drift_system,
         ).run_if(in_state(AppState::MainMenu)))
         .add_systems(Update, (
             scenes::main_menu::save_overlay_system,
