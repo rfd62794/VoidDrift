@@ -1,12 +1,11 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use crate::systems::persistence::save::AutosaveEvent;
 
 /// Moves ships with AutopilotTarget toward their destination.
 /// On arrival:
 ///   - Asteroid  → transitions to Mining
-///   - Berth     → unloads cargo, despawns ship, increments ShipQueue
+///   - Berth     → fires ShipDockedWithCargo or ShipDockedWithBottle event
 ///   - Station   → opening sequence hub dock (fallback only)
 pub fn autopilot_system(
     time: Res<Time>,
@@ -14,14 +13,11 @@ pub fn autopilot_system(
     berth_query: Query<(Entity, &Berth)>,
     asteroid_query: Query<&ActiveAsteroid>,
     mut station_query: Query<(Entity, &mut Station, &Transform), BaseStationFilter>,
-    mut active_tab: ResMut<ActiveStationTab>,
     mut commands: Commands,
-    mut autosave_events: EventWriter<AutosaveEvent>,
-    mut queue: ResMut<ShipQueue>,
     bottle_query: Query<&ActiveBottle>,
     carrying_query: Query<&CarryingBottle>,
-    mut requests_tab: ResMut<RequestsTabState>,
-    mut signal_log: ResMut<SignalLog>,
+    mut cargo_docked_events: EventWriter<ShipDockedWithCargo>,
+    mut bottle_docked_events: EventWriter<ShipDockedWithBottle>,
 ) {
     for (mut ship, mut transform, mut target, entity) in query.iter_mut() {
         if ship.state == ShipState::Navigating {
@@ -51,40 +47,17 @@ pub fn autopilot_system(
                         // Arrived at asteroid → start mining
                         ship.state = ShipState::Mining;
                     } else if berth_query.get(target_ent).is_ok() {
-                        // Arrived at berth → unload, despawn, return to queue
-                        if let Ok((_station_ent, mut station, _)) = station_query.get_single_mut() {
-                            match ship.cargo_type {
-                                OreDeposit::Iron     => station.iron_reserves     += ship.cargo,
-                                OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
-                                OreDeposit::Nickel   => station.nickel_reserves   += ship.cargo,
-                                OreDeposit::Aluminum => station.aluminum_reserves += ship.cargo,
-                            }
-                            *active_tab = ActiveStationTab::Cargo;
-                            station.dock_state = StationDockState::Resuming;
-                            station.resume_timer = STATION_RESUME_DELAY;
-                            
-                            // Check if carrying bottle
-                            if carrying_query.get(entity).is_ok() {
-                                bevy::log::info!("CarryingBottle unload branch reached");
-                                // Narrative Event!
-                                signal_log.entries.push_back("SIGNAL RECEIVED — ORIGIN UNKNOWN\nFrequency matched. You were expected.\nWe have observed your work. It is... acceptable.\nA proposal follows.".to_string());
-                                if signal_log.entries.len() > 10 {
-                                    signal_log.entries.pop_front();
-                                }
-                                requests_tab.collected_requests.push(CollectedRequest {
-                                    id: RequestId::FirstLight,
-                                    faction: FactionId::Signal,
-                                    fulfilled: false,
-                                });
-                                commands.entity(entity).remove::<CarryingBottle>();
-                            }
+                        // Arrived at berth → fire arrival event, economy/narrative handled downstream
+                        if carrying_query.get(entity).is_ok() {
+                            bottle_docked_events.send(ShipDockedWithBottle { ship_entity: entity });
+                        } else {
+                            cargo_docked_events.send(ShipDockedWithCargo {
+                                ship_entity: entity,
+                                ore_type: ship.cargo_type,
+                                amount: ship.cargo,
+                            });
                         }
-
-                        queue.available_count += 1;
-                        info!("[Voiddrift] Ship docked & unloaded. Queue: {}", queue.available_count);
-                        autosave_events.send(AutosaveEvent);
-                        commands.entity(entity).despawn_recursive();
-                        // Entity is gone — stop processing this ship
+                        // Entity will be despawned by economy system this frame
                         continue;
 
                     } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {

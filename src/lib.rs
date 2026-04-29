@@ -73,6 +73,11 @@ fn main() {
         ).run_if(in_state(AppState::InGame)))
         .add_event::<systems::persistence::save::AutosaveEvent>()
         .add_event::<systems::persistence::save::SaveRequestEvent>()
+        .add_event::<ShipDockedWithCargo>()
+        .add_event::<ShipDockedWithBottle>()
+        .add_event::<FulfillRequestEvent>()
+        .add_event::<RepairStationEvent>()
+        .add_event::<OpeningCompleteEvent>()
         .add_systems(Update, (
             systems::persistence::save::autosave_system,
             systems::persistence::save::save_request_system,
@@ -85,7 +90,9 @@ fn main() {
             scenes::main_menu::ingame_startup_system,
         ).chain())
         .add_systems(Update, (
-            systems::ship_control::autopilot::autopilot_system, 
+            systems::ship_control::autopilot::autopilot_system,
+            systems::game_loop::economy::ship_docked_economy_system,
+            systems::narrative::narrative_events::narrative_event_system,
             systems::visuals::map::camera_follow_system,                
             systems::visuals::visuals::starfield_scroll_system,
             systems::visuals::visuals::station_rotation_system,

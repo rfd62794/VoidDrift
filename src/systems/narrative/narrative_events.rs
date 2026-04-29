@@ -1,0 +1,36 @@
+use bevy::prelude::*;
+use crate::components::*;
+use crate::constants::*;
+
+pub fn narrative_event_system(
+    mut bottle_events: EventReader<ShipDockedWithBottle>,
+    mut opening_events: EventReader<OpeningCompleteEvent>,
+    mut signal_log: ResMut<SignalLog>,
+    mut requests_tab: ResMut<RequestsTabState>,
+    mut queue: ResMut<ShipQueue>,
+    mut station_query: Query<&mut Station>,
+    mut commands: Commands,
+) {
+    for event in bottle_events.read() {
+        info!("CarryingBottle unload branch reached");
+        signal_log.entries.push_back("SIGNAL RECEIVED — ORIGIN UNKNOWN\nFrequency matched. You were expected.\nWe have observed your work. It is... acceptable.\nA proposal follows.".to_string());
+        if signal_log.entries.len() > 10 {
+            signal_log.entries.pop_front();
+        }
+        requests_tab.collected_requests.push(CollectedRequest {
+            id: RequestId::FirstLight,
+            faction: FactionId::Signal,
+            fulfilled: false,
+        });
+        commands.entity(event.ship_entity).remove::<CarryingBottle>();
+    }
+
+    for _event in opening_events.read() {
+        queue.available_count += 1;
+        if let Ok(mut station) = station_query.get_single_mut() {
+            station.dock_state = StationDockState::Resuming;
+            station.resume_timer = STATION_RESUME_DELAY;
+        }
+        info!("[Voidrift] OpeningCompleteEvent received. Queue: {}", queue.available_count);
+    }
+}

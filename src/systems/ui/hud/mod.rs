@@ -102,6 +102,8 @@ pub struct HudParams<'w, 's> {
     pub queue: Res<'w, ShipQueue>,
     pub prod_tab: ResMut<'w, ProductionTabState>,
     pub req_tab: ResMut<'w, RequestsTabState>,
+    pub repair_events: EventWriter<'w, RepairStationEvent>,
+    pub fulfill_events: EventWriter<'w, FulfillRequestEvent>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -188,6 +190,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &params.queue,
                         &mut params.prod_tab,
                         &mut params.req_tab,
+                        &mut params.repair_events,
+                        &mut params.fulfill_events,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
