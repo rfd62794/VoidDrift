@@ -117,7 +117,6 @@ fn main() {
         .add_systems(Update, (
             // --- Station, Narrative & UI ---
             systems::ui::hud::hud_ui_system,
-            systems::ui::hud::station_visual_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
             systems::visuals::map::pinch_zoom_system,

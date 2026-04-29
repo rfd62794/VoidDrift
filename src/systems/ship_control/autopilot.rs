@@ -120,6 +120,10 @@ pub fn autopilot_system(
                                     target_entity: Some(berth_ent),
                                 });
                             } else {
+                                bevy::log::warn!(
+                                    "autopilot: CarryingBottle ship {:?} found no berth — falling back to station hub",
+                                    entity
+                                );
                                 commands.entity(entity).insert(AutopilotTarget {
                                     destination: s_transform.translation.truncate(),
                                     target_entity: None,
@@ -130,9 +134,17 @@ pub fn autopilot_system(
                     } else {
                         // Target entity no longer exists (asteroid despawned before arrival).
                         // Transition to mining anyway so the mining system can retarget or send it home.
+                        bevy::log::warn!(
+                            "autopilot: target entity {:?} matched no query arm — defaulting to Mining",
+                            target_ent
+                        );
                         ship.state = ShipState::Mining;
                     }
                 } else {
+                    bevy::log::warn!(
+                        "autopilot: ship {:?} has no target entity — setting Idle",
+                        entity
+                    );
                     ship.state = ShipState::Idle;
                 }
             } else {

@@ -18,7 +18,7 @@ pub fn cleanup_world_entities(
     
     for entity in entities_to_despawn {
         if commands.get_entity(entity).is_some() {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }

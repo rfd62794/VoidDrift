@@ -85,6 +85,11 @@ pub fn mining_system(
                         }
                     } else {
                         // Too far, lose target
+                        bevy::log::warn!(
+                            "mining: ship {:?} too far from target {:?} — clearing mining target",
+                            ship_ent,
+                            ship.current_mining_target
+                        );
                         ship.current_mining_target = None;
                     }
                 } else {
@@ -146,6 +151,10 @@ pub fn mining_system(
                             target_entity: Some(berth_ent),
                         });
                     } else {
+                        bevy::log::warn!(
+                            "mining: ship {:?} returning to station but no berth found — targeting hub position",
+                            ship_ent
+                        );
                         commands.entity(ship_ent).insert(AutopilotTarget {
                             destination: s_transform.translation.truncate(),
                             target_entity: None,
