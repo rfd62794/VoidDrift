@@ -65,27 +65,42 @@ fn main() {
         .add_systems(OnExit(AppState::MainMenu), (
             scenes::main_menu::cleanup_menu,
         ))
+        .add_systems(OnExit(AppState::InGame), (
+            cleanup_world_entities,
+        ))
         .add_systems(Update, (
             scenes::main_menu::main_menu_system,
+            scenes::main_menu::menu_star_drift_system,
         ).run_if(in_state(AppState::MainMenu)))
         .add_systems(Update, (
             scenes::main_menu::save_overlay_system,
         ).run_if(in_state(AppState::InGame)))
         .add_event::<systems::persistence::save::AutosaveEvent>()
         .add_event::<systems::persistence::save::SaveRequestEvent>()
+        .add_event::<ShipDockedWithCargo>()
+        .add_event::<ShipDockedWithBottle>()
+        .add_event::<FulfillRequestEvent>()
+        .add_event::<RepairStationEvent>()
+        .add_event::<OpeningCompleteEvent>()
+        .add_event::<DroneDispatched>()
+        .add_event::<InsufficientLaserEvent>()
+        .add_event::<SignalFired>()
         .add_systems(Update, (
             systems::persistence::save::autosave_system,
             systems::persistence::save::save_request_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
+            systems::setup::reset_game_resources,
             systems::setup::setup_world,
             systems::asteroid::spawn::spawn_initial_asteroids,
             systems::visuals::debug_log::setup_debug_log_system,
             scenes::main_menu::ingame_startup_system,
         ).chain())
         .add_systems(Update, (
-            systems::ship_control::autopilot::autopilot_system, 
+            systems::ship_control::autopilot::autopilot_system,
+            systems::game_loop::economy::ship_docked_economy_system,
+            systems::narrative::narrative_events::narrative_event_system,
             systems::visuals::map::camera_follow_system,                
             systems::visuals::visuals::starfield_scroll_system,
             systems::visuals::visuals::station_rotation_system,
@@ -124,6 +139,7 @@ fn main() {
             systems::narrative::opening_sequence::opening_sequence_system,
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
+            systems::narrative::quest::quest_signal_system,
             systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,

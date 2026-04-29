@@ -16,7 +16,7 @@ pub fn opening_sequence_system(
     mut station_query: Query<(&mut Station, &Transform), (With<Station>, Without<Ship>)>,
     mut commands: Commands,
     mut signal_log: ResMut<SignalLog>,
-    mut queue: ResMut<ShipQueue>,
+    mut opening_complete_events: EventWriter<OpeningCompleteEvent>,
 ) {
     if opening.phase == OpeningPhase::Complete {
         return;
@@ -96,13 +96,8 @@ pub fn opening_sequence_system(
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
                 commands.entity(ship_ent).despawn_recursive();
-                queue.available_count += 1;
-
-                // Resume station rotation
-                st.dock_state = StationDockState::Resuming;
-                st.resume_timer = crate::constants::STATION_RESUME_DELAY;
-
-                info!("[Voidrift] Opening complete. Drone absorbed by ECHO. Queue: {}", queue.available_count);
+                opening_complete_events.send(OpeningCompleteEvent);
+                info!("[Voidrift] Opening complete. Drone absorbed by ECHO. Firing OpeningCompleteEvent.");
             }
         }
         OpeningPhase::Complete => {}

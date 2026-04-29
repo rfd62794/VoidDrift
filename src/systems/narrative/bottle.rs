@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
+use crate::systems::ship_control::ship_spawn::spawn_bottle_drone;
 
 #[derive(Resource)]
 pub struct BottleSpawnTimer {
@@ -23,7 +24,14 @@ pub fn bottle_spawn_system(
     mut bottle_timer: ResMut<BottleSpawnTimer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    requests_tab: Res<RequestsTabState>,
 ) {
+    // On load: if FirstLight card already exists, bottle was already collected.
+    // Set spawned=true so the timer never fires again.
+    if requests_tab.collected_requests.iter().any(|r| r.id == RequestId::FirstLight) {
+        bottle_timer.spawned = true;
+    }
+
     if bottle_timer.spawned {
         return;
     }
@@ -52,7 +60,7 @@ pub fn bottle_input_system(
     touches: Res<Touches>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     bottle_query: Query<(Entity, &GlobalTransform), With<ActiveBottle>>,
-    mut queue: ResMut<ShipQueue>,
+    queue: Res<ShipQueue>,
     mut commands: Commands,
     opening: Res<OpeningSequence>,
     state: Res<State<GameState>>,
@@ -60,6 +68,7 @@ pub fn bottle_input_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     station_query: Query<(&Station, &Transform), With<Station>>,
+    mut dispatch_events: EventWriter<DroneDispatched>,
 ) {
     if opening.phase != OpeningPhase::Complete { return; }
     if touches.iter().count() >= 2 { return; }
@@ -71,47 +80,24 @@ pub fn bottle_input_system(
         if let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, touch.position()) {
             for (bottle_ent, bottle_gtransform) in bottle_query.iter() {
                 let bp = bottle_gtransform.translation().truncate();
-                
-                if world_pos.distance(bp) < 60.0 { // Mobile touch target size
+
+                if world_pos.distance(bp) < 60.0 {
                     let spawn_pos = if let Ok((_, s_transform)) = station_query.get_single() {
                         s_transform.translation.truncate()
                     } else {
                         STATION_POS
                     };
 
-                    let ship_ent = commands.spawn((
-                        Ship {
-                            state: ShipState::Navigating,
-                            speed: SHIP_SPEED,
-                            cargo: 0.0,
-                            cargo_type: OreDeposit::Iron, // Dummy
-                            cargo_capacity: CARGO_CAPACITY,
-                            laser_tier: LaserTier::Basic,
-                            current_mining_target: None,
-                        },
-                        AutonomousShipTag,
-                        LastHeading(0.0),
-                        AutopilotTarget {
-                            destination: bp,
-                            target_entity: Some(bottle_ent),
-                        },
-                        Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
-                        MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
-                        Transform::from_xyz(spawn_pos.x, spawn_pos.y, Z_SHIP),
-                    )).id();
+                    spawn_bottle_drone(
+                        &mut commands,
+                        &mut meshes,
+                        &mut materials,
+                        spawn_pos,
+                        AutopilotTarget { destination: bp, target_entity: Some(bottle_ent) },
+                    );
 
-                    commands.entity(ship_ent).with_children(|parent| {
-                        parent.spawn((
-                            ThrusterGlow,
-                            Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-                            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
-                            Transform::from_xyz(0.0, -18.0, 0.1),
-                            Visibility::Hidden,
-                        ));
-                    });
-
-                    queue.available_count -= 1;
-                    info!("[Voiddrift] Drone dispatched to collect Bottle.");
+                    dispatch_events.send(DroneDispatched);
+                    info!("[Voidrift] Drone dispatched to collect Bottle.");
 
                     if *state.get() == GameState::MapView {
                         next_state.set(GameState::SpaceView);

@@ -1,3 +1,4 @@
+use bevy::prelude::EventWriter;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
@@ -50,6 +51,8 @@ pub fn render_tab_content(
     queue: &ShipQueue,
     prod_tab: &mut ProductionTabState,
     req_tab: &mut RequestsTabState,
+    repair_events: &mut EventWriter<RepairStationEvent>,
+    fulfill_events: &mut EventWriter<FulfillRequestEvent>,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
@@ -92,8 +95,7 @@ pub fn render_tab_content(
             });
             if !station.online {
                 if ui.button("REPAIR STATION").clicked() {
-                    station.repair_progress = 1.0;
-                    station.online = true;
+                    repair_events.send(RepairStationEvent);
                 }
             }
         }
@@ -169,9 +171,10 @@ pub fn render_tab_content(
                                     } else {
                                         let can_afford = station.iron_ingots >= 25.0;
                                         if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
-                                            station.iron_ingots -= 25.0;
-                                            station.power_multiplier += 0.25;
-                                            req.fulfilled = true;
+                                            fulfill_events.send(FulfillRequestEvent {
+                                                request_id: req.id,
+                                                faction_id: req.faction,
+                                            });
                                         }
                                     }
                                 }
