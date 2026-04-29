@@ -85,3 +85,6 @@ pub struct AutopilotTarget {
 
 #[derive(Component)] pub struct ActiveBottle;
 #[derive(Component)] pub struct CarryingBottle(pub Entity);
+
+#[derive(Component)]
+pub struct MenuStar;
