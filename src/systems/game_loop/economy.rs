@@ -8,6 +8,7 @@ pub fn ship_docked_economy_system(
     mut bottle_events: EventReader<ShipDockedWithBottle>,
     mut fulfill_events: EventReader<FulfillRequestEvent>,
     mut repair_events: EventReader<RepairStationEvent>,
+    mut dispatch_events: EventReader<DroneDispatched>,
     mut station_query: Query<&mut Station>,
     mut requests_tab: ResMut<RequestsTabState>,
     mut queue: ResMut<ShipQueue>,
@@ -25,10 +26,15 @@ pub fn ship_docked_economy_system(
             station.dock_state = StationDockState::Resuming;
             station.resume_timer = STATION_RESUME_DELAY;
         }
-        queue.available_count += 1;
-        info!("[Voidrift] Ship docked & unloaded. Queue: {}", queue.available_count);
-        autosave_events.send(AutosaveEvent);
-        commands.entity(event.ship_entity).despawn_recursive();
+        if event.despawn {
+            queue.available_count += 1;
+            info!("[Voidrift] Ship docked & unloaded. Queue: {}", queue.available_count);
+            autosave_events.send(AutosaveEvent);
+            commands.entity(event.ship_entity).despawn_recursive();
+        } else {
+            info!("[Voidrift] Autonomous ship unloaded. Returning to cycle.");
+            autosave_events.send(AutosaveEvent);
+        }
     }
 
     for event in bottle_events.read() {
@@ -52,6 +58,13 @@ pub fn ship_docked_economy_system(
         if let Ok(mut station) = station_query.get_single_mut() {
             station.repair_progress = 1.0;
             station.online = true;
+        }
+    }
+
+    for _ in dispatch_events.read() {
+        if queue.available_count > 0 {
+            queue.available_count -= 1;
+            info!("[Voidrift] Drone dispatched. Queue: {}", queue.available_count);
         }
     }
 }

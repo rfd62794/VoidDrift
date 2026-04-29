@@ -78,6 +78,7 @@ fn main() {
         .add_event::<FulfillRequestEvent>()
         .add_event::<RepairStationEvent>()
         .add_event::<OpeningCompleteEvent>()
+        .add_event::<DroneDispatched>()
         .add_systems(Update, (
             systems::persistence::save::autosave_system,
             systems::persistence::save::save_request_system,

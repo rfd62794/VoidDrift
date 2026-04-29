@@ -12,7 +12,7 @@ pub fn autopilot_system(
     mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), BaseShipFilter>,
     berth_query: Query<(Entity, &Berth)>,
     asteroid_query: Query<&ActiveAsteroid>,
-    mut station_query: Query<(Entity, &mut Station, &Transform), BaseStationFilter>,
+    station_query: Query<(Entity, &Station, &Transform), BaseStationFilter>,
     mut commands: Commands,
     bottle_query: Query<&ActiveBottle>,
     carrying_query: Query<&CarryingBottle>,
@@ -55,23 +55,22 @@ pub fn autopilot_system(
                                 ship_entity: entity,
                                 ore_type: ship.cargo_type,
                                 amount: ship.cargo,
+                                despawn: true,
                             });
                         }
                         // Entity will be despawned by economy system this frame
                         continue;
 
-                    } else if let Ok((station_ent, mut station, _)) = station_query.get_mut(target_ent) {
-                        // Hub dock (opening sequence cinematic only)
-                        match ship.cargo_type {
-                            OreDeposit::Iron     => station.iron_reserves     += ship.cargo,
-                            OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
-                            OreDeposit::Nickel   => station.nickel_reserves   += ship.cargo,
-                            OreDeposit::Aluminum => station.aluminum_reserves += ship.cargo,
-                        }
+                    } else if let Ok((station_ent, _, _)) = station_query.get(target_ent) {
+                        // Hub dock (opening sequence cinematic only — opening drone carries zero cargo)
                         ship.cargo = 0.0;
                         ship.state = ShipState::Docked;
-                        station.dock_state = StationDockState::Resuming;
-                        station.resume_timer = STATION_RESUME_DELAY;
+                        cargo_docked_events.send(ShipDockedWithCargo {
+                            ship_entity: entity,
+                            ore_type: ship.cargo_type,
+                            amount: 0.0,
+                            despawn: false, // opening_sequence_system despawns this entity at t>=10.5
+                        });
                         info!("[Voidrift] Hub dock complete (opening sequence).");
                         commands.entity(entity).remove::<AutopilotTarget>().insert(DockedAt(station_ent));
                     } else if bottle_query.get(target_ent).is_ok() {

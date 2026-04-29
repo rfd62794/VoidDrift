@@ -1,24 +1,21 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
-use crate::systems::ui::add_log_entry;
-use crate::systems::persistence::save::AutosaveEvent;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
     mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
-    mut station_query: Query<(&mut Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
+    station_query: Query<(&Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
-    mut autosave_events: EventWriter<AutosaveEvent>,
+    mut cargo_docked_events: EventWriter<ShipDockedWithCargo>,
 ) {
-    if let Ok((mut station, s_transform)) = station_query.get_single_mut() {
+    if let Ok((station, s_transform)) = station_query.get_single() {
         for (ship_entity, mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     ship.state = AutonomousShipState::Outbound;
                     commands.entity(ship_entity).remove::<DockedAt>();
-                    add_log_entry(&mut station, "[STATION AI] Dispatching autonomous unit.".to_string());
                 }
                 AutonomousShipState::Outbound => {
                     let direction = assignment.target_pos - transform.translation.truncate();
@@ -38,7 +35,6 @@ pub fn autonomous_ship_system(
                 }
                 AutonomousShipState::Returning => {
                     // [PHASE B] Dynamic destination tracking for Berth 2
-                    // We use the station and transform already matched at the top of the system
                     let berth_pos = berth_world_pos(
                         s_transform.translation.truncate(),
                         station.rotation,
@@ -55,36 +51,19 @@ pub fn autonomous_ship_system(
                         if let Some((b_ent, _)) = berth_query.iter().find(|(_, b)| b.berth_type == BerthType::Drone) {
                             commands.entity(ship_entity).insert(DockedAt(b_ent));
                         }
-                        
-                        // Trigger autosave when drone docks
-                        autosave_events.send(AutosaveEvent);
-
-                        // [PHASE B] Trigger station resume if not already resuming
-                        station.dock_state = StationDockState::Resuming;
-                        station.resume_timer = STATION_RESUME_DELAY;
                     } else {
                         let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
                         transform.translation += movement.extend(0.0);
                     }
                 }
                 AutonomousShipState::Unloading => {
-                    let ore_name = match assignment.ore_type {
-                        OreDeposit::Iron => "Iron",
-                        OreDeposit::Tungsten => "Tungsten",
-                        OreDeposit::Nickel => "Nickel",
-                        OreDeposit::Aluminum => "Aluminum",
-                    };
-                    match assignment.ore_type {
-                        OreDeposit::Iron => station.iron_reserves += ship.cargo,
-                        OreDeposit::Tungsten => station.tungsten_reserves += ship.cargo,
-                        OreDeposit::Nickel => station.nickel_reserves += ship.cargo,
-                        OreDeposit::Aluminum => station.aluminum_reserves += ship.cargo,
-                    }
-
-                    let msg = format!("[STATION AI] Cargo deposited: {}. {} recovered.", assignment.sector_name, ore_name);
-                    add_log_entry(&mut station, msg);
+                    cargo_docked_events.send(ShipDockedWithCargo {
+                        ship_entity,
+                        ore_type: assignment.ore_type,
+                        amount: ship.cargo,
+                        despawn: false, // autonomous ships cycle — not despawned
+                    });
                     ship.cargo = 0.0;
-                    
                     ship.state = AutonomousShipState::Holding;
                 }
             }
