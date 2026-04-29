@@ -16,11 +16,14 @@ pub fn narrative_event_system(
         if signal_log.entries.len() > 10 {
             signal_log.entries.pop_front();
         }
-        requests_tab.collected_requests.push(CollectedRequest {
-            id: RequestId::FirstLight,
-            faction: FactionId::Signal,
-            fulfilled: false,
-        });
+        let already_collected = requests_tab.collected_requests.iter().any(|r| r.id == RequestId::FirstLight);
+        if !already_collected {
+            requests_tab.collected_requests.push(CollectedRequest {
+                id: RequestId::FirstLight,
+                faction: FactionId::Signal,
+                fulfilled: false,
+            });
+        }
         // CarryingBottle component is removed automatically when the ship entity
         // is despawned by ship_docked_economy_system — no explicit remove needed.
     }
