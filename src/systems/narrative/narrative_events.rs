@@ -9,9 +9,8 @@ pub fn narrative_event_system(
     mut requests_tab: ResMut<RequestsTabState>,
     mut queue: ResMut<ShipQueue>,
     mut station_query: Query<&mut Station>,
-    mut commands: Commands,
 ) {
-    for event in bottle_events.read() {
+    for _event in bottle_events.read() {
         info!("CarryingBottle unload branch reached");
         signal_log.entries.push_back("SIGNAL RECEIVED — ORIGIN UNKNOWN\nFrequency matched. You were expected.\nWe have observed your work. It is... acceptable.\nA proposal follows.".to_string());
         if signal_log.entries.len() > 10 {
@@ -22,7 +21,8 @@ pub fn narrative_event_system(
             faction: FactionId::Signal,
             fulfilled: false,
         });
-        commands.entity(event.ship_entity).remove::<CarryingBottle>();
+        // CarryingBottle component is removed automatically when the ship entity
+        // is despawned by ship_docked_economy_system — no explicit remove needed.
     }
 
     for _event in opening_events.read() {
