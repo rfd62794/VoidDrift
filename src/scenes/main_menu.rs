@@ -47,7 +47,7 @@ pub fn main_menu_system(
 
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_rgb(4, 6, 12)))
+            .fill(egui::Color32::TRANSPARENT))
         .show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(120.0);
