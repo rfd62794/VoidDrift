@@ -305,12 +305,16 @@ pub fn ingame_startup_system(
             station.tungsten_ingots     = save_data.tungsten_ingots;
             station.nickel_reserves     = save_data.nickel;
             station.nickel_ingots       = save_data.nickel_ingots;
+            station.aluminum_reserves   = save_data.aluminum;
+            station.aluminum_ingots     = save_data.aluminum_ingots;
+            station.aluminum_canisters  = save_data.aluminum_canisters;
             station.hull_plate_reserves = save_data.hull_plates;
             station.thruster_reserves   = save_data.thruster_reserves;
             // ship_hulls restored to queue above
             station.ai_cores            = save_data.ai_cores;
             station.repair_progress     = save_data.repair_progress;
             station.drone_build_progress = save_data.drone_build_progress;
+            station.power_multiplier    = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
         }
 
         // Restore active tab
@@ -323,6 +327,9 @@ pub fn ingame_startup_system(
 
         // Restore requests state
         requests_tab.collected_requests = save_data.collected_requests.clone();
+
+        // Restore signal log fired IDs so already-seen signals don't replay
+        signal_log.fired = save_data.signal_fired_ids.iter().copied().collect();
 
         signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
         signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));

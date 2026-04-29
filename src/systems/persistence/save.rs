@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use crate::components::*;
 
-pub const SAVE_VERSION: u32 = 3;
+pub const SAVE_VERSION: u32 = 4;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SaveData {
@@ -26,12 +26,17 @@ pub struct SaveData {
     #[serde(default)] pub tungsten_ingots: f32,
     pub nickel: f32,
     #[serde(default)] pub nickel_ingots: f32,
+    #[serde(default)] pub aluminum: f32,
+    #[serde(default)] pub aluminum_ingots: f32,
+    #[serde(default)] pub aluminum_canisters: f32,
     pub hull_plates: f32,
     #[serde(default)] pub thruster_reserves: f32,
     pub ship_hulls: f32,  // kept for save compat — maps to queue count on load
     pub ai_cores: f32,
     pub repair_progress: f32,
     pub drone_build_progress: f32,
+    #[serde(default)] pub power_multiplier: f32,
+    #[serde(default)] pub signal_fired_ids: Vec<u32>,
 
     // Tabs unlocked
     pub tab_power: bool,
@@ -179,6 +184,7 @@ pub fn collect_save_data(
     queue: &ShipQueue,
     drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: &RequestsTabState,
+    signal_log: &SignalLog,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -195,12 +201,17 @@ pub fn collect_save_data(
         tungsten_ingots: station.tungsten_ingots,
         nickel: station.nickel_reserves,
         nickel_ingots: station.nickel_ingots,
+        aluminum: station.aluminum_reserves,
+        aluminum_ingots: station.aluminum_ingots,
+        aluminum_canisters: station.aluminum_canisters,
         hull_plates: station.hull_plate_reserves,
         thruster_reserves: station.thruster_reserves,
         ship_hulls: queue.available_count as f32,
         ai_cores: station.ai_cores,
         repair_progress: station.repair_progress,
         drone_build_progress: station.drone_build_progress,
+        power_multiplier: station.power_multiplier,
+        signal_fired_ids: signal_log.fired.iter().copied().collect(),
         tab_power: false, // TODO: collect from tabs resource
         tab_cargo: false, // TODO: collect from tabs resource
         tab_refinery: false, // TODO: collect from tabs resource
@@ -246,6 +257,7 @@ pub fn autosave_system(
     queue: Res<ShipQueue>,
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: Res<RequestsTabState>,
+    signal_log: Res<SignalLog>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -259,6 +271,7 @@ pub fn autosave_system(
                 &queue,
                 &drone_query,
                 &requests_tab,
+                &signal_log,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -276,6 +289,7 @@ pub fn save_request_system(
     queue: Res<ShipQueue>,
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: Res<RequestsTabState>,
+    signal_log: Res<SignalLog>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for event in events.read() {
@@ -289,6 +303,7 @@ pub fn save_request_system(
                 &queue,
                 &drone_query,
                 &requests_tab,
+                &signal_log,
             );
             
             if let Err(e) = save_game(&data) {
