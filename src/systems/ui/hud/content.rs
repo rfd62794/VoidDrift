@@ -100,7 +100,7 @@ pub fn render_tab_content(
             }
         }
         ActiveStationTab::Production => {
-            ui.heading("PRODUCTION PIPELINE");
+            ui.heading("FORGE");
             ui.add_space(8.0);
             
             egui::ComboBox::from_id_salt("ore_combo")

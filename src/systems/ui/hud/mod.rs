@@ -220,7 +220,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 ui.horizontal(|ui| {
                     for (tab, label) in [
                         (ActiveStationTab::Cargo,    "CARGO"),
-                        (ActiveStationTab::Production, "PRODUCTION"),
+                        (ActiveStationTab::Production, "FORGE"),
                         (ActiveStationTab::Requests, "REQUESTS"),
                     ] {
                         if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {

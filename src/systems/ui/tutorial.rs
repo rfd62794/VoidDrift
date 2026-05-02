@@ -209,7 +209,7 @@ pub fn tutorial_system(
             tutorial.active = Some(TutorialPopup {
                 id: 106,
                 title: "ECHO".into(),
-                body: "Signal detected. Dispatch a drone to retrieve it.".into(),
+                body: "Signal detected. Dispatch a drone to retrieve it. Check the REQUESTS tab in the drawer after collection.".into(),
                 button_label: "Understood".into(),
             });
         }
