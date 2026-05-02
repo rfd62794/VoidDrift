@@ -81,6 +81,7 @@ pub fn exit_map_view() {
 
 pub fn pinch_zoom_system(
     touches: Res<Touches>,
+    windows: Query<&Window>,
     mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut last_dist: Local<Option<f32>>,
     mut scroll_events: EventReader<bevy::input::mouse::MouseWheel>,
@@ -105,8 +106,15 @@ pub fn pinch_zoom_system(
         *last_dist = None;
     }
 
-    // Scroll wheel zoom (WASM + desktop)
+    // Scroll wheel zoom (WASM + desktop) - only when cursor is over the window
+    let cursor_in_window = windows.iter().any(|window| {
+        window.cursor_position().is_some()
+    });
+
     for event in scroll_events.read() {
+        if !cursor_in_window {
+            continue; // Don't zoom if cursor is outside the window
+        }
         let zoom_delta = match event.unit {
             bevy::input::mouse::MouseScrollUnit::Line => event.y * 0.1,
             bevy::input::mouse::MouseScrollUnit::Pixel => event.y * 0.001,

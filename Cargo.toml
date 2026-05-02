@@ -2,6 +2,9 @@
 name = "voidrift"
 version = "0.1.0"
 edition = "2021"
+description = "Asteroids meets Event Horizon. Mine asteroid debris at the edge of a black hole."
+repository = "https://github.com/rfd62794/VoidDrift"
+license = "MIT"
 
 # ----------------------------------------------------------------------------
 # Lib crate only — cdylib required for Android .so output.
