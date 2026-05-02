@@ -104,7 +104,6 @@ fn main() {
         .add_systems(Startup, (
             configure_egui_scale,
             update_ui_layout_from_window,
-            detect_device_type,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
