@@ -268,12 +268,13 @@ pub fn collect_save_data(
     drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: &RequestsTabState,
     signal_log: &SignalLog,
+    time: &Res<Time>,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
         save_name: name,
         save_category: category,
-        timestamp: current_timestamp(),
+        timestamp: current_timestamp(time),
         description,
         opening_complete: opening.phase == OpeningPhase::Complete,
         opening_phase: format!("{:?}", opening.phase),
@@ -322,12 +323,8 @@ pub fn collect_save_data(
     }
 }
 
-fn current_timestamp() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
+fn current_timestamp(time: &Res<Time>) -> String {
+    let secs = time.elapsed().as_secs();
     format!("{secs}")
 }
 
@@ -341,6 +338,7 @@ pub fn autosave_system(
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
+    time: Res<Time>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -355,6 +353,7 @@ pub fn autosave_system(
                 &drone_query,
                 &requests_tab,
                 &signal_log,
+                &time,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -373,6 +372,7 @@ pub fn save_request_system(
     drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
+    time: Res<Time>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for event in events.read() {
@@ -387,6 +387,7 @@ pub fn save_request_system(
                 &drone_query,
                 &requests_tab,
                 &signal_log,
+                &time,
             );
             
             if let Err(e) = save_game(&data) {

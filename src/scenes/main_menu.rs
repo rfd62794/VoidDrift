@@ -42,6 +42,7 @@ pub fn main_menu_system(
     mut contexts: EguiContexts,
     mut menu_state: ResMut<MainMenuState>,
     mut next_state: ResMut<NextState<AppState>>,
+    time: Res<Time>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -137,6 +138,7 @@ pub fn main_menu_system(
                     btn_width,
                     false,
                     &mut next_state,
+                    &time,
                 );
 
                 // STAGE SAVES - developer mode only
@@ -150,6 +152,7 @@ pub fn main_menu_system(
                         btn_width,
                         true,
                         &mut next_state,
+                        &time,
                     );
                 }
             });
@@ -164,6 +167,7 @@ fn render_save_list(
     btn_width: f32,
     is_stage: bool,
     next_state: &mut NextState<AppState>,
+    time: &Res<Time>,
 ) {
     ui.label(
         egui::RichText::new(heading)
@@ -187,7 +191,7 @@ fn render_save_list(
             format!(
                 "{}    {}",
                 save.save_name,
-                format_timestamp(&save.timestamp),
+                format_timestamp(&save.timestamp, time),
             )
         } else {
             format!("{}  [VERSION MISMATCH]", save.save_name)
@@ -215,13 +219,10 @@ fn render_save_list(
     }
 }
 
-fn format_timestamp(ts: &str) -> String {
+fn format_timestamp(ts: &str, time: &Res<Time>) -> String {
     ts.parse::<u64>().map(|secs| {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-        
+        let now = time.elapsed().as_secs();
+
         let diff = now.saturating_sub(secs);
         if diff < 60 {
             format!("{}s ago", diff)
