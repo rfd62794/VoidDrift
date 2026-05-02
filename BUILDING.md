@@ -63,17 +63,20 @@ Captures binary-correct PNG screenshots from the device via ADB. Use this for ga
 
 ### Build Command
 
-Run from the repo root:
+Run the automated script from the repo root:
+```powershell
+.\build_wasm.ps1
+```
+
+Or directly:
 ```powershell
 wasm-pack build --target web --out-dir pkg
 ```
 
 Output lands in `pkg/`. wasm-pack writes `voidrift.js`, `voidrift_bg.wasm`, and binding files there.  
-`pkg/index.html` is **hand-maintained** — wasm-pack does not own it. Do not let wasm-pack overwrite it.
+`pkg/index.html` is **hand-maintained** — wasm-pack does not own it. `build_wasm.ps1` detects and restores it if wasm-pack unexpectedly modifies it.
 
 ### Notes
-
-- There is no `build_wasm.ps1`. Run the command above directly.
 - `[package.metadata.wasm-pack.profile.release]` in `Cargo.toml` disables wasm-opt (`wasm-opt = false`). Do not remove this.
 - WASM entry point is the `start()` function in `src/lib.rs` (gated `#[cfg(target_arch = "wasm32")]`). It is separate from the Android/desktop `main()`.
 
@@ -81,31 +84,36 @@ Output lands in `pkg/`. wasm-pack writes `voidrift.js`, `voidrift_bg.wasm`, and 
 
 ## Deploying to itch.io (Butler)
 
-Butler binary lives at `C:\Butler\butler.exe`. It must be on the system PATH.  
-The deployment pipeline lives in a separate private repo: `C:\Github\RFD_IT_Publishing`.
+Butler binary: resolved from PATH first, then `C:\Butler\butler.exe` as fallback.  
+Install Butler: https://itch.io/docs/butler/
+
+### Setup (once)
+
+1. Copy `.publish.env.example` to `.publish.env` in the repo root
+2. Set `ITCHIO_TARGET=your-username/your-game:html5` in `.publish.env`
+3. Run `butler login` to authenticate (stored locally, no key committed)
+
+`.publish.env` is gitignored and must never be committed.
 
 ### Deploy Command
 
 ```powershell
-cd C:\Github\RFD_IT_Publishing
-python publisher.py deploy voidrift --target itchio
+.\publish.ps1
 ```
 
-This runs: `butler push C:\Github\VoidDrift\pkg rdug627/voidrift:html5`
-
-### Dry Run (verify without pushing)
+### Build + Deploy in one step
 
 ```powershell
-python publisher.py deploy voidrift --target itchio --dry-run
+.\publish.ps1 -Build
 ```
 
-### First-Time Auth
+### Dry Run (verify without uploading)
 
 ```powershell
-butler login
+.\publish.ps1 -DryRun
 ```
 
-Credentials are stored locally by Butler. No `.env` key needed for itch.io.
+Butler binary is resolved from PATH first, then `C:\Butler\butler.exe` as fallback.
 
 ---
 

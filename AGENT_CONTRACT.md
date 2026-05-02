@@ -88,33 +88,35 @@ not alpha transparency.
 
 Build target : wasm32-unknown-unknown
 Tool         : wasm-pack
+Script       : build_wasm.ps1 (repo root) — runs wasm-pack and verifies artifacts
 Command      : wasm-pack build --target web --out-dir pkg
 Output dir   : C:\Github\VoidDrift\pkg\
 Entry point  : src/lib.rs → pub fn start() — gated #[cfg(target_arch = "wasm32")]
-index.html   : pkg/index.html — hand-maintained, NOT owned by wasm-pack. Never overwrite it.
-No script    : There is no build_wasm.ps1. Run the wasm-pack command directly.
+index.html   : pkg/index.html — hand-maintained, NOT owned by wasm-pack. build_wasm.ps1 restores it if clobbered.
 wasm-opt     : Disabled in Cargo.toml [package.metadata.wasm-pack.profile.release]. Do not remove.
 
 ## DEPLOY
 
-Pipeline repo  : C:\Github\RFD_IT_Publishing   (separate private repo, not VoidDrift)
-Butler binary  : C:\Butler\butler.exe           (must be on system PATH)
+Script         : publish.ps1 (repo root)
+Butler binary  : resolved from PATH, then C:\Butler\butler.exe fallback
 Butler auth    : run `butler login` once — credentials stored locally, no .env key needed
-Game config    : C:\Github\RFD_IT_Publishing\config\games.yaml → entry: voidrift
-itch.io slug   : rdug627/voidrift
+Target config  : .publish.env (gitignored) — copy from .publish.env.example, set ITCHIO_TARGET
 channel        : html5
 build_dir      : C:\Github\VoidDrift\pkg
 
-Deploy command (from RFD_IT_Publishing root):
-    python publisher.py deploy voidrift --target itchio
+Deploy command:
+    .\publish.ps1
+
+Build + deploy in one step:
+    .\publish.ps1 -Build
 
 Dry run (safe, prints command only):
-    python publisher.py deploy voidrift --target itchio --dry-run
+    .\publish.ps1 -DryRun
 
-Raw Butler equivalent (what the pipeline runs):
-    butler push C:\Github\VoidDrift\pkg rdug627/voidrift:html5
+Raw Butler equivalent:
+    butler push pkg <ITCHIO_TARGET>
 
 Full release sequence:
-    1. wasm-pack build --target web --out-dir pkg          (from VoidDrift root)
-    2. python publisher.py deploy voidrift --target itchio (from RFD_IT_Publishing root)
-    3. git tag vX.Y.Z-<slug> && git push --tags            (from VoidDrift root)
+    1. .\publish.ps1 -Build          (or .\build_wasm.ps1 then .\publish.ps1)
+    2. git tag vX.Y.Z-<slug>
+    3. git push --tags
