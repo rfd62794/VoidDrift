@@ -6,9 +6,6 @@ use crate::components::*;
 use crate::constants::*;
 use crate::systems::persistence::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
 
-#[cfg(target_arch = "wasm32")]
-use web_sys::console;
-
 #[derive(Resource, Default)]
 pub struct MainMenuState {
     pub play_saves: Vec<SaveData>,
