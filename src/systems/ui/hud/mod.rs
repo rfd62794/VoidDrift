@@ -209,8 +209,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     // ── 3. SECONDARY TABS (if Expanded && docked) ─────────────────────────────
     if drawer == DrawerState::Expanded && is_docked {
         let no_popup = params.tutorial.active.is_none();
-        let show_forge_hl    = no_popup && params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104);
-        let show_requests_hl = no_popup && params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty();
+        let show_forge_hl    = no_popup && params.tutorial.shown.contains(&104) && !params.tutorial.shown.contains(&105);
+        let show_requests_hl = no_popup && params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty() && !params.req_tab.visited_after_t106;
         let tab_hl_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
         let tab_hl_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
 
@@ -248,6 +248,9 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         }
                         if response.clicked() {
                             *params.active_tab = tab;
+                            if tab == ActiveStationTab::Requests && params.tutorial.shown.contains(&106) {
+                                params.req_tab.visited_after_t106 = true;
+                            }
                         }
                     }
                 });

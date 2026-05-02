@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::EguiContexts;
 use crate::components::*;
 use crate::constants::*;
 use crate::systems::ship_control::ship_spawn::spawn_bottle_drone;
@@ -57,6 +58,7 @@ pub fn bottle_spawn_system(
 }
 
 pub fn bottle_input_system(
+    mut contexts: EguiContexts,
     touches: Res<Touches>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     bottle_query: Query<(Entity, &GlobalTransform), With<ActiveBottle>>,
@@ -73,6 +75,7 @@ pub fn bottle_input_system(
     mouse_button: Res<ButtonInput<MouseButton>>,
 ) {
     if opening.phase != OpeningPhase::Complete { return; }
+    if contexts.ctx_mut().wants_pointer_input() { return; }
     if touches.iter().count() >= 2 { return; }
     if queue.available_count == 0 { return; }
 

@@ -64,6 +64,7 @@ pub enum OreType {
 pub struct RequestsTabState {
     pub selected_faction: FactionId,
     pub collected_requests: Vec<CollectedRequest>,
+    pub visited_after_t106: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]

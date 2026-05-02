@@ -1,9 +1,11 @@
 use bevy::prelude::*;
+use bevy_egui::EguiContexts;
 use crate::components::*;
 use crate::constants::*;
 use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
 
 pub fn asteroid_input_system(
+    mut contexts: EguiContexts,
     touches: Res<Touches>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     marker_query: Query<(&GlobalTransform, Entity, &ActiveAsteroid), With<MapMarker>>,
@@ -20,6 +22,10 @@ pub fn asteroid_input_system(
     mouse_button: Res<ButtonInput<MouseButton>>,
 ) {
     if opening.phase != OpeningPhase::Complete {
+        return;
+    }
+
+    if contexts.ctx_mut().wants_pointer_input() {
         return;
     }
 
