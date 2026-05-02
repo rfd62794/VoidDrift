@@ -53,9 +53,6 @@ pub fn main_menu_system(
         .frame(egui::Frame::NONE
             .fill(egui::Color32::TRANSPARENT))
         .show(ctx, |ui| {
-            #[cfg(target_arch = "wasm32")]
-            console::log_1(&format!("menu available_width: {}", ui.available_width()).into());
-
             ui.vertical_centered(|ui| {
                 ui.add_space(120.0);
 

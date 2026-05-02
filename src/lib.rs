@@ -192,8 +192,11 @@ pub fn start() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 canvas: Some("#bevy-canvas".to_string()),
+                resolution: bevy::window::WindowResolution::new(720.0, 1280.0),
                 present_mode: bevy::window::PresentMode::Fifo,
                 title: "Voidrift".to_string(),
+                fit_canvas_to_parent: true,
+                prevent_default_event_handling: false,
                 ..default()
             }),
             ..default()
