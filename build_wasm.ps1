@@ -68,6 +68,13 @@ try {
     Pop-Location
 }
 
+# Copy game assets into WASM web root so Bevy's asset server can fetch them via HTTP.
+# Bevy WASM resolves asset_server.load("fonts/x.ttf") as GET assets/fonts/x.ttf
+# relative to the page root. Without this copy, font loads return 404 silently.
+Write-Host "  Copying assets to pkg/assets/..." -ForegroundColor DarkGray
+Copy-Item -Path (Join-Path $RepoRoot "assets") -Destination (Join-Path $PkgDir "assets") -Recurse -Force
+Write-Host "  Assets copied." -ForegroundColor DarkGray
+
 # Restore index.html if wasm-pack unexpectedly modified it
 if ($null -ne $indexBackup) {
     $currentIndex = Get-Content $indexPath -Raw -ErrorAction SilentlyContinue

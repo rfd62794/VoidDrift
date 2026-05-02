@@ -1,0 +1,5 @@
+# Assets placeholder
+# This directory is intentionally empty at Phase 0.
+# The android/app/build.gradle references ../../assets as the asset source dir.
+# An empty assets/ directory must exist so the Gradle build does not error.
+# Game assets (sprites, audio, etc.) are Phase 1+ scope.

@@ -91,8 +91,8 @@ pub fn pinch_zoom_system(
     
     // Use different zoom sensitivity based on device type
     let zoom_speed = match *device_type {
-        DeviceType::Mobile => 0.2, // Much faster zoom for touch (5x)
-        DeviceType::Desktop => 0.02, // Faster zoom for mouse
+        DeviceType::Mobile => 0.1, // Pinch zoom speed (reduced 50% — was 0.2)
+        DeviceType::Desktop => 0.02, // Scroll zoom speed (desktop mouse)
     };
     
     // We only care about the distance between the first two touch points
@@ -123,8 +123,8 @@ pub fn pinch_zoom_system(
             continue; // Don't zoom if cursor is outside the window
         }
         let zoom_delta = match event.unit {
-            bevy::input::mouse::MouseScrollUnit::Line => event.y * 0.1,
-            bevy::input::mouse::MouseScrollUnit::Pixel => event.y * 0.001,
+            bevy::input::mouse::MouseScrollUnit::Line => event.y * 0.05,
+            bevy::input::mouse::MouseScrollUnit::Pixel => event.y * 0.0005,
         };
         // Apply same zoom logic as pinch — adjust OrthographicProjection.scale
         // Clamp to same min/max zoom bounds as pinch zoom
