@@ -205,18 +205,24 @@ fn main() {
 #[wasm_bindgen(start)]
 pub fn start() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                canvas: Some("#bevy-canvas".to_string()),
-                resolution: bevy::window::WindowResolution::new(720.0, 1280.0),
-                present_mode: bevy::window::PresentMode::Fifo,
-                title: "Voidrift".to_string(),
-                fit_canvas_to_parent: true,
-                prevent_default_event_handling: true,
+        .add_plugins(DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    canvas: Some("#bevy-canvas".to_string()),
+                    resolution: bevy::window::WindowResolution::new(720.0, 1280.0),
+                    present_mode: bevy::window::PresentMode::Fifo,
+                    title: "Voidrift".to_string(),
+                    fit_canvas_to_parent: true,
+                    prevent_default_event_handling: true,
+                    ..default()
+                }),
                 ..default()
-            }),
-            ..default()
-        }))
+            })
+            .set(AssetPlugin {
+                meta_check: bevy::asset::AssetMetaCheck::Never,
+                ..default()
+            })
+        )
         .add_plugins(EguiPlugin)
         .init_state::<GameState>()
         .init_state::<AppState>()
