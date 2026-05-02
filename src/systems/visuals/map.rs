@@ -83,6 +83,7 @@ pub fn pinch_zoom_system(
     touches: Res<Touches>,
     mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut last_dist: Local<Option<f32>>,
+    mut scroll_events: EventReader<bevy::input::mouse::MouseWheel>,
 ) {
     let Ok(mut projection) = query.get_single_mut() else { return; };
     
@@ -103,6 +104,17 @@ pub fn pinch_zoom_system(
     } else {
         *last_dist = None;
     }
+
+    // Scroll wheel zoom (WASM + desktop)
+    for event in scroll_events.read() {
+        let zoom_delta = match event.unit {
+            bevy::input::mouse::MouseScrollUnit::Line => event.y * 0.1,
+            bevy::input::mouse::MouseScrollUnit::Pixel => event.y * 0.001,
+        };
+        // Apply same zoom logic as pinch — adjust OrthographicProjection.scale
+        // Clamp to same min/max zoom bounds as pinch zoom
+        projection.scale = (projection.scale - zoom_delta).clamp(ZOOM_MIN, ZOOM_MAX);
+    }
 }
 
 pub fn map_pan_system(
@@ -112,6 +124,9 @@ pub fn map_pan_system(
     state: Res<State<GameState>>,
     ship_query: Query<&Transform, With<Ship>>,
     opening: Res<OpeningSequence>,
+    mouse_button: Res<ButtonInput<MouseButton>>,
+    mut cursor_moved: EventReader<CursorMoved>,
+    mut last_cursor_pos: Local<Option<Vec2>>,
 ) {
     // Guard against panning during cinematic opening
     if opening.phase != OpeningPhase::Complete {
@@ -147,5 +162,35 @@ pub fn map_pan_system(
         pan_state.last_position = Some(touch.position());
     } else {
         pan_state.last_position = None;
+    }
+
+    // Click-drag pan (WASM + desktop)
+    if mouse_button.pressed(MouseButton::Left) {
+        for event in cursor_moved.read() {
+            if let Some(last) = *last_cursor_pos {
+                let delta = event.position - last;
+                let Ok(projection) = projection_query.get_single() else { continue; };
+
+                // If dragging in SpaceView while focused, break focus and initialize offset to current ship position
+                if *state.get() == GameState::SpaceView && pan_state.is_focused {
+                    pan_state.is_focused = false;
+                    if let Ok(st) = ship_query.get_single() {
+                        pan_state.cumulative_offset = st.translation.truncate();
+                    } else {
+                        // Default offset to station if focus is broken while no ship exists
+                        pan_state.cumulative_offset = STATION_POS;
+                    }
+                }
+
+                // Apply same pan logic as touch drag
+                // Invert delta direction to match touch drag feel
+                pan_state.cumulative_offset.x -= delta.x * MAP_PAN_SPEED * projection.scale;
+                pan_state.cumulative_offset.y += delta.y * MAP_PAN_SPEED * projection.scale;
+            }
+            *last_cursor_pos = Some(event.position);
+        }
+    } else {
+        *last_cursor_pos = None;
+        cursor_moved.clear();
     }
 }

@@ -2,10 +2,27 @@
 // ============================================================================
 
 use bevy::prelude::*;
-use bevy_egui::EguiPlugin;
+use bevy_egui::{EguiPlugin, EguiContexts};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
+fn configure_egui_scale(
+    windows: Query<&Window>,
+    mut egui_contexts: EguiContexts,
+) {
+    if let Ok(window) = windows.get_single() {
+        let device_scale = window.scale_factor() as f32;
+        // Clamp to reasonable range across all targets
+        // Android Moto G: scale_factor ~3.0 → egui_scale ~3.0
+        // Tablet: scale_factor ~2.0 → egui_scale ~2.0
+        // WASM: scale_factor ~1.0–2.0 → egui_scale ~2.0 minimum
+        let egui_scale = (device_scale).clamp(2.0, 4.0);
+        if let Some(ctx) = egui_contexts.try_ctx_mut() {
+            ctx.set_pixels_per_point(egui_scale);
+        }
+    }
+}
 
 mod constants;
 pub use constants::*;
@@ -61,6 +78,7 @@ fn main() {
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
+            configure_egui_scale,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
@@ -193,6 +211,7 @@ pub fn start() {
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
+            configure_egui_scale,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
