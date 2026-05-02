@@ -325,7 +325,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         let cyan_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
         let cyan_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
 
-        // Drawer handle — nudge player to open drawer after T-103 (ore arrived)
+        // Drawer handle — nudge player to open drawer after T-103 (ore arrived), collapsed state
         if tut.shown.contains(&103) && !tut.shown.contains(&104) && drawer == DrawerState::Collapsed {
             let handle_rect = egui::Rect::from_min_max(
                 egui::pos2(screen.min.x, screen.max.y - signal_height - layout.handle_height),
@@ -335,15 +335,32 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             painter.rect_stroke(handle_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
         }
 
-        // REQUESTS tab — nudge player after T-106 (signal hint given) until they open the tab
+        // Tab row geometry (only valid when Expanded):
+        // Stack from bottom: signal → content_area → secondary_tabs → handle_bar
+        // secondary_tabs bottom = screen.max.y - signal_height - content_height
+        let tab_row_bottom = screen.max.y - signal_height - layout.content_height;
+        let tab_row_top    = tab_row_bottom - layout.secondary_tab_height;
+        let tab_w          = (screen.max.x - screen.min.x) / 3.0;
+
+        // FORGE tab (middle) — shown when drawer is open, waiting for player to switch to FORGE
+        if tut.shown.contains(&103) && !tut.shown.contains(&104)
+            && drawer == DrawerState::Expanded
+            && *params.active_tab != ActiveStationTab::Production
+        {
+            let forge_rect = egui::Rect::from_min_max(
+                egui::pos2(screen.min.x + tab_w, tab_row_top),
+                egui::pos2(screen.min.x + tab_w * 2.0, tab_row_bottom),
+            );
+            painter.rect_filled(forge_rect, 0.0, cyan_fill);
+            painter.rect_stroke(forge_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
+        }
+
+        // REQUESTS tab (rightmost) — nudge player after T-106 until they open the tab
         if tut.shown.contains(&106)
             && drawer == DrawerState::Expanded
             && *params.active_tab != ActiveStationTab::Requests
         {
-            let tab_row_bottom = screen.max.y - signal_height - layout.handle_height;
-            let tab_row_top    = tab_row_bottom - layout.secondary_tab_height;
-            let tab_w          = (screen.max.x - screen.min.x) / 3.0;
-            let requests_rect  = egui::Rect::from_min_max(
+            let requests_rect = egui::Rect::from_min_max(
                 egui::pos2(screen.min.x + tab_w * 2.0, tab_row_top),
                 egui::pos2(screen.max.x, tab_row_bottom),
             );
