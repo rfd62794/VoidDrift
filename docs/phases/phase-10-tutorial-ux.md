@@ -1,3 +1,11 @@
+# Phase 10 Summary: Tutorial & UX (LEGACY)
+
+**⚠️ LEGACY:** This document describes the T-001 to T-006 tutorial system, which has been superseded by the Phase 4a T-101 to T-106 Echo tutorial system. The legacy system is preserved in code but non-functional (requires InOpeningSequence ship which is despawned at OpeningPhase::Complete).
+
+See `docs/directives/VoidDrift_Phase4a_Tutorial_Directive.md` for the current tutorial implementation.
+
+---
+
 # Phase 10 Summary: Tutorial & UX
 
 **Date:** April 2026

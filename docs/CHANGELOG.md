@@ -15,6 +15,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.7] - Tutorial 4a - 2026-04-XX
+### Added
+- Phase 4a tutorial system (T-101 to T-106 Echo voice)
+- TutorialHighlight component (cyan ring, distinct from DestinationHighlight)
+- Tutorial position driver system (highlights asteroid, then bottle)
+- New game guard (tutorial resets on new game, skips on load)
+### Preserved
+- Legacy T-001 to T-006 system (non-functional, requires InOpeningSequence ship)
+
+## [2.8.6] - Balance Speed & Mining - 2026-04-XX
+### Changed
+- Increased MINING_RATE from 18.0 to 22.0 ore/sec
+- Increased SHIP_SPEED from 180.0 to 210.0 units/sec
+- Asteroid depletion time: ~4.5s at current mining rate
+
+## [2.8.5] - Balance Forge & Mining - 2026-04-XX
+### Changed
+- Halved FORGE_HULL_TIME from 10.0s to 5.0s
+- Increased MINING_RATE from 12.0 to 18.0 ore/sec
+
+## [2.8.4] - Balance Drone Spawn Weights - 2026-04-XX
+### Changed
+- Reduced DRONE_BUILD_TIME from 30.0s to 18.0s per drone
+- Changed Aluminum spawn weight from 25% to 10%
+- Iron/Tungsten/Nickel each at 30% spawn weight
+
+## [2.8.3] - EventBus Complete - 2026-04-XX
+### Added
+- Phase 3b event bus refactor complete
+- 8 Bevy events for decoupled systems
+- economy.rs and narrative_events.rs systems
+### Refactored
+- autopilot.rs to fire events instead of direct mutations
+- OpeningCompleteEvent, ShipDockedWithCargo, ShipDockedWithBottle, FulfillRequestEvent, RepairStationEvent, DroneDispatched, InsufficientLaserEvent, SignalFired
+
+## [2.8.2] - UI Refactor v2 - 2026-04-XX
+### Added
+- Phase 2 UI Refactor v2 complete
+- PRODUCTION tab: collapsed ore pipeline tabs into single tab with ComboBox
+- REQUESTS tab: replaced UPGRADES placeholder
+- Aluminum ore type (10% spawn weight)
+- Bottle collection mechanic (spawn, drift, tap, dual output)
+- Faction ComboBox to REQUESTS tab
+- Request cards with fulfillment logic
+
+## [2.8.1] - Cleanup Complete - 2026-04-XX
+### Fixed
+- Phase 3a pre-refactor cleanup complete
+- Replaced despawn() with despawn_recursive() in cleanup_world_entities
+- Removed duplicate station_visual_system registration in lib.rs
+- Added warn!() log lines to silent fallback paths in autopilot.rs and mining.rs
+
+## [2.8.0] - Power Multiplier - 2026-04-XX
+### Added
+- Phase 2 closeout complete
+- Station.power_multiplier wired to base mining rate
+- Effective mining rate: BASE_MINING_RATE * station.power_multiplier
+- power_multiplier increases by 0.25 after First Light request fulfillment
+
+---
+
 ## [2.0.0] - 2026-04-27
 ### Added
 - PRODUCTION tab: collapses Iron/Tungsten/Nickel/Aluminum into single tab with ComboBox

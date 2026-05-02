@@ -4,7 +4,7 @@
 
 A mobile arcade mining game built in Rust/Bevy for Android. Mine asteroid debris at the edge of a black hole, build a drone fleet, and receive contact from factions you don't understand.
 
-> **Status:** Phase 2 Complete — `v2.2.0-docs-phase2-complete` — Verified on Moto G 2025
+> **Status:** Phase 4a Complete — `v2.8.7-tutorial-4a` — Live on [itch.io](https://rdug627.itch.io/voidrift)
 
 ---
 
@@ -107,8 +107,9 @@ VoidDrift/
 | Phase 1 | ✅ Complete | Core mining → refining → drone building loop |
 | Phase 1c | ✅ Complete | Asteroid lifecycle, lifespan timers, stuck-ship safety |
 | Phase 2 | ✅ Complete | UI refactor, Requests framework, bottle mechanic, random spawn |
-| Phase 3 | 🚧 Next | Architectural refactor — SRP / event bus, decouple narrative from simulation |
-| Phase 4 | 🔮 Planned | Narrative drops — memory fragments, faction voice differentiation |
+| Phase 3 | ✅ Complete | Architectural refactor — SRP / event bus, decouple narrative from simulation |
+| Phase 4a | ✅ Complete | Tutorial system (T-101 to T-106) with TutorialHighlight ring |
+| Phase 4b | 🔮 Planned | Narrative drops — memory fragments, faction voice differentiation |
 
 ---
 
@@ -129,6 +130,65 @@ VoidDrift/
 Compiles, packages, and deploys directly to the connected device. Logcat output follows automatically.
 
 *Applies `max-page-size=16384` for Android 15+ 16kb page compatibility.*
+
+---
+
+## Building for WASM
+
+### Prerequisites
+- Rust 1.85+
+- wasm-pack v0.14.0 (`cargo install wasm-pack`)
+- Node.js (for wasm-pack dependencies)
+
+### Build
+
+```powershell
+.\build_wasm.ps1
+```
+
+Builds the WASM binary to `pkg/` directory and copies assets to `pkg/assets/` for font loading.
+
+**Output:**
+- `pkg/voidrift_bg.wasm` (~22.7MB)
+- `pkg/voidrift.js` (~149KB)
+- `pkg/index.html` (hand-maintained entry point)
+- `pkg/assets/` (fonts copied from root assets/)
+
+### Local Testing
+
+Serve the `pkg/` directory with a local web server:
+```powershell
+python -m http.server 8000 --directory pkg
+```
+
+Then open `http://localhost:8000` in a browser.
+
+---
+
+## Publishing to itch.io
+
+### Prerequisites
+- Butler v15.26.1 in system PATH
+- `.publish.env` file configured (gitignored):
+  ```
+  ITCHIO_TARGET=rdug627/voidrift:html5
+  ```
+
+### Deploy
+
+```powershell
+.\publish.ps1
+```
+
+Deploys the `pkg/` directory to itch.io. Use `-Build` flag to build before deploying:
+```powershell
+.\publish.ps1 -Build
+```
+
+Use `-DryRun` to verify without uploading:
+```powershell
+.\publish.ps1 -DryRun
+```
 
 ---
 
