@@ -91,7 +91,7 @@ pub fn pinch_zoom_system(
     
     // Use different zoom sensitivity based on device type
     let zoom_speed = match *device_type {
-        DeviceType::Mobile => 0.04, // Much faster zoom for touch
+        DeviceType::Mobile => 0.2, // Much faster zoom for touch (5x)
         DeviceType::Desktop => 0.02, // Faster zoom for mouse
     };
     

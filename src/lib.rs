@@ -103,8 +103,10 @@ fn main() {
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
-            update_ui_layout_from_window,
             systems::visuals::debug_log::setup_debug_log_system,
+        ))
+        .add_systems(Update, (
+            update_ui_layout_from_window,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
             scenes::main_menu::setup_main_menu,
@@ -241,9 +243,11 @@ pub fn start() {
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
-            update_ui_layout_from_window,
             detect_device_type,
             systems::visuals::debug_log::setup_debug_log_system,
+        ))
+        .add_systems(Update, (
+            update_ui_layout_from_window,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
             scenes::main_menu::setup_main_menu,
