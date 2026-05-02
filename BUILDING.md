@@ -54,6 +54,61 @@ Captures binary-correct PNG screenshots from the device via ADB. Use this for ga
 - **ADB device not authorized**: Check your phone screen for the permission prompt.
 - **Invisible UI**: Ensure `bevy_egui` is used for all screenspace elements.
 
+## WASM Build (Web / itch.io)
+
+### Prerequisites
+
+- **wasm-pack**: `cargo install wasm-pack`
+- **wasm32-unknown-unknown target**: `rustup target add wasm32-unknown-unknown`
+
+### Build Command
+
+Run from the repo root:
+```powershell
+wasm-pack build --target web --out-dir pkg
+```
+
+Output lands in `pkg/`. wasm-pack writes `voidrift.js`, `voidrift_bg.wasm`, and binding files there.  
+`pkg/index.html` is **hand-maintained** — wasm-pack does not own it. Do not let wasm-pack overwrite it.
+
+### Notes
+
+- There is no `build_wasm.ps1`. Run the command above directly.
+- `[package.metadata.wasm-pack.profile.release]` in `Cargo.toml` disables wasm-opt (`wasm-opt = false`). Do not remove this.
+- WASM entry point is the `start()` function in `src/lib.rs` (gated `#[cfg(target_arch = "wasm32")]`). It is separate from the Android/desktop `main()`.
+
+---
+
+## Deploying to itch.io (Butler)
+
+Butler binary lives at `C:\Butler\butler.exe`. It must be on the system PATH.  
+The deployment pipeline lives in a separate private repo: `C:\Github\RFD_IT_Publishing`.
+
+### Deploy Command
+
+```powershell
+cd C:\Github\RFD_IT_Publishing
+python publisher.py deploy voidrift --target itchio
+```
+
+This runs: `butler push C:\Github\VoidDrift\pkg rdug627/voidrift:html5`
+
+### Dry Run (verify without pushing)
+
+```powershell
+python publisher.py deploy voidrift --target itchio --dry-run
+```
+
+### First-Time Auth
+
+```powershell
+butler login
+```
+
+Credentials are stored locally by Butler. No `.env` key needed for itch.io.
+
+---
+
 ## Desktop Build (Development Only)
 
 You can run the game locally for logic verification:

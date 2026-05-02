@@ -83,3 +83,38 @@ boundary rings) MUST use AlphaMode2d::Opaque in their ColorMaterial.
 Using Blend on Mali-G57 causes Z-sorting flicker that cannot be fixed 
 by Z-layer adjustment alone. Achieve dimming through color values, 
 not alpha transparency.
+
+## WASM_BUILD
+
+Build target : wasm32-unknown-unknown
+Tool         : wasm-pack
+Command      : wasm-pack build --target web --out-dir pkg
+Output dir   : C:\Github\VoidDrift\pkg\
+Entry point  : src/lib.rs → pub fn start() — gated #[cfg(target_arch = "wasm32")]
+index.html   : pkg/index.html — hand-maintained, NOT owned by wasm-pack. Never overwrite it.
+No script    : There is no build_wasm.ps1. Run the wasm-pack command directly.
+wasm-opt     : Disabled in Cargo.toml [package.metadata.wasm-pack.profile.release]. Do not remove.
+
+## DEPLOY
+
+Pipeline repo  : C:\Github\RFD_IT_Publishing   (separate private repo, not VoidDrift)
+Butler binary  : C:\Butler\butler.exe           (must be on system PATH)
+Butler auth    : run `butler login` once — credentials stored locally, no .env key needed
+Game config    : C:\Github\RFD_IT_Publishing\config\games.yaml → entry: voidrift
+itch.io slug   : rdug627/voidrift
+channel        : html5
+build_dir      : C:\Github\VoidDrift\pkg
+
+Deploy command (from RFD_IT_Publishing root):
+    python publisher.py deploy voidrift --target itchio
+
+Dry run (safe, prints command only):
+    python publisher.py deploy voidrift --target itchio --dry-run
+
+Raw Butler equivalent (what the pipeline runs):
+    butler push C:\Github\VoidDrift\pkg rdug627/voidrift:html5
+
+Full release sequence:
+    1. wasm-pack build --target web --out-dir pkg          (from VoidDrift root)
+    2. python publisher.py deploy voidrift --target itchio (from RFD_IT_Publishing root)
+    3. git tag vX.Y.Z-<slug> && git push --tags            (from VoidDrift root)
