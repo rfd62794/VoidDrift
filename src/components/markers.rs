@@ -75,6 +75,9 @@ pub struct MapConnector;
 pub struct DestinationHighlight;
 
 #[derive(Component)]
+pub struct TutorialHighlight;
+
+#[derive(Component)]
 pub struct AutopilotTarget {
     pub destination: Vec2,
     pub target_entity: Option<Entity>,

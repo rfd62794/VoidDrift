@@ -219,6 +219,25 @@ pub fn spawn_destination_highlight(
     ));
 }
 
+pub fn spawn_tutorial_highlight(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    commands.spawn((
+        MapElement,
+        TutorialHighlight,
+        Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
+        MeshMaterial2d(materials.add(ColorMaterial {
+            color: Color::srgba(0.0, 1.0, 1.0, 0.6), // Cyan — distinct from white DestinationHighlight
+            alpha_mode: AlphaMode2d::Opaque,
+            ..default()
+        })),
+        Transform::from_xyz(0.0, 0.0, Z_HUD - 0.05),
+        Visibility::Hidden,
+    ));
+}
+
 
 
 // ── VISUAL HELPERS ───────────────────────────────────────────────────────────

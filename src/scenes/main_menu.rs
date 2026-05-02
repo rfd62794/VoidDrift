@@ -340,7 +340,11 @@ pub fn ingame_startup_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut commands: Commands,
     mut requests_tab: ResMut<RequestsTabState>,
+    mut tutorial: ResMut<TutorialState>,
 ) {
+    // Reset tutorial for every session (new game starts clean; load path overrides below)
+    *tutorial = TutorialState::default();
+
     if let Some(save_data) = menu_state.pending_load.take() {
         restore_save_state(
             &save_data,
@@ -354,8 +358,12 @@ pub fn ingame_startup_system(
             &mut requests_tab,
         );
         spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
+        // Suppress all Phase 4a tutorial popups when loading an existing save
+        for id in [101u32, 102, 103, 104, 105, 106] {
+            tutorial.shown.insert(id);
+        }
     }
-    // NEW GAME PATH: opening sequence runs normally — no state to restore.
+    // NEW GAME PATH: opening sequence runs normally — tutorial starts empty.
 
     apply_dev_mode_signal(&mut menu_state, &mut signal_log);
 }

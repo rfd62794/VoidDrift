@@ -58,6 +58,7 @@ pub fn setup_world(
     spawn_station(&mut commands, &mut meshes, &mut materials);
     spawn_berths(&mut commands);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
+    spawn_tutorial_highlight(&mut commands, &mut meshes, &mut materials);
 }
 
 fn spawn_starfield(
