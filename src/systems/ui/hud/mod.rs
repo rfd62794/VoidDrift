@@ -208,6 +208,11 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
     // ── 3. SECONDARY TABS (if Expanded && docked) ─────────────────────────────
     if drawer == DrawerState::Expanded && is_docked {
+        let show_forge_hl    = params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104);
+        let show_requests_hl = params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty();
+        let tab_hl_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
+        let tab_hl_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
+
         egui::TopBottomPanel::bottom("secondary_tabs")
             .frame(egui::Frame::NONE
                 .fill(egui::Color32::from_rgb(15, 15, 20))
@@ -219,11 +224,24 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
-                        (ActiveStationTab::Cargo,    "CARGO"),
+                        (ActiveStationTab::Cargo,      "CARGO"),
                         (ActiveStationTab::Production, "FORGE"),
-                        (ActiveStationTab::Requests, "REQUESTS"),
+                        (ActiveStationTab::Requests,   "REQUESTS"),
                     ] {
-                        if ui.add_sized(tab_size, egui::SelectableLabel::new(*params.active_tab == tab, label)).clicked() {
+                        let response = ui.add_sized(
+                            tab_size,
+                            egui::SelectableLabel::new(*params.active_tab == tab, label),
+                        );
+                        let highlight = match tab {
+                            ActiveStationTab::Production => show_forge_hl && *params.active_tab != tab,
+                            ActiveStationTab::Requests   => show_requests_hl && *params.active_tab != tab,
+                            _                            => false,
+                        };
+                        if highlight {
+                            ui.painter().rect_filled(response.rect, 0.0, tab_hl_fill);
+                            ui.painter().rect_stroke(response.rect, 0.0, tab_hl_stroke, egui::StrokeKind::Outside);
+                        }
+                        if response.clicked() {
                             *params.active_tab = tab;
                         }
                     }
@@ -315,58 +333,20 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         }
     }
 
-    // ── 7b. TUTORIAL EGUI HIGHLIGHTS ─────────────────────────────────────────
+    // ── 7b. TUTORIAL EGUI HIGHLIGHTS (drawer handle only — tabs handled inline in step 3) ─
+    if params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104)
+        && drawer == DrawerState::Collapsed
     {
-        let tut = &params.tutorial;
         let painter = ctx.layer_painter(egui::LayerId::new(
             egui::Order::Foreground,
             egui::Id::new("tutorial_hl"),
         ));
-        let cyan_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
-        let cyan_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
-
-        // Drawer handle — nudge player to open drawer after T-103 (ore arrived), collapsed state
-        if tut.shown.contains(&103) && !tut.shown.contains(&104) && drawer == DrawerState::Collapsed {
-            let handle_rect = egui::Rect::from_min_max(
-                egui::pos2(screen.min.x, screen.max.y - signal_height - layout.handle_height),
-                egui::pos2(screen.max.x, screen.max.y - signal_height),
-            );
-            painter.rect_filled(handle_rect, 0.0, cyan_fill);
-            painter.rect_stroke(handle_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
-        }
-
-        // Tab row geometry (only valid when Expanded):
-        // Stack from bottom: signal → content_area → secondary_tabs → handle_bar
-        // secondary_tabs bottom = screen.max.y - signal_height - content_height
-        let tab_row_bottom = screen.max.y - signal_height - layout.content_height;
-        let tab_row_top    = tab_row_bottom - layout.secondary_tab_height;
-        let tab_w          = (screen.max.x - screen.min.x) / 3.0;
-
-        // FORGE tab (middle) — shown when drawer is open, waiting for player to switch to FORGE
-        if tut.shown.contains(&103) && !tut.shown.contains(&104)
-            && drawer == DrawerState::Expanded
-            && *params.active_tab != ActiveStationTab::Production
-        {
-            let forge_rect = egui::Rect::from_min_max(
-                egui::pos2(screen.min.x + tab_w, tab_row_top),
-                egui::pos2(screen.min.x + tab_w * 2.0, tab_row_bottom),
-            );
-            painter.rect_filled(forge_rect, 0.0, cyan_fill);
-            painter.rect_stroke(forge_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
-        }
-
-        // REQUESTS tab (rightmost) — nudge player after T-106 until they open the tab
-        if tut.shown.contains(&106)
-            && drawer == DrawerState::Expanded
-            && *params.active_tab != ActiveStationTab::Requests
-        {
-            let requests_rect = egui::Rect::from_min_max(
-                egui::pos2(screen.min.x + tab_w * 2.0, tab_row_top),
-                egui::pos2(screen.max.x, tab_row_bottom),
-            );
-            painter.rect_filled(requests_rect, 0.0, cyan_fill);
-            painter.rect_stroke(requests_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
-        }
+        let handle_rect = egui::Rect::from_min_max(
+            egui::pos2(screen.min.x, screen.max.y - signal_height - layout.handle_height),
+            egui::pos2(screen.max.x, screen.max.y - signal_height),
+        );
+        painter.rect_filled(handle_rect, 0.0, egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35));
+        painter.rect_stroke(handle_rect, 0.0, egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220)), egui::StrokeKind::Outside);
     }
 
     // ── 8. CENTRAL PANEL (world view — MUST be last) ──────────────────────────
