@@ -83,3 +83,10 @@ pub enum FactionId {
 pub enum RequestId {
     FirstLight,
 }
+
+#[derive(Resource, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DeviceType {
+    #[default]
+    Desktop,
+    Mobile,
+}

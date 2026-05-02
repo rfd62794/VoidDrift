@@ -34,11 +34,24 @@ fn update_ui_layout_from_window(
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+fn detect_device_type(mut device_type: ResMut<DeviceType>) {
+    let window = web_sys::window().unwrap();
+    let is_touch = js_sys::Reflect::get(&window, &"ontouchstart".into())
+        .map(|v| !v.is_undefined())
+        .unwrap_or(false);
+    *device_type = if is_touch {
+        DeviceType::Mobile
+    } else {
+        DeviceType::Desktop
+    };
+}
+
 mod constants;
 pub use constants::*;
 
 mod components;
-pub use components::*;
+pub use crate::components::*;
 
 pub mod systems;
 pub mod scenes;
@@ -85,11 +98,13 @@ fn main() {
         .insert_resource(ShipQueue::default())
         .insert_resource(RequestsTabState::default())
         .insert_resource(ProductionTabState::default())
+        .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
             update_ui_layout_from_window,
+            detect_device_type,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
@@ -222,11 +237,13 @@ pub fn start() {
         .insert_resource(ShipQueue::default())
         .insert_resource(RequestsTabState::default())
         .insert_resource(ProductionTabState::default())
+        .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
             update_ui_layout_from_window,
+            detect_device_type,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (

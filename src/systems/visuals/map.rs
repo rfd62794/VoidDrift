@@ -82,11 +82,18 @@ pub fn exit_map_view() {
 pub fn pinch_zoom_system(
     touches: Res<Touches>,
     windows: Query<&Window>,
+    device_type: Res<DeviceType>,
     mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut last_dist: Local<Option<f32>>,
     mut scroll_events: EventReader<bevy::input::mouse::MouseWheel>,
 ) {
     let Ok(mut projection) = query.get_single_mut() else { return; };
+    
+    // Use different zoom sensitivity based on device type
+    let zoom_speed = match *device_type {
+        DeviceType::Mobile => 0.005, // Slower zoom for touch
+        DeviceType::Desktop => 0.01, // Faster zoom for mouse
+    };
     
     // We only care about the distance between the first two touch points
     let touch_points: Vec<Vec2> = touches.iter().map(|t| t.position()).take(2).collect();
@@ -98,7 +105,7 @@ pub fn pinch_zoom_system(
             let delta = prev - dist; // Positive if pinching (getting closer), negative if pulling (getting further)
             
             // Apply scale delta
-            let new_scale = (projection.scale + delta * ZOOM_SPEED).clamp(ZOOM_MIN, ZOOM_MAX);
+            let new_scale = (projection.scale + delta * zoom_speed).clamp(ZOOM_MIN, ZOOM_MAX);
             projection.scale = new_scale;
         }
         *last_dist = Some(dist);
