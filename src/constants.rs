@@ -9,7 +9,7 @@ pub const MAP_OVERVIEW_SCALE: f32 = 1.5;
 pub const EGUI_SCALE: f32 = 3.0;
 
 pub const CARGO_CAPACITY: u32 = 100;
-pub const MINING_RATE: f32 = 12.0;
+pub const MINING_RATE: f32 = 18.0;
 
 pub const REFINERY_RATIO: u32 = 10;
 pub const HULL_REFINERY_RATIO: u32 = 5;
@@ -101,7 +101,7 @@ pub const LOG_MAX_LINES: usize = 10;
 pub const REFINERY_IRON_TIME: f32      = 4.0;
 pub const REFINERY_TUNGSTEN_TIME: f32  = 5.0;
 pub const REFINERY_NICKEL_TIME: f32    = 3.0;
-pub const FORGE_HULL_TIME: f32         = 10.0;
+pub const FORGE_HULL_TIME: f32         = 5.0;
 pub const FORGE_THRUSTER_TIME: f32     = 10.0;
 pub const FORGE_CORE_TIME: f32         = 12.0;
 
