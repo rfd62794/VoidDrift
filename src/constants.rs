@@ -31,7 +31,7 @@ pub const SECTOR_3_POS: Vec2     = Vec2::new(380.0, -280.0);  // Nickel
 pub const MAP_STRATEGIC_SCALE: f32 = 8.0;
 pub const ZOOM_MIN: f32   = 0.3;   // most zoomed in
 pub const ZOOM_MAX: f32   = 8.0;   // most zoomed out
-pub const ZOOM_SPEED: f32 = 0.005;
+pub const ZOOM_SPEED: f32 = 0.01;
 
 // ── ASTEROID SCALE & COLOR ───────────────────────────────────────────────────
 pub const ASTEROID_RADIUS_IRON: f32      = 20.0;
