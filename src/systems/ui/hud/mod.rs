@@ -238,8 +238,12 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                             _                            => false,
                         };
                         if highlight {
-                            ui.painter().rect_filled(response.rect, 0.0, tab_hl_fill);
-                            ui.painter().rect_stroke(response.rect, 0.0, tab_hl_stroke, egui::StrokeKind::Outside);
+                            let p = ui.ctx().layer_painter(egui::LayerId::new(
+                                egui::Order::Foreground,
+                                egui::Id::new("tab_hl"),
+                            ));
+                            p.rect_filled(response.rect, 0.0, tab_hl_fill);
+                            p.rect_stroke(response.rect, 0.0, tab_hl_stroke, egui::StrokeKind::Outside);
                         }
                         if response.clicked() {
                             *params.active_tab = tab;
