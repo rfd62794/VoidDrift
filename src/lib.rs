@@ -24,6 +24,16 @@ fn configure_egui_scale(
     }
 }
 
+fn update_ui_layout_from_window(
+    windows: Query<&Window>,
+    mut ui_layout: ResMut<UiLayout>,
+) {
+    if let Ok(window) = windows.get_single() {
+        ui_layout.screen_width = window.physical_width() as f32;
+        ui_layout.screen_height = window.physical_height() as f32;
+    }
+}
+
 mod constants;
 pub use constants::*;
 
@@ -79,6 +89,7 @@ fn main() {
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
+            update_ui_layout_from_window,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
@@ -212,6 +223,7 @@ pub fn start() {
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
+            update_ui_layout_from_window,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
