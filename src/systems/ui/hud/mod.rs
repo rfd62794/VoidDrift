@@ -315,6 +315,43 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         }
     }
 
+    // ── 7b. TUTORIAL EGUI HIGHLIGHTS ─────────────────────────────────────────
+    {
+        let tut = &params.tutorial;
+        let painter = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Foreground,
+            egui::Id::new("tutorial_hl"),
+        ));
+        let cyan_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
+        let cyan_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
+
+        // Drawer handle — nudge player to open drawer after T-103 (ore arrived)
+        if tut.shown.contains(&103) && !tut.shown.contains(&104) && drawer == DrawerState::Collapsed {
+            let handle_rect = egui::Rect::from_min_max(
+                egui::pos2(screen.min.x, screen.max.y - signal_height - layout.handle_height),
+                egui::pos2(screen.max.x, screen.max.y - signal_height),
+            );
+            painter.rect_filled(handle_rect, 0.0, cyan_fill);
+            painter.rect_stroke(handle_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
+        }
+
+        // REQUESTS tab — nudge player after T-106 (signal hint given) until they open the tab
+        if tut.shown.contains(&106)
+            && drawer == DrawerState::Expanded
+            && *params.active_tab != ActiveStationTab::Requests
+        {
+            let tab_row_bottom = screen.max.y - signal_height - layout.handle_height;
+            let tab_row_top    = tab_row_bottom - layout.secondary_tab_height;
+            let tab_w          = (screen.max.x - screen.min.x) / 3.0;
+            let requests_rect  = egui::Rect::from_min_max(
+                egui::pos2(screen.min.x + tab_w * 2.0, tab_row_top),
+                egui::pos2(screen.max.x, tab_row_bottom),
+            );
+            painter.rect_filled(requests_rect, 0.0, cyan_fill);
+            painter.rect_stroke(requests_rect, 0.0, cyan_stroke, egui::StrokeKind::Outside);
+        }
+    }
+
     // ── 8. CENTRAL PANEL (world view — MUST be last) ──────────────────────────
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
