@@ -1,6 +1,6 @@
 // Voidrift — Constants
 
-pub const SHIP_SPEED: f32 = 180.0;
+pub const SHIP_SPEED: f32 = 210.0;
 pub const ARRIVAL_THRESHOLD: f32 = 8.0;
 pub const ARRIVAL_THRESHOLD_MINING: f32 = 40.0;
 pub const MAP_OVERVIEW_SCALE: f32 = 1.5;
@@ -9,7 +9,7 @@ pub const MAP_OVERVIEW_SCALE: f32 = 1.5;
 pub const EGUI_SCALE: f32 = 3.0;
 
 pub const CARGO_CAPACITY: u32 = 100;
-pub const MINING_RATE: f32 = 18.0;
+pub const MINING_RATE: f32 = 22.0;
 
 pub const REFINERY_RATIO: u32 = 10;
 pub const HULL_REFINERY_RATIO: u32 = 5;
