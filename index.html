@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>VoidDrift WASM</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #050514;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bevy-canvas"></canvas>
+    <script type="module">
+        import init from './pkg/voidrift.js';
+        init().then(() => {
+            console.log('VoidDrift WASM loaded successfully');
+        }).catch(err => {
+            console.error('Failed to load VoidDrift WASM:', err);
+        });
+    </script>
+</body>
+</html>
