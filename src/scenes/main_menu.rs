@@ -6,6 +6,9 @@ use crate::components::*;
 use crate::constants::*;
 use crate::systems::persistence::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
 
+#[cfg(target_arch = "wasm32")]
+use web_sys::console;
+
 #[derive(Resource, Default)]
 pub struct MainMenuState {
     pub play_saves: Vec<SaveData>,
@@ -50,6 +53,9 @@ pub fn main_menu_system(
         .frame(egui::Frame::NONE
             .fill(egui::Color32::TRANSPARENT))
         .show(ctx, |ui| {
+            #[cfg(target_arch = "wasm32")]
+            console::log_1(&format!("menu available_width: {}", ui.available_width()).into());
+
             ui.vertical_centered(|ui| {
                 ui.add_space(120.0);
 
