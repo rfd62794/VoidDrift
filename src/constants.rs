@@ -108,7 +108,7 @@ pub const FORGE_CORE_TIME: f32         = 12.0;
 pub const MAP_PAN_SPEED: f32 = 1.5;
 
 // [PHASE 1c] DRONE ASSEMBLY
-pub const DRONE_BUILD_TIME: f32    = 30.0; // Seconds per drone
+pub const DRONE_BUILD_TIME: f32    = 18.0; // Seconds per drone
 pub const DRONE_BUILD_COST_HULLS: f32      = 3.0;
 pub const DRONE_BUILD_COST_THRUSTERS: f32  = 1.0;
 pub const DRONE_BUILD_COST_CORES: f32      = 1.0;

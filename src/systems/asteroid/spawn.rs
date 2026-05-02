@@ -189,10 +189,10 @@ pub fn asteroid_respawn_system(
         }
 
         let mut rng = rand::thread_rng();
-        let target_ore_type = match rng.gen_range(0..4) {
-            0 => OreDeposit::Iron,
-            1 => OreDeposit::Tungsten,
-            2 => OreDeposit::Nickel,
+        let target_ore_type = match rng.gen_range(0..10) {
+            0..=2 => OreDeposit::Iron,
+            3..=5 => OreDeposit::Tungsten,
+            6..=8 => OreDeposit::Nickel,
             _ => OreDeposit::Aluminum,
         };
 
