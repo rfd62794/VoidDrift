@@ -208,8 +208,9 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
     // ── 3. SECONDARY TABS (if Expanded && docked) ─────────────────────────────
     if drawer == DrawerState::Expanded && is_docked {
-        let show_forge_hl    = params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104);
-        let show_requests_hl = params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty();
+        let no_popup = params.tutorial.active.is_none();
+        let show_forge_hl    = no_popup && params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104);
+        let show_requests_hl = no_popup && params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty();
         let tab_hl_fill   = egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35);
         let tab_hl_stroke = egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220));
 
@@ -331,14 +332,12 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     }
                 });
             });
-        if ctx.input(|i| i.pointer.any_click()) && !ctx.is_pointer_over_area() {
-            params.tutorial.shown.insert(popup.id);
-            params.tutorial.active = None;
-        }
+        // No click-outside dismiss — tap gestures in world space would swallow the next popup
     }
 
     // ── 7b. TUTORIAL EGUI HIGHLIGHTS (drawer handle only — tabs handled inline in step 3) ─
-    if params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104)
+    if params.tutorial.active.is_none()
+        && params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104)
         && drawer == DrawerState::Collapsed
     {
         let painter = ctx.layer_painter(egui::LayerId::new(
