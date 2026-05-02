@@ -9,6 +9,7 @@ pub fn asteroid_input_system(
     touches: Res<Touches>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     marker_query: Query<(&GlobalTransform, Entity, &ActiveAsteroid), With<MapMarker>>,
+    bottle_query: Query<&GlobalTransform, With<ActiveBottle>>,
     queue: Res<ShipQueue>,
     mut commands: Commands,
     opening: Res<OpeningSequence>,
@@ -41,6 +42,14 @@ pub fn asteroid_input_system(
 
     // Dispatch logic shared by touch and mouse
     let mut handle_dispatch = |world_pos: Vec2| {
+        // Skip if click is within bottle range (bottle takes priority)
+        if let Ok(bottle_transform) = bottle_query.get_single() {
+            let bottle_pos = bottle_transform.translation().truncate();
+            if world_pos.distance(bottle_pos) < 60.0 {
+                return false;
+            }
+        }
+
         for (marker_gtransform, asteroid_ent, active_asteroid) in marker_query.iter() {
             let mp = marker_gtransform.translation().truncate();
 
