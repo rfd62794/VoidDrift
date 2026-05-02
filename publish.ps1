@@ -90,24 +90,31 @@ Write-Host "[2/3] Locating Butler..." -ForegroundColor Cyan
 
 $butlerExe = $null
 
+# Butler's --version writes to stderr, so temporarily relax error preference
+# to prevent NativeCommandError from terminating the script during the probe.
+$savedPref = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+
 # Check PATH first
-try {
-    $versionOut = & butler --version 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        $butlerExe = "butler"
-        Write-Host "  Butler (PATH): $versionOut" -ForegroundColor DarkGray
-    }
-} catch {}
+& butler --version 2>&1 | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    $butlerExe = "butler"
+    Write-Host "  Butler (PATH): $(& butler --version 2>&1)" -ForegroundColor DarkGray
+}
 
 # Fall back to known local install location
 if (-not $butlerExe) {
     $localPath = "C:\Butler\butler.exe"
     if (Test-Path $localPath) {
-        $butlerExe = $localPath
-        $versionOut = & $localPath --version 2>&1
-        Write-Host "  Butler (local): $versionOut" -ForegroundColor DarkGray
+        & $localPath --version 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $butlerExe = $localPath
+            Write-Host "  Butler (local): $(& $localPath --version 2>&1)" -ForegroundColor DarkGray
+        }
     }
 }
+
+$ErrorActionPreference = $savedPref
 
 if (-not $butlerExe) {
     Write-Host "  ERROR: Butler not found in PATH or C:\Butler\butler.exe." -ForegroundColor Red
