@@ -235,13 +235,14 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             .exact_height(layout.secondary_tab_height)
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
-                let tab_w = ui.available_width() / 3.0;
+                let tab_w = ui.available_width() / 4.0;
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
                         (ActiveStationTab::Cargo,      "CARGO"),
                         (ActiveStationTab::Production, "FORGE"),
-                        (ActiveStationTab::Requests,   "REQUESTS"),
+                        (ActiveStationTab::Requests,   "QUESTS"),
+                        (ActiveStationTab::Logs,       "LOGS"),
                     ] {
                         let response = ui.add_sized(
                             tab_size,

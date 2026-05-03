@@ -184,5 +184,10 @@ pub fn render_tab_content(
                 }
             }
         }
+        ActiveStationTab::Logs => {
+            ui.heading("SIGNAL LOGS");
+            ui.add_space(8.0);
+            ui.label(egui::RichText::new("No signals received.").color(egui::Color32::GRAY));
+        }
     }
 }
