@@ -113,6 +113,7 @@ pub struct HudParams<'w, 's> {
     pub world_view_rect: ResMut<'w, WorldViewRect>,
     pub queue: Res<'w, ShipQueue>,
     pub max_dispatch: Res<'w, MaxDispatch>,
+    pub autonomous_ships: Query<'w, 's, Entity, With<AutonomousShipTag>>,
     pub prod_tab: ResMut<'w, ProductionTabState>,
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
@@ -379,8 +380,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             params.world_view_rect.h = r.height();
 
             ui.horizontal(|ui| {
-                // Left: Fleet count indicator
-                ui.label(egui::RichText::new(format!("Fleet: {}", params.queue.available_count))
+                // Left: Fleet count indicator (ready/total)
+                let deployed = params.autonomous_ships.iter().count();
+                let total = params.queue.available_count as usize + deployed;
+                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, total))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));
 
