@@ -127,8 +127,6 @@ pub fn auto_build_drones_system(
                 station.thruster_reserves   -= actual as f32 * DRONE_BUILD_COST_THRUSTERS;
                 station.ai_cores            -= actual as f32 * DRONE_BUILD_COST_CORES;
                 queue.available_count += actual;
-                // Bump max_drones if queue exceeds it
-                station.max_drones = station.max_drones.max(queue.available_count);
                 info!("[Voidrift] Drone assembly complete: {} built. Queue: {}", actual, queue.available_count);
             }
 

@@ -52,6 +52,8 @@ pub use constants::*;
 
 mod components;
 pub use crate::components::*;
+use crate::components::events::*;
+use crate::components::resources::{ShipQueue, MaxDispatch};
 
 pub mod systems;
 pub mod scenes;
@@ -96,7 +98,7 @@ fn main() {
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
         .insert_resource(ShipQueue::default())
-        .insert_resource(MaxDrones::default())
+        .insert_resource(MaxDispatch::default())
         .insert_resource(RequestsTabState::default())
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())
@@ -244,7 +246,7 @@ pub fn start() {
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
         .insert_resource(ShipQueue::default())
-        .insert_resource(MaxDrones::default())
+        .insert_resource(MaxDispatch::default())
         .insert_resource(RequestsTabState::default())
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())

@@ -3,6 +3,7 @@ use bevy_egui::{egui, EguiContexts};
 use bevy::sprite::AlphaMode2d;
 use rand::{Rng, SeedableRng};
 use crate::components::*;
+use crate::components::resources::{ShipQueue, MaxDispatch};
 use crate::constants::*;
 use crate::systems::persistence::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
 
@@ -335,7 +336,7 @@ pub fn ingame_startup_system(
     mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut queue: ResMut<ShipQueue>,
-    mut max_drones: ResMut<MaxDrones>,
+    mut max_dispatch: ResMut<MaxDispatch>,
     opening_drone_query: Query<Entity, With<InOpeningSequence>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -354,7 +355,7 @@ pub fn ingame_startup_system(
             &mut station_query,
             &mut active_tab,
             &mut queue,
-            &mut max_drones,
+            &mut max_dispatch,
             &opening_drone_query,
             &mut commands,
             &mut requests_tab,
@@ -378,7 +379,7 @@ fn restore_save_state(
     station_query: &mut Query<&mut Station, (With<Station>, Without<Ship>)>,
     active_tab: &mut ActiveStationTab,
     queue: &mut ShipQueue,
-    max_drones: &mut MaxDrones,
+    max_dispatch: &mut MaxDispatch,
     opening_drone_query: &Query<Entity, With<InOpeningSequence>>,
     commands: &mut Commands,
     requests_tab: &mut RequestsTabState,
@@ -423,8 +424,8 @@ fn restore_save_state(
         station.repair_progress      = save_data.repair_progress;
         station.drone_build_progress = save_data.drone_build_progress;
         station.power_multiplier     = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
-        station.max_drones          = if save_data.max_drones > 0 { save_data.max_drones } else { 5 };
-        max_drones.0 = station.max_drones;
+        station.max_dispatch          = if save_data.max_dispatch > 0 { save_data.max_dispatch } else { 5 };
+        max_dispatch.0 = station.max_dispatch;
     }
 
     *active_tab = match save_data.active_tab.as_str() {

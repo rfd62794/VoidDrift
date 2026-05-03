@@ -36,7 +36,7 @@ pub struct ShipQueue {
 }
 
 #[derive(Resource, Default)]
-pub struct MaxDrones(pub u32);
+pub struct MaxDispatch(pub u32);
 
 #[derive(Resource, Default)]
 pub struct SignalLog {

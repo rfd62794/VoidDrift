@@ -67,7 +67,7 @@ pub struct Station {
     pub cargo_capacity_multiplier: f32,
     pub ship_speed_multiplier: f32,
     pub power_multiplier: f32,
-    pub max_drones: u32,
+    pub max_dispatch: u32,
     pub max_active_asteroids: u32,
 }
 

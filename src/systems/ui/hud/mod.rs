@@ -6,7 +6,7 @@ use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
-use crate::components::resources::MaxDrones;
+use crate::components::resources::MaxDispatch;
 use crate::scenes::main_menu::MainMenuState;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
@@ -77,14 +77,14 @@ pub fn station_visual_system(
     }
 }
 
-/// Syncs station.max_drones to MaxDrones resource for HUD display
+/// Syncs station.max_dispatch to MaxDispatch resource for HUD display
 /// Runs before HUD to avoid query conflicts
 pub fn sync_max_drones_system(
     station_query: Query<&Station, (With<Station>, Without<Ship>)>,
-    mut max_drones: ResMut<MaxDrones>,
+    mut max_dispatch: ResMut<MaxDispatch>,
 ) {
     if let Ok(station) = station_query.get_single() {
-        max_drones.0 = station.max_drones;
+        max_dispatch.0 = station.max_dispatch;
     }
 }
 
@@ -112,7 +112,7 @@ pub struct HudParams<'w, 's> {
     pub ui_layout: Res<'w, UiLayout>,
     pub world_view_rect: ResMut<'w, WorldViewRect>,
     pub queue: Res<'w, ShipQueue>,
-    pub max_drones: Res<'w, MaxDrones>,
+    pub max_dispatch: Res<'w, MaxDispatch>,
     pub prod_tab: ResMut<'w, ProductionTabState>,
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
@@ -380,7 +380,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator
-                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
+                ui.label(egui::RichText::new(format!("Fleet: {}", params.queue.available_count))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));
 

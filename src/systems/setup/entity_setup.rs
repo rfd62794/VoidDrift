@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
 use rand::{Rng, SeedableRng};
-use crate::constants::*;
 use crate::components::*;
+use crate::components::resources::MaxDispatch;
+use crate::constants::*;
 
 pub fn spawn_opening_drone(
     commands: &mut Commands,
@@ -94,10 +95,10 @@ pub fn spawn_station(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    mut max_drones: ResMut<MaxDrones>,
+    mut max_dispatch: ResMut<MaxDispatch>,
 ) {
-    let station_max_drones = 5;
-    max_drones.0 = station_max_drones;
+    let station_max_dispatch = 5;
+    max_dispatch.0 = station_max_dispatch;
 
     commands.spawn((
         MapMarker,
@@ -116,7 +117,7 @@ pub fn spawn_station(
             hull_plate_reserves: 0.0,
             thruster_reserves: 0.0,
             ai_cores: 0.0,
-            max_drones: station_max_drones,
+            max_dispatch: station_max_dispatch,
             drone_build_progress: 0.0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
