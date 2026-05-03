@@ -15,6 +15,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.18] - Drone Queue HUD - 2026-05-03
+### Changed
+- Renamed MaxDrones resource to MaxDispatch (soft dispatch limit, not fleet cap)
+- Renamed station.max_drones to station.max_dispatch
+- Updated HUD to display "Fleet: {available}/{total}" (ready/total fleet size)
+- Available = queue.available_count, Total = available + deployed (autonomous ship entities)
+- Removed misleading cap display — no hard fleet limit exists
+### Fixed
+- Save data field name changed to max_dispatch for clarity
+
+## [2.8.15] - Bottle Asteroid Overlap Fix - 2026-05-02
+### Fixed
+- Bottle entities no longer spawn overlapping asteroids
+- Improved spawn position validation
+
+## [2.8.14] - Tutorial Input Fixes - 2026-05-02
+### Fixed
+- Tutorial popups no longer block game input when dismissed
+- Fixed tutorial state persistence across save/load
+
+## [2.8.13] - Tutorial Popup Fixes - 2026-05-02
+### Fixed
+- Tutorial popup positioning corrected for all screen sizes
+- Fixed popup rendering overlap with HUD elements
+
+## [2.8.12] - Tutorial Highlight Fix 3 - 2026-05-02
+### Fixed
+- TutorialHighlight ring visibility state corrected
+- Fixed highlight persistence after tutorial completion
+
+## [2.8.11] - Tutorial Highlight Fix 2 - 2026-05-02
+### Fixed
+- Tutorial highlight targeting improved for nearest asteroid
+- Fixed highlight flickering during state transitions
+
+## [2.8.10] - Tutorial Highlight Fix - 2026-05-02
+### Fixed
+- TutorialHighlight component rendering corrected
+- Fixed highlight Z-order relative to game elements
+
+## [2.8.9] - Tutorial egui Highlights - 2026-05-02
+### Added
+- egui-based tutorial highlighting system
+- Visual indicators for tutorial targets
+
+## [2.8.8] - Tutorial Fixes & Forge Rename - 2026-05-02
+### Changed
+- Renamed "Production" tab to "FORGE" in UI display
+- Tutorial system fixes for Phase 4a
+### Fixed
+- Tutorial popup timing corrected
+- Fixed tutorial state tracking
+
 ## [2.8.7] - Tutorial 4a - 2026-04-XX
 ### Added
 - Phase 4a tutorial system (T-101 to T-106 Echo voice)

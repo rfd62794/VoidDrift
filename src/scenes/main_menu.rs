@@ -432,6 +432,7 @@ fn restore_save_state(
         "Cargo"      => ActiveStationTab::Cargo,
         "Production" => ActiveStationTab::Production,
         "Requests"   => ActiveStationTab::Requests,
+        "Logs"       => ActiveStationTab::Logs,
         _            => ActiveStationTab::Cargo,
     };
 

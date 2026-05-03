@@ -6,6 +6,7 @@ pub enum ActiveStationTab {
     Cargo,
     Production,
     Requests,
+    Logs,
 }
 
 #[derive(Resource, PartialEq, Debug, Clone, Copy, Default)]
