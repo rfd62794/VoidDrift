@@ -88,22 +88,6 @@ pub fn sync_max_drones_system(
     }
 }
 
-/// Ensures max_drones never drops below current drone count
-/// This handles cases where drones are added during gameplay
-pub fn ensure_max_drones_covers_queue(
-    queue: Res<ShipQueue>,
-    mut max_drones: ResMut<MaxDrones>,
-    mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
-) {
-    if queue.available_count > max_drones.0 {
-        max_drones.0 = queue.available_count;
-        // Also update the station component so it persists
-        if let Ok(mut station) = station_query.get_single_mut() {
-            station.max_drones = max_drones.0;
-        }
-    }
-}
-
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
@@ -396,6 +380,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator
+                info!("[MaxDrones HUD] Reading from resource: {}", params.max_drones.0);
                 ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));

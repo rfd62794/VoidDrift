@@ -179,7 +179,6 @@ fn main() {
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
-            systems::ui::hud::ensure_max_drones_covers_queue,
             systems::ui::hud::sync_max_drones_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
@@ -329,7 +328,6 @@ pub fn start() {
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
-            systems::ui::hud::ensure_max_drones_covers_queue,
             systems::ui::hud::sync_max_drones_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
