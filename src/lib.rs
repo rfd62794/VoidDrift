@@ -213,6 +213,7 @@ pub fn start() {
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     canvas: Some("#bevy-canvas".to_string()),
+                    #[cfg(not(target_arch = "wasm32"))]
                     resolution: bevy::window::WindowResolution::new(720.0, 1280.0),
                     present_mode: bevy::window::PresentMode::Fifo,
                     title: "Voidrift".to_string(),
