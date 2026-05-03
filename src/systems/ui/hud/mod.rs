@@ -368,24 +368,27 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator
-                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
+                let max_drones = params.max_drones.0;
+                info!("[Voidrift] HUD reading MaxDrones: {}", max_drones);
+                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, max_drones))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));
 
-                // Spacer to push buttons right
-                ui.add_space(ui.available_width() - 168.0);
-
-                // Right: FOCUS and SAVE buttons
-                if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
-                    params.pan_state.is_focused = true;
-                    params.pan_state.cumulative_offset = Vec2::ZERO;
-                    if let Ok(mut proj) = params.cam_query.get_single_mut() {
-                        proj.scale = 1.0;
+                // Push buttons to right edge using right_to_left layout
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    // SAVE renders first but appears rightmost due to right_to_left
+                    if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                        params.menu_state.show_save_overlay = true;
                     }
-                }
-                if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {
-                    params.menu_state.show_save_overlay = true;
-                }
+                    // FOCUS renders second but appears left of SAVE
+                    if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                        params.pan_state.is_focused = true;
+                        params.pan_state.cumulative_offset = Vec2::ZERO;
+                        if let Ok(mut proj) = params.cam_query.get_single_mut() {
+                            proj.scale = 1.0;
+                        }
+                    }
+                });
             });
         });
 }

@@ -98,6 +98,7 @@ pub fn spawn_station(
 ) {
     let station_max_drones = 5;
     max_drones.0 = station_max_drones;
+    info!("[Voidrift] MaxDrones set from spawn_station: {}", max_drones.0);
 
     commands.spawn((
         MapMarker,
