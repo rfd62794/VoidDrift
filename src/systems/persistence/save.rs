@@ -39,7 +39,6 @@ pub struct SaveData {
     pub repair_progress: f32,
     pub drone_build_progress: f32,
     #[serde(default)] pub power_multiplier: f32,
-    #[serde(default)] pub max_drones: u32,
     #[serde(default)] pub signal_fired_ids: Vec<u32>,
 
     // Tabs unlocked
@@ -296,7 +295,6 @@ pub fn collect_save_data(
         repair_progress: station.repair_progress,
         drone_build_progress: station.drone_build_progress,
         power_multiplier: station.power_multiplier,
-        max_drones: station.max_drones,
         signal_fired_ids: signal_log.fired.iter().copied().collect(),
         tab_power: false, // TODO: collect from tabs resource
         tab_cargo: false, // TODO: collect from tabs resource

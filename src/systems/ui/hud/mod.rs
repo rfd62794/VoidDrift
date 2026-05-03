@@ -6,6 +6,7 @@ use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
 use crate::constants::*;
+use crate::components::resources::MaxDrones;
 use crate::scenes::main_menu::MainMenuState;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
@@ -73,6 +74,17 @@ pub fn station_visual_system(
                 if material.color != target_color { material.color = target_color; }
             }
         }
+    }
+}
+
+/// Syncs station.max_drones to MaxDrones resource for HUD display
+/// Runs before HUD to avoid query conflicts
+pub fn sync_max_drones_system(
+    station_query: Query<&Station, (With<Station>, Without<Ship>)>,
+    mut max_drones: ResMut<MaxDrones>,
+) {
+    if let Ok(station) = station_query.get_single() {
+        max_drones.0 = station.max_drones;
     }
 }
 
@@ -368,9 +380,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator
-                let max_drones = params.max_drones.0;
-                info!("[Voidrift] HUD reading MaxDrones: {}", max_drones);
-                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, max_drones))
+                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));
 

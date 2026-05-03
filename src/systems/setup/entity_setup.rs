@@ -98,7 +98,6 @@ pub fn spawn_station(
 ) {
     let station_max_drones = 5;
     max_drones.0 = station_max_drones;
-    info!("[Voidrift] MaxDrones set from spawn_station: {}", max_drones.0);
 
     commands.spawn((
         MapMarker,
@@ -117,6 +116,7 @@ pub fn spawn_station(
             hull_plate_reserves: 0.0,
             thruster_reserves: 0.0,
             ai_cores: 0.0,
+            max_drones: station_max_drones,
             drone_build_progress: 0.0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
@@ -126,7 +126,6 @@ pub fn spawn_station(
             cargo_capacity_multiplier: 1.0,
             ship_speed_multiplier: 1.0,
             power_multiplier: 1.0,
-            max_drones: station_max_drones,
             max_active_asteroids: 3,
         },
         StationQueues::default(),

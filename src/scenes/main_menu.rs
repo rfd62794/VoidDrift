@@ -357,7 +357,7 @@ pub fn ingame_startup_system(
             &mut max_drones,
             &opening_drone_query,
             &mut commands,
-            &mut *requests_tab,
+            &mut requests_tab,
         );
         spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
         // Suppress all Phase 4a tutorial popups when loading an existing save
@@ -423,16 +423,7 @@ fn restore_save_state(
         station.repair_progress      = save_data.repair_progress;
         station.drone_build_progress = save_data.drone_build_progress;
         station.power_multiplier     = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
-        
-        // Load max_drones from save if available, otherwise use station value
-        if save_data.max_drones > 0 {
-            station.max_drones = save_data.max_drones;
-            max_drones.0 = save_data.max_drones;
-            info!("[Voidrift] MaxDrones loaded from save: {}", max_drones.0);
-        } else {
-            max_drones.0 = station.max_drones;
-            info!("[Voidrift] MaxDrones loaded from station (save missing field): {}", max_drones.0);
-        }
+        max_drones.0 = station.max_drones;
     }
 
     *active_tab = match save_data.active_tab.as_str() {

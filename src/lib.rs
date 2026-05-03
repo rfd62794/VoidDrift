@@ -179,6 +179,7 @@ fn main() {
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
+            systems::ui::hud::sync_max_drones_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
@@ -327,6 +328,7 @@ pub fn start() {
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
+            systems::ui::hud::sync_max_drones_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
