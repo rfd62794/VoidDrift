@@ -343,6 +343,7 @@ pub fn ingame_startup_system(
     mut commands: Commands,
     mut requests_tab: ResMut<RequestsTabState>,
     mut tutorial: ResMut<TutorialState>,
+    mut pan_state: ResMut<MapPanState>,
 ) {
     // Reset tutorial for every session (new game starts clean; load path overrides below)
     *tutorial = TutorialState::default();
@@ -359,6 +360,7 @@ pub fn ingame_startup_system(
             &opening_drone_query,
             &mut commands,
             &mut requests_tab,
+            &mut pan_state,
         );
         spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
         // Suppress all Phase 4a tutorial popups when loading an existing save
@@ -383,6 +385,7 @@ fn restore_save_state(
     opening_drone_query: &Query<Entity, With<InOpeningSequence>>,
     commands: &mut Commands,
     requests_tab: &mut RequestsTabState,
+    pan_state: &mut MapPanState,
 ) {
     opening.phase = match save_data.opening_phase.as_str() {
         "Adrift"           => OpeningPhase::Adrift,
@@ -394,6 +397,9 @@ fn restore_save_state(
         _                  => OpeningPhase::Complete,
     };
     opening.timer = 0.0;
+
+    // Reset camera focus to station on load
+    pan_state.is_focused = false;
 
     if opening.phase == OpeningPhase::Complete {
         for ent in opening_drone_query.iter() {
