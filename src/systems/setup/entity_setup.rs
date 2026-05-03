@@ -94,7 +94,11 @@ pub fn spawn_station(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    mut max_drones: ResMut<MaxDrones>,
 ) {
+    let station_max_drones = 5;
+    max_drones.0 = station_max_drones;
+
     commands.spawn((
         MapMarker,
         Station {
@@ -121,7 +125,7 @@ pub fn spawn_station(
             cargo_capacity_multiplier: 1.0,
             ship_speed_multiplier: 1.0,
             power_multiplier: 1.0,
-            max_drones: 5,
+            max_drones: station_max_drones,
             max_active_asteroids: 3,
         },
         StationQueues::default(),

@@ -4,6 +4,7 @@ use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::constants::*;
 use crate::components::*;
+use crate::components::resources::MaxDrones;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
 
@@ -48,6 +49,7 @@ pub fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    max_drones: ResMut<MaxDrones>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
@@ -55,7 +57,7 @@ pub fn setup_world(
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
     spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server);
-    spawn_station(&mut commands, &mut meshes, &mut materials);
+    spawn_station(&mut commands, &mut meshes, &mut materials, max_drones);
     spawn_berths(&mut commands);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
     spawn_tutorial_highlight(&mut commands, &mut meshes, &mut materials);

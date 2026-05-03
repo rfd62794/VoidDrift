@@ -36,6 +36,9 @@ pub struct ShipQueue {
 }
 
 #[derive(Resource, Default)]
+pub struct MaxDrones(pub u32);
+
+#[derive(Resource, Default)]
 pub struct SignalLog {
     pub entries: VecDeque<String>,
     pub fired: HashSet<u32>,

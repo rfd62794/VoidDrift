@@ -48,7 +48,7 @@ pub fn render_tab_content(
     active_tab: ActiveStationTab,
     station: &mut Station,
     toggles: &mut ProductionToggles,
-    queue: &ShipQueue,
+    _queue: &ShipQueue,
     prod_tab: &mut ProductionTabState,
     req_tab: &mut RequestsTabState,
     repair_events: &mut EventWriter<RepairStationEvent>,
@@ -68,7 +68,6 @@ pub fn render_tab_content(
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
                     ui.label("CANISTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_canisters)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("FLEET READY:"); ui.label(egui::RichText::new(format!("{}", queue.available_count)).color(egui::Color32::from_rgb(0, 230, 120)).strong()); ui.end_row();
                 });
 
                 ui.add_space(8.0);

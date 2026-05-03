@@ -100,6 +100,7 @@ pub struct HudParams<'w, 's> {
     pub ui_layout: Res<'w, UiLayout>,
     pub world_view_rect: ResMut<'w, WorldViewRect>,
     pub queue: Res<'w, ShipQueue>,
+    pub max_drones: Res<'w, MaxDrones>,
     pub prod_tab: ResMut<'w, ProductionTabState>,
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
@@ -366,6 +367,15 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             params.world_view_rect.h = r.height();
 
             ui.horizontal(|ui| {
+                // Left: Fleet count indicator
+                ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
+                    .color(egui::Color32::from_rgb(0, 200, 200))
+                    .size(16.0));
+
+                // Spacer to push buttons right
+                ui.add_space(ui.available_width() - 168.0);
+
+                // Right: FOCUS and SAVE buttons
                 if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                     params.pan_state.is_focused = true;
                     params.pan_state.cumulative_offset = Vec2::ZERO;

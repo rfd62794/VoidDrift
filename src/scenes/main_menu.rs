@@ -335,6 +335,7 @@ pub fn ingame_startup_system(
     mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
     mut active_tab: ResMut<ActiveStationTab>,
     mut queue: ResMut<ShipQueue>,
+    mut max_drones: ResMut<MaxDrones>,
     opening_drone_query: Query<Entity, With<InOpeningSequence>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -353,9 +354,10 @@ pub fn ingame_startup_system(
             &mut station_query,
             &mut active_tab,
             &mut queue,
+            &mut max_drones,
             &opening_drone_query,
             &mut commands,
-            &mut requests_tab,
+            &mut *requests_tab,
         );
         spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
         // Suppress all Phase 4a tutorial popups when loading an existing save
@@ -376,6 +378,7 @@ fn restore_save_state(
     station_query: &mut Query<&mut Station, (With<Station>, Without<Ship>)>,
     active_tab: &mut ActiveStationTab,
     queue: &mut ShipQueue,
+    max_drones: &mut MaxDrones,
     opening_drone_query: &Query<Entity, With<InOpeningSequence>>,
     commands: &mut Commands,
     requests_tab: &mut RequestsTabState,
@@ -420,6 +423,7 @@ fn restore_save_state(
         station.repair_progress      = save_data.repair_progress;
         station.drone_build_progress = save_data.drone_build_progress;
         station.power_multiplier     = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
+        max_drones.0 = station.max_drones;
     }
 
     *active_tab = match save_data.active_tab.as_str() {
