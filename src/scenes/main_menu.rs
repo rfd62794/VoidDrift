@@ -425,7 +425,6 @@ fn restore_save_state(
         station.power_multiplier     = if save_data.power_multiplier > 0.0 { save_data.power_multiplier } else { 1.0 };
         station.max_drones          = if save_data.max_drones > 0 { save_data.max_drones } else { 5 };
         max_drones.0 = station.max_drones;
-        info!("[MaxDrones Restore] Station max_drones from save: {}", station.max_drones);
     }
 
     *active_tab = match save_data.active_tab.as_str() {

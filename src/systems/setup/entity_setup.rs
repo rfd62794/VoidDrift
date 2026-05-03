@@ -98,7 +98,6 @@ pub fn spawn_station(
 ) {
     let station_max_drones = 5;
     max_drones.0 = station_max_drones;
-    info!("[MaxDrones Spawn] Set to: {}", station_max_drones);
 
     commands.spawn((
         MapMarker,

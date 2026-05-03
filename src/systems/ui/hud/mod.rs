@@ -380,7 +380,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator
-                info!("[MaxDrones HUD] Reading from resource: {}", params.max_drones.0);
                 ui.label(egui::RichText::new(format!("Fleet: {}/{}", params.queue.available_count, params.max_drones.0))
                     .color(egui::Color32::from_rgb(0, 200, 200))
                     .size(16.0));
