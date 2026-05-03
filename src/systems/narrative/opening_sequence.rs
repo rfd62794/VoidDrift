@@ -17,10 +17,15 @@ pub fn opening_sequence_system(
     mut commands: Commands,
     mut signal_log: ResMut<SignalLog>,
     mut opening_complete_events: EventWriter<OpeningCompleteEvent>,
+    mut pan_state: ResMut<MapPanState>,
 ) {
     if opening.phase == OpeningPhase::Complete {
+        pan_state.is_focused = false;
         return;
     }
+
+    // Focus on ship during opening sequence
+    pan_state.is_focused = true;
 
     let delta = time.delta_secs();
     opening.timer += delta;

@@ -70,19 +70,19 @@ pub fn ship_rotation_system(
 }
 
 /// Scrolls star entities with parallax and wraps them around the camera.
-/// On wrap, stars are redistributed randomly within bounds — no hard edges at any zoom.
+/// Stars are always centered on the station, not the camera.
 pub fn starfield_scroll_system(
-    cam_query: Query<&Transform, VisualsCameraFilter>,
+    station_query: Query<&Transform, (With<Station>, Without<StarLayer>)>,
     mut star_query: Query<(&StarLayer, &mut Transform), VisualsStarFilter>,
 ) {
-    let Ok(cam_transform) = cam_query.get_single() else { return; };
-    let cam_pos = cam_transform.translation.truncate();
+    let Ok(station_transform) = station_query.get_single() else { return; };
+    let station_pos = station_transform.translation.truncate();
 
     for (layer, mut transform) in star_query.iter_mut() {
         // Star position is its original world position + the parallax offset.
-        // The camera's position dictates how far the star shifts.
-        transform.translation.x = layer.orig_pos.x + cam_pos.x * (1.0 - layer.layer);
-        transform.translation.y = layer.orig_pos.y + cam_pos.y * (1.0 - layer.layer);
+        // The station's position dictates how far the star shifts (always centered on station).
+        transform.translation.x = layer.orig_pos.x + station_pos.x * (1.0 - layer.layer);
+        transform.translation.y = layer.orig_pos.y + station_pos.y * (1.0 - layer.layer);
     }
 }
 

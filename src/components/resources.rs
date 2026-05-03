@@ -191,7 +191,7 @@ impl Default for MapPanState {
         Self {
             last_position: None,
             cumulative_offset: Vec2::ZERO,
-            is_focused: true,
+            is_focused: false,
         }
     }
 }
