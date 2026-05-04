@@ -84,11 +84,19 @@ pub fn render_tab_content(
                     egui::Color32::from_rgb(180, 60, 0)
                 };
 
+                let stall_label = if station.hull_plate_reserves < DRONE_BUILD_COST_HULLS {
+                    "Needs Hull Plates"
+                } else if station.thruster_reserves < DRONE_BUILD_COST_THRUSTERS {
+                    "Needs Thrusters"
+                } else {
+                    "Needs AI Core"
+                };
+
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("NEXT DRONE:").color(egui::Color32::from_gray(160)).size(12.0));
                     let progress_bar = egui::ProgressBar::new(progress)
                         .fill(bar_color)
-                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { "STALLED".to_string() });
+                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { stall_label.to_string() });
                     ui.add(progress_bar);
                 });
             });
