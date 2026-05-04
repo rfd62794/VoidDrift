@@ -59,20 +59,21 @@ pub fn render_tab_content(
             ui.vertical(|ui| {
                 ui.heading("CARGO BAY");
                 ui.add_space(8.0);
-                ui.label(egui::RichText::new("ORE").color(egui::Color32::from_gray(140)).size(11.0));
+                ui.label(egui::RichText::new("ORE / INGOTS").color(egui::Color32::from_gray(140)).size(11.0));
                 egui::Grid::new("ore_grid").spacing([20.0, 8.0]).show(ui, |ui| {
                     ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.iron_reserves, station.iron_ingots)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.tungsten_reserves, station.tungsten_ingots)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("NICKEL:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.nickel_reserves, station.nickel_ingots)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.aluminum_reserves, station.aluminum_canisters)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.aluminum_reserves, station.aluminum_ingots)).color(egui::Color32::WHITE)); ui.end_row();
                 });
 
                 ui.add_space(4.0);
-                ui.label(egui::RichText::new("INGOTS & PARTS").color(egui::Color32::from_gray(140)).size(11.0));
+                ui.label(egui::RichText::new("PARTS").color(egui::Color32::from_gray(140)).size(11.0));
                 egui::Grid::new("parts_grid").spacing([20.0, 8.0]).show(ui, |ui| {
                     ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
+                    ui.label("CANISTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_canisters)).color(egui::Color32::WHITE)); ui.end_row();
                 });
 
                 ui.add_space(8.0);
