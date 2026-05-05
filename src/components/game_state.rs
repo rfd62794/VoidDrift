@@ -110,6 +110,7 @@ pub struct StationQueues {
     pub nickel_refinery: Option<crate::components::ProcessingJob>,
     pub aluminum_refinery: Option<crate::components::ProcessingJob>,
     pub hull_forge:         Option<crate::components::ProcessingJob>,
+    pub thruster_forge:      Option<crate::components::ProcessingJob>,
     pub core_fabricator:    Option<crate::components::ProcessingJob>,
     pub canister_forge:     Option<crate::components::ProcessingJob>,
 }

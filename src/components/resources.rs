@@ -144,6 +144,7 @@ pub enum ProcessingOperation {
     NickelRefinery,
     AluminumRefinery,
     HullForge,
+    ThrusterForge,
     CoreFabricator,
     AluminumCanisterForge,
 }
