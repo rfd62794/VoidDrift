@@ -235,7 +235,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     }
 
     // ── 3. SECONDARY TABS (if Expanded && docked) ─────────────────────────────
-    if drawer == DrawerState::Expanded && is_docked {
+    if drawer == DrawerState::Expanded && is_docked && !params.view_state.show_production_tree {
         let no_popup = params.tutorial.active.is_none();
         let show_forge_hl    = no_popup && params.tutorial.shown.contains(&104) && !params.tutorial.shown.contains(&105);
         let show_requests_hl = no_popup && params.tutorial.shown.contains(&106) && !params.req_tab.collected_requests.is_empty() && !params.req_tab.visited_after_t106;
@@ -289,31 +289,33 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     // ── 4. PRIMARY TABS REMOVED ─────────────────────────────
 
     // ── 5. HANDLE BAR (always when opening_complete) ──────────────────────────
-    egui::TopBottomPanel::bottom("handle_bar")
-        .resizable(false)
-        .exact_height(layout.handle_height)
-        .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_rgb(8, 10, 14)))
-        .show(ctx, |ui| {
-            let rect = ui.max_rect();
-            let response = ui.interact(rect, ui.id(), egui::Sense::click());
-            if response.clicked() {
-                *params.drawer = match *params.drawer {
-                    DrawerState::Collapsed => DrawerState::Expanded,
-                    DrawerState::Expanded  => DrawerState::Collapsed,
-                };
-            }
-            ui.painter().text(
-                rect.center(),
-                egui::Align2::CENTER_CENTER,
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-                egui::FontId::monospace(10.0),
-                egui::Color32::from_gray(60),
-            );
-        });
+    if !params.view_state.show_production_tree {
+        egui::TopBottomPanel::bottom("handle_bar")
+            .resizable(false)
+            .exact_height(layout.handle_height)
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgb(8, 10, 14)))
+            .show(ctx, |ui| {
+                let rect = ui.max_rect();
+                let response = ui.interact(rect, ui.id(), egui::Sense::click());
+                if response.clicked() {
+                    *params.drawer = match *params.drawer {
+                        DrawerState::Collapsed => DrawerState::Expanded,
+                        DrawerState::Expanded  => DrawerState::Collapsed,
+                    };
+                }
+                ui.painter().text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+                    egui::FontId::monospace(10.0),
+                    egui::Color32::from_gray(60),
+                );
+            });
+    }
 
     // ── 6. QUEST OVERLAY (window, above world) ────────────────────────────────
-    if params.quest_log.panel_open {
+    if params.quest_log.panel_open && !params.view_state.show_production_tree {
         egui::Window::new("OBJECTIVES")
             .anchor(egui::Align2::RIGHT_TOP, egui::vec2(-10.0, 10.0))
             .resizable(false)
@@ -343,49 +345,30 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
     // ── 7. TUTORIAL POP-UP ────────────────────────────────────────────────────
     if let Some(popup) = params.tutorial.active.clone() {
-        egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
-            .id(egui::Id::new("tutorial_popup"))
-            .collapsible(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .fixed_size([300.0, 180.0])
-            .frame(egui::Frame::window(&ctx.style())
-                .fill(egui::Color32::from_rgb(5, 5, 10))
-                .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
-                .inner_margin(16.0))
-            .show(ctx, |ui| {
-                ui.vertical_centered(|ui| {
-                    ui.add_space(8.0);
-                    ui.label(egui::RichText::new(&popup.body).size(13.0).color(egui::Color32::WHITE));
-                    ui.add_space(20.0);
-                    if ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 40.0))).clicked() {
-                        params.tutorial.shown.insert(popup.id);
+        if !params.view_state.show_production_tree {
+            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
+                .id(egui::Id::new("tutorial_popup"))
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .fixed_size([300.0, 180.0])
+                .frame(egui::Frame::window(&ctx.style())
+                    .fill(egui::Color32::from_rgb(5, 5, 10))
+                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
+                    .inner_margin(16.0))
+                .frame(egui::Frame::NONE
+                    .fill(egui::Color32::from_rgb(2, 4, 8)))
+                .show(ctx, |ui| {
+                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
+                    ui.add_space(12.0);
+                    if ui.button(egui::RichText::new(&popup.button_label).strong()).clicked() {
                         params.tutorial.active = None;
                     }
                 });
-            });
-        // No click-outside dismiss — tap gestures in world space would swallow the next popup
+        }
     }
 
-    // ── 7b. TUTORIAL EGUI HIGHLIGHTS (drawer handle only — tabs handled inline in step 3) ─
-    if params.tutorial.active.is_none()
-        && params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104)
-        && drawer == DrawerState::Collapsed
-    {
-        let painter = ctx.layer_painter(egui::LayerId::new(
-            egui::Order::Foreground,
-            egui::Id::new("tutorial_hl"),
-        ));
-        let handle_rect = egui::Rect::from_min_max(
-            egui::pos2(screen.min.x, screen.max.y - signal_height - layout.handle_height),
-            egui::pos2(screen.max.x, screen.max.y - signal_height),
-        );
-        painter.rect_filled(handle_rect, 0.0, egui::Color32::from_rgba_unmultiplied(0, 220, 220, 35));
-        painter.rect_stroke(handle_rect, 0.0, egui::Stroke::new(2.0, egui::Color32::from_rgb(0, 220, 220)), egui::StrokeKind::Outside);
-    }
-
-    // ── 8. CENTRAL PANEL (world view — MUST be last) ──────────────────────────
-    // Production Tree viewport — swap if active
+    // ── 8. PRODUCTION TREE VIEWPORT ───────────────────────────────────────────
     if params.view_state.show_production_tree {
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE
