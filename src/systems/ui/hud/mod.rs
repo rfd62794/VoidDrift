@@ -380,16 +380,69 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 params.world_view_rect.w = 0.0;
                 params.world_view_rect.h = 0.0;
                 
-                // Centered title
-                ui.painter().text(
-                    rect.center() - egui::vec2(0.0, 20.0),
+                let painter = ui.painter();
+                let border_color = egui::Color32::from_rgb(0, 200, 200); // Echo cyan
+                let fill_color = egui::Color32::from_rgb(4, 8, 16);
+                let text_color = egui::Color32::WHITE;
+                let border_stroke = egui::Stroke::new(1.5, border_color);
+                
+                // Grid dimensions
+                let col_width = rect.width() / 4.0;
+                let row_height = rect.height() / 5.0;
+                let node_size = egui::vec2(100.0, 40.0);
+                let drone_bay_size = egui::vec2(200.0, 40.0);
+                
+                // Title at top (smaller to make room for grid)
+                painter.text(
+                    egui::pos2(rect.center().x, rect.min.y + 30.0),
                     egui::Align2::CENTER_CENTER,
                     "PRODUCTION PIPELINE",
-                    egui::FontId::proportional(24.0),
-                    egui::Color32::from_rgb(0, 200, 200), // Echo cyan
+                    egui::FontId::proportional(16.0),
+                    border_color,
                 );
                 
-                // BACK button — bottom center
+                // Node rendering helper
+                let render_node = |col: usize, row: usize, label: &str, is_wide: bool| {
+                    let cell_center = egui::pos2(
+                        rect.min.x + col_width * (col as f32 + 0.5),
+                        rect.min.y + row_height * (row as f32 + 0.5),
+                    );
+                    let size = if is_wide { drone_bay_size } else { node_size };
+                    let node_rect = egui::Rect::from_center_size(cell_center, size);
+                    
+                    painter.rect_filled(node_rect, 4.0, fill_color);
+                    painter.rect_stroke(node_rect, 4.0, border_stroke, egui::StrokeKind::Outside);
+                    painter.text(
+                        node_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        label,
+                        egui::FontId::proportional(11.0),
+                        text_color,
+                    );
+                };
+                
+                // Row 0: Ore nodes
+                render_node(0, 0, "IRON", false);
+                render_node(1, 0, "TUNGSTEN", false);
+                render_node(2, 0, "NICKEL", false);
+                render_node(3, 0, "ALUMINUM", false);
+                
+                // Row 1: Ingot nodes
+                render_node(0, 1, "IRON INGOT", false);
+                render_node(1, 1, "TUNGSTEN INGOT", false);
+                render_node(2, 1, "NICKEL INGOT", false);
+                render_node(3, 1, "ALUMINUM INGOT", false);
+                
+                // Row 2: Part nodes
+                render_node(0, 2, "HULL PLATE", false);
+                render_node(1, 2, "THRUSTER", false);
+                render_node(2, 2, "AI CORE", false);
+                render_node(3, 2, "CANISTER", false);
+                
+                // Row 3: Convergence (DRONE BAY)
+                render_node(1, 3, "DRONE BAY", true); // Centered in middle columns
+                
+                // BACK button — bottom center, above DRONE BAY
                 let button_rect = egui::Rect::from_center_size(
                     rect.center_bottom() - egui::vec2(0.0, 60.0),
                     egui::vec2(120.0, 44.0),
