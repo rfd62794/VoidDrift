@@ -51,7 +51,7 @@ mod constants;
 pub use constants::*;
 
 pub mod config;
-use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig};
+use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig};
 
 mod components;
 pub use crate::components::*;
@@ -108,6 +108,8 @@ fn main() {
         .insert_resource(VisualConfig::load())
         .insert_resource(ContentConfig::load())
         .insert_resource(TutorialConfig::load())
+        .insert_resource(QuestConfig::load())
+        .insert_resource(RequestConfig::load())
         .insert_resource(ContentState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
@@ -267,6 +269,8 @@ pub fn start() {
         .insert_resource(VisualConfig::load())
         .insert_resource(ContentConfig::load())
         .insert_resource(TutorialConfig::load())
+        .insert_resource(QuestConfig::load())
+        .insert_resource(RequestConfig::load())
         .insert_resource(ContentState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (

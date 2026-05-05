@@ -2,12 +2,11 @@ use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
-use crate::constants::*;
 use crate::components::*;
-use crate::components::resources::MaxDispatch;
+use crate::constants::*;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
-use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::{BalanceConfig, VisualConfig, QuestConfig};
 
 /// Clean up all entities before setting up a new game
 pub fn cleanup_world_entities(
@@ -55,10 +54,11 @@ pub fn setup_world(
     max_dispatch: ResMut<MaxDispatch>,
     cfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
+    quest_cfg: Res<QuestConfig>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
-    init_quest_log(&mut commands);
+    init_quest_log(&mut commands, &quest_cfg);
     spawn_starfield(&mut commands, &mut meshes, &mut materials, &vcfg);
     spawn_camera(&mut commands);
     spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server, &cfg, &vcfg);

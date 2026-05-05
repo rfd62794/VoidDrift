@@ -2,7 +2,7 @@ use bevy::prelude::EventWriter;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
-use crate::config::BalanceConfig;
+use crate::config::{BalanceConfig, RequestConfig};
 
 fn render_ore_pipeline(
     ui: &mut egui::Ui,
@@ -55,6 +55,7 @@ pub fn render_tab_content(
     repair_events: &mut EventWriter<RepairStationEvent>,
     fulfill_events: &mut EventWriter<FulfillRequestEvent>,
     cfg: &BalanceConfig,
+    request_cfg: &RequestConfig,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
@@ -170,33 +171,48 @@ pub fn render_tab_content(
                 ui.label(egui::RichText::new("Something may be out there.").color(egui::Color32::GRAY).italics());
             } else {
                 for req in filtered.iter_mut().rev() {
-                    ui.group(|ui| {
-                        ui.vertical(|ui| {
-                            match req.id {
-                                RequestId::FirstLight => {
-                                    ui.heading(egui::RichText::new("First Light").color(egui::Color32::GOLD));
-                                    ui.label(egui::RichText::new("Something has been noticed about you.").italics());
-                                    ui.add_space(8.0);
-                                    ui.label("Requires: 25 Iron Ingots");
-                                    ui.label(egui::RichText::new("Reward: Power +25%").color(egui::Color32::CYAN));
-                                    ui.add_space(8.0);
-                                    
-                                    if req.fulfilled {
-                                        ui.label(egui::RichText::new("COMPLETE").strong().color(egui::Color32::GREEN));
-                                    } else {
-                                        let can_afford = station.iron_ingots >= 25.0;
-                                        if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
-                                            fulfill_events.send(FulfillRequestEvent {
-                                                request_id: req.id,
-                                                faction_id: req.faction,
-                                            });
+                    // Look up request definition from config
+                    if let Some(req_def) = request_cfg.faction_requests.iter().find(|r| r.id == format!("{:?}", req.id)) {
+                        ui.group(|ui| {
+                            ui.vertical(|ui| {
+                                ui.heading(egui::RichText::new(&req_def.title).color(egui::Color32::GOLD));
+                                ui.label(egui::RichText::new(&req_def.flavor).italics());
+                                ui.add_space(8.0);
+                                
+                                // Build requirements string
+                                for req_item in &req_def.requirements {
+                                    ui.label(format!("Requires: {:.0} {}", req_item.amount, req_item.resource));
+                                }
+                                
+                                // Build rewards string
+                                for reward in &req_def.rewards {
+                                    ui.label(egui::RichText::new(format!("Reward: {} {:.2}", reward.r#type, reward.value)).color(egui::Color32::CYAN));
+                                }
+                                
+                                ui.add_space(8.0);
+                                
+                                if req.fulfilled {
+                                    ui.label(egui::RichText::new("COMPLETE").strong().color(egui::Color32::GREEN));
+                                } else {
+                                    // Check if player can afford (simplified for FirstLight: iron_ingots >= 25)
+                                    let can_afford = req_def.requirements.iter().all(|r| {
+                                        match r.resource.as_str() {
+                                            "iron_ingots" => station.iron_ingots >= r.amount,
+                                            _ => false,
                                         }
+                                    });
+                                    
+                                    if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
+                                        fulfill_events.send(FulfillRequestEvent {
+                                            request_id: req.id,
+                                            faction_id: req.faction,
+                                        });
                                     }
                                 }
-                            }
+                            });
                         });
-                    });
-                    ui.add_space(8.0);
+                        ui.add_space(8.0);
+                    }
                 }
             }
         }

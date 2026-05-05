@@ -126,6 +126,7 @@ pub struct HudParams<'w, 's> {
     pub fulfill_events: EventWriter<'w, FulfillRequestEvent>,
     pub balance_cfg: Res<'w, BalanceConfig>,
     pub visual_cfg: Res<'w, VisualConfig>,
+    pub request_cfg: Res<'w, crate::config::RequestConfig>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -215,6 +216,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &mut params.repair_events,
                         &mut params.fulfill_events,
                         &params.balance_cfg,
+                        &params.request_cfg,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
