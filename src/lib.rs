@@ -51,7 +51,7 @@ mod constants;
 pub use constants::*;
 
 pub mod config;
-use config::BalanceConfig;
+use config::{BalanceConfig, VisualConfig};
 
 mod components;
 pub use crate::components::*;
@@ -105,6 +105,7 @@ fn main() {
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .insert_resource(BalanceConfig::load())
+        .insert_resource(VisualConfig::load())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -190,6 +191,8 @@ fn main() {
             systems::visuals::map::pinch_zoom_system,
             systems::visuals::map::map_pan_system,
             systems::narrative::opening_sequence::opening_sequence_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,
@@ -254,6 +257,7 @@ pub fn start() {
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .insert_resource(BalanceConfig::load())
+        .insert_resource(VisualConfig::load())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -340,6 +344,8 @@ pub fn start() {
             systems::visuals::map::pinch_zoom_system,
             systems::visuals::map::map_pan_system,
             systems::narrative::opening_sequence::opening_sequence_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,

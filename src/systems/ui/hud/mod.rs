@@ -5,10 +5,10 @@ use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
-use crate::constants::*;
 use crate::components::resources::MaxDispatch;
 use crate::scenes::main_menu::MainMenuState;
-use crate::config::BalanceConfig;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -17,6 +17,7 @@ pub fn ship_cargo_display_system(
     ship_query: Query<(&Ship, &Children), Without<Station>>,
     mut fill_query: Query<(&mut Transform, &mut MeshMaterial2d<ColorMaterial>), With<ShipCargoBarFill>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    vcfg: Res<VisualConfig>,
 ) {
     for (ship, children) in ship_query.iter() {
         for child in children.iter() {
@@ -25,14 +26,16 @@ pub fn ship_cargo_display_system(
                 transform.scale.x = ratio.max(0.001);
                 transform.translation.x = -20.0 * (1.0 - ratio);
                 if let Some(mat) = materials.get_mut(&mat_handle.0) {
+                    let av = &vcfg.asteroid;
                     mat.color = if ship.cargo >= ship.cargo_capacity as f32 * 0.95 {
                         let pulse = (time.elapsed_secs() * 10.0).sin() * 0.2 + 0.8;
                         Color::srgba(0.0, pulse, pulse, 1.0)
                     } else {
                         match ship.cargo_type {
-                            OreDeposit::Iron => COLOR_IRON,
-                            OreDeposit::Tungsten    => COLOR_TUNGSTEN,
-                            _ => Color::srgb(0.0, 1.0, 1.0),
+                            OreDeposit::Iron     => rgb(av.color_iron),
+                            OreDeposit::Tungsten => rgb(av.color_tungsten),
+                            OreDeposit::Nickel   => rgb(av.color_nickel),
+                            OreDeposit::Aluminum => rgb(av.color_aluminum),
                         }
                     };
                 }
@@ -67,11 +70,13 @@ pub fn station_visual_system(
     station_query: Query<&Station>,
     mut hub_query: Query<&MeshMaterial2d<ColorMaterial>, With<StationHub>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    vcfg: Res<VisualConfig>,
 ) {
     if let Ok(station) = station_query.get_single() {
         if let Ok(material_handle) = hub_query.get_single_mut() {
             if let Some(material) = materials.get_mut(&material_handle.0) {
-                let target_color = if station.online { Color::srgb(1.0, 0.84, 0.0) } else { Color::srgb(0.33, 0.27, 0.0) };
+                let sv = &vcfg.station;
+                let target_color = if station.online { rgb(sv.color_hub_online) } else { rgb(sv.color_hub_offline) };
                 if material.color != target_color { material.color = target_color; }
             }
         }
@@ -120,6 +125,7 @@ pub struct HudParams<'w, 's> {
     pub repair_events: EventWriter<'w, RepairStationEvent>,
     pub fulfill_events: EventWriter<'w, FulfillRequestEvent>,
     pub balance_cfg: Res<'w, BalanceConfig>,
+    pub visual_cfg: Res<'w, VisualConfig>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {

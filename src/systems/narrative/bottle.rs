@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_egui::EguiContexts;
 use crate::components::*;
 use crate::constants::*;
+use crate::config::VisualConfig;
+use crate::config::visual::rgb;
 use crate::systems::ship_control::ship_spawn::spawn_bottle_drone;
 
 #[derive(Resource)]
@@ -26,6 +28,7 @@ pub fn bottle_spawn_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     requests_tab: Res<RequestsTabState>,
+    vcfg: Res<VisualConfig>,
 ) {
     // On load: if FirstLight card already exists, bottle was already collected.
     // Set spawned=true so the timer never fires again.
@@ -42,14 +45,15 @@ pub fn bottle_spawn_system(
     if bottle_timer.timer.finished() {
         bottle_timer.spawned = true;
         
-        let spawn_pos = Vec2::new(150.0, 200.0); // Drift somewhere
-        
+        let b = &vcfg.bottle;
+        let spawn_pos = Vec2::new(b.spawn_x, b.spawn_y);
+
         commands.spawn((
             ActiveBottle,
             MapMarker,
             MapElement,
-            Mesh2d(meshes.add(Rectangle::new(16.0, 32.0))), // Big enough to tap
-            MeshMaterial2d(materials.add(COLOR_BOTTLE)),
+            Mesh2d(meshes.add(Rectangle::new(b.width, b.height))),
+            MeshMaterial2d(materials.add(rgb(b.color))),
             Transform::from_xyz(spawn_pos.x, spawn_pos.y, Z_ENVIRONMENT),
         ));
         
@@ -73,6 +77,7 @@ pub fn bottle_input_system(
     mut dispatch_events: EventWriter<DroneDispatched>,
     windows: Query<&Window>,
     mouse_button: Res<ButtonInput<MouseButton>>,
+    vcfg: Res<VisualConfig>,
 ) {
     if opening.phase != OpeningPhase::Complete { return; }
     if contexts.ctx_mut().wants_pointer_input() { return; }
@@ -86,7 +91,7 @@ pub fn bottle_input_system(
         for (bottle_ent, bottle_gtransform) in bottle_query.iter() {
             let bp = bottle_gtransform.translation().truncate();
 
-            if world_pos.distance(bp) < 60.0 {
+            if world_pos.distance(bp) < vcfg.bottle.hit_radius {
                 let spawn_pos = if let Ok((_, s_transform)) = station_query.get_single() {
                     s_transform.translation.truncate()
                 } else {
@@ -99,6 +104,7 @@ pub fn bottle_input_system(
                     &mut materials,
                     spawn_pos,
                     AutopilotTarget { destination: bp, target_entity: Some(bottle_ent) },
+                    &vcfg,
                 );
 
                 dispatch_events.send(DroneDispatched);

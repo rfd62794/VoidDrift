@@ -345,6 +345,7 @@ pub fn ingame_startup_system(
     mut tutorial: ResMut<TutorialState>,
     mut pan_state: ResMut<MapPanState>,
     cfg: Res<crate::config::BalanceConfig>,
+    vcfg: Res<crate::config::VisualConfig>,
 ) {
     // Reset tutorial for every session (new game starts clean; load path overrides below)
     *tutorial = TutorialState::default();
@@ -363,7 +364,7 @@ pub fn ingame_startup_system(
             &mut requests_tab,
             &mut pan_state,
         );
-        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials, &cfg);
+        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials, &cfg, &vcfg);
         // Suppress all Phase 4a tutorial popups when loading an existing save
         for id in [101u32, 102, 103, 104, 105, 106] {
             tutorial.shown.insert(id);
@@ -457,9 +458,11 @@ fn spawn_saved_drones(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     cfg: &crate::config::BalanceConfig,
+    vcfg: &crate::config::VisualConfig,
 ) {
     use crate::components::{OreDeposit, Ship, ShipState, LaserTier, AutonomousShipTag, LastHeading, AutopilotTarget, ThrusterGlow, MiningBeam, ShipCargoBarFill};
     use crate::constants::*;
+    use crate::config::visual::{rgb, rgba};
 
     for d in save_data.drones.iter() {
         let state = match d.state.as_str() {
@@ -489,8 +492,8 @@ fn spawn_saved_drones(
             AutonomousShipTag,
             LastHeading(d.heading),
             Transform::from_xyz(d.pos_x, d.pos_y, Z_SHIP),
-            Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(20.0, 28.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+            Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(vcfg.drone.mission.hull_w, vcfg.drone.mission.hull_h))),
+            MeshMaterial2d(materials.add(rgb(vcfg.drone.mission.color_hull))),
         )).id();
 
         if d.assignment_pos_x != 0.0 || d.assignment_pos_y != 0.0 {
@@ -500,30 +503,31 @@ fn spawn_saved_drones(
             });
         }
 
+        let md = &vcfg.drone.mission;
         commands.entity(ship_ent).with_children(|parent| {
             parent.spawn((
                 ThrusterGlow,
                 Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-                MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
+                MeshMaterial2d(materials.add(rgb(md.color_thruster))),
                 Transform::from_xyz(0.0, -18.0, 0.1),
                 Visibility::Hidden,
             ));
             parent.spawn((
                 MiningBeam,
                 Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-                MeshMaterial2d(materials.add(Color::srgba(1.0, 0.5, 0.0, 0.6))),
+                MeshMaterial2d(materials.add(rgba(md.color_beam, md.beam_alpha))),
                 Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
                 Visibility::Hidden,
             ));
             parent.spawn((
-                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
-                MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
+                MeshMaterial2d(materials.add(rgb(md.color_cargo_bg))),
                 Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
             ));
             parent.spawn((
                 ShipCargoBarFill,
-                Mesh2d(meshes.add(Rectangle::new(30.0, 4.0))),
-                MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+                Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
+                MeshMaterial2d(materials.add(rgb(md.color_cargo_fill))),
                 Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
             ));
         });

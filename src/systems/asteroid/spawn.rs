@@ -3,7 +3,8 @@ use bevy::sprite::AlphaMode2d;
 use rand::Rng;
 use crate::components::*;
 use crate::constants::*;
-use crate::config::BalanceConfig;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
 
 pub fn spawn_initial_asteroids(
     mut commands: Commands,
@@ -13,11 +14,12 @@ pub fn spawn_initial_asteroids(
     existing_asteroids: Query<&Transform, With<ActiveAsteroid>>,
     asset_server: Res<AssetServer>,
     cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     // Spawn initial asteroids (one of each type around their sectors)
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Iron, &cfg);
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Tungsten, &cfg);
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Nickel, &cfg);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Iron, &cfg, &vcfg);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Tungsten, &cfg, &vcfg);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Nickel, &cfg, &vcfg);
     respawn_timer.timer = Timer::from_seconds(cfg.asteroid.respawn_timer_secs, TimerMode::Once);
 }
 
@@ -29,6 +31,7 @@ pub fn spawn_asteroid(
     asset_server: &Res<AssetServer>,
     ore_type: OreDeposit,
     cfg: &BalanceConfig,
+    vcfg: &VisualConfig,
 ) -> bool {
     let mut rng = rand::thread_rng();
     
@@ -65,11 +68,12 @@ pub fn spawn_asteroid(
         return false;
     }
 
+    let av = &vcfg.asteroid;
     let color = match ore_type {
-        OreDeposit::Iron => COLOR_IRON,
-        OreDeposit::Tungsten => COLOR_TUNGSTEN,
-        OreDeposit::Nickel => COLOR_NICKEL,
-        OreDeposit::Aluminum => COLOR_ALUMINUM,
+        OreDeposit::Iron     => rgb(av.color_iron),
+        OreDeposit::Tungsten => rgb(av.color_tungsten),
+        OreDeposit::Nickel   => rgb(av.color_nickel),
+        OreDeposit::Aluminum => rgb(av.color_aluminum),
     };
 
     let radius = match ore_type {
@@ -180,6 +184,7 @@ pub fn asteroid_respawn_system(
     asset_server: Res<AssetServer>,
     station_query: Query<&Station>,
     cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     respawn_timer.timer.tick(time.delta());
     
@@ -200,7 +205,7 @@ pub fn asteroid_respawn_system(
             _ => OreDeposit::Aluminum,
         };
 
-        spawn_asteroid(&mut commands, &mut meshes, &mut materials, &transform_query, &asset_server, target_ore_type, &cfg);
+        spawn_asteroid(&mut commands, &mut meshes, &mut materials, &transform_query, &asset_server, target_ore_type, &cfg, &vcfg);
         respawn_timer.timer.reset();
     }
 }

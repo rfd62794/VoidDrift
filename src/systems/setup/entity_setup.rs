@@ -4,7 +4,8 @@ use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::components::resources::MaxDispatch;
 use crate::constants::*;
-use crate::config::BalanceConfig;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
 
 pub fn spawn_opening_drone(
     commands: &mut Commands,
@@ -12,6 +13,7 @@ pub fn spawn_opening_drone(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     asset_server: &AssetServer,
     cfg: &BalanceConfig,
+    vcfg: &VisualConfig,
 ) {
     let parent_ent = commands.spawn((
         InOpeningSequence,
@@ -26,42 +28,43 @@ pub fn spawn_opening_drone(
             current_mining_target: None,
         },
         AutonomousShipTag,
-        Mesh2d(meshes.add(triangle_mesh(20.0, 28.0))),
-        MeshMaterial2d(materials.add(Color::srgb(0.0, 0.6, 1.0))),
+        Mesh2d(meshes.add(triangle_mesh(vcfg.drone.opening.hull_w, vcfg.drone.opening.hull_h))),
+        MeshMaterial2d(materials.add(rgb(vcfg.drone.opening.color_hull))),
         Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
     )).id();
-    
+
+    let od = &vcfg.drone.opening;
     commands.entity(parent_ent).with_children(|parent| {
         parent.spawn((
             ThrusterGlow,
             Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-            MeshMaterial2d(materials.add(Color::srgb(1.0, 0.3, 0.0))),
+            MeshMaterial2d(materials.add(rgb(od.color_thruster))),
             Transform::from_xyz(0.0, -18.0, 0.1),
             Visibility::Hidden,
         ));
         parent.spawn((
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-            MeshMaterial2d(materials.add(Color::srgba(0.0, 1.0, 1.0, 0.6))),
+            MeshMaterial2d(materials.add(crate::config::visual::rgba(od.color_beam, od.beam_alpha))),
             Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
             Visibility::Hidden,
         ));
         parent.spawn((
-            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+            Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
+            MeshMaterial2d(materials.add(rgb(od.color_cargo_bg))),
             Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
         ));
         parent.spawn((
             ShipCargoBarFill,
-            Mesh2d(meshes.add(Rectangle::new(40.0, 6.0))),
-            MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 1.0))),
+            Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
+            MeshMaterial2d(materials.add(rgb(od.color_cargo_fill))),
             Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
         ));
         parent.spawn((
             MapElement,
-            Mesh2d(meshes.add(triangle_mesh(12.0, 16.0))),
+            Mesh2d(meshes.add(triangle_mesh(od.map_icon_w, od.map_icon_h))),
             MeshMaterial2d(materials.add(ColorMaterial {
-                color: Color::srgb(0.0, 0.6, 1.0),
+                color: rgb(od.color_hull),
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),
@@ -76,7 +79,7 @@ pub fn spawn_opening_drone(
                 font_size: 10.0,
                 ..default()
             },
-            TextColor(Color::srgba(0.0, 1.0, 1.0, 0.8)),
+            TextColor(crate::config::visual::rgba(od.color_beam, 0.8)),
             Transform::from_xyz(0.0, 36.0, Z_HUD - Z_SHIP),
         ));
         parent.spawn((
@@ -98,6 +101,7 @@ pub fn spawn_station(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     mut max_dispatch: ResMut<MaxDispatch>,
+    vcfg: &VisualConfig,
 ) {
     let station_max_dispatch = 5;
     max_dispatch.0 = station_max_dispatch;
@@ -142,19 +146,20 @@ pub fn spawn_station(
             Visibility::Visible,
         ))
         .with_children(|vis| {
+            let sv = &vcfg.station;
             vis.spawn((
                 StationHub,
-                Mesh2d(meshes.add(Circle::new(STATION_HUB_RADIUS))),
-                MeshMaterial2d(materials.add(Color::srgb(0.33, 0.27, 0.0))),
+                Mesh2d(meshes.add(Circle::new(sv.hub_radius))),
+                MeshMaterial2d(materials.add(rgb(sv.color_hub_offline))),
                 Transform::from_xyz(0.0, 0.0, 0.0),
             ));
             for i in 0..6 {
                 let angle = (i as f32) * (std::f32::consts::TAU / 6.0);
-                let is_active = i < STATION_BERTH_INITIAL;
-                let length = if is_active { STATION_ARM_LENGTH } else { STATION_STUB_LENGTH };
-                let color = if is_active { Color::srgb(0.6, 0.6, 0.6) } else { Color::srgb(0.12, 0.12, 0.12) };
+                let is_active = i < sv.berth_initial;
+                let length = if is_active { sv.arm_length } else { sv.stub_length };
+                let color = if is_active { rgb(sv.color_arm_active) } else { rgb(sv.color_arm_stub) };
                 vis.spawn((
-                    Mesh2d(meshes.add(Rectangle::new(STATION_ARM_THICKNESS, length))),
+                    Mesh2d(meshes.add(Rectangle::new(sv.arm_thickness, length))),
                     MeshMaterial2d(materials.add(ColorMaterial { color, alpha_mode: AlphaMode2d::Opaque, ..default() })),
                     Transform::from_rotation(Quat::from_rotation_z(angle - std::f32::consts::FRAC_PI_2))
                         .with_translation(Vec3::new(angle.cos() * (length / 2.0), angle.sin() * (length / 2.0), -0.1)),
@@ -162,8 +167,8 @@ pub fn spawn_station(
                     if is_active {
                         arm.spawn((
                             BerthVisual(i as u8),
-                            Mesh2d(meshes.add(Circle::new(STATION_BERTH_RADIUS))),
-                            MeshMaterial2d(materials.add(ColorMaterial { color: Color::srgb(0.4, 0.4, 0.4), alpha_mode: AlphaMode2d::Opaque, ..default() })),
+                            Mesh2d(meshes.add(Circle::new(sv.berth_radius))),
+                            MeshMaterial2d(materials.add(ColorMaterial { color: rgb(sv.color_berth_empty), alpha_mode: AlphaMode2d::Opaque, ..default() })),
                             Transform::from_xyz(0.0, length / 2.0, 0.1),
                         ));
                     }
