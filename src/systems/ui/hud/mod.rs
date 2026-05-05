@@ -390,10 +390,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 let drone_bay_size = egui::vec2(200.0, 40.0);
                 
                 // Access station data for active states
-                let (station, toggles) = if let Ok((_, st, _)) = params.station_query.get_single() {
-                    (Some(st), &params.toggles)
+                let (station, mut toggles) = if let Ok((_, st, _)) = params.station_query.get_single() {
+                    (Some(st), params.toggles.clone())
                 } else {
-                    (None, &params.toggles)
+                    (None, params.toggles.clone())
                 };
                 
                 // Compute all node centers first
@@ -422,12 +422,14 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 
                 let drone_bay  = node_center(1, 3); // wide, centered
                 
-                // Arrow drawing helper
-                let draw_arrow = |from: egui::Pos2, to: egui::Pos2, active: bool| {
-                    let color = if active {
-                        egui::Color32::from_rgb(0, 200, 200) // Echo cyan
+                // Arrow drawing helper with three-state colors and ON/OFF label
+                let draw_arrow = |from: egui::Pos2, to: egui::Pos2, toggle_on: bool, has_inventory: bool| -> egui::Rect {
+                    let color = if !toggle_on {
+                        egui::Color32::from_rgb(180, 40, 40)  // Red — OFF
+                    } else if has_inventory {
+                        egui::Color32::from_rgb(40, 180, 40)  // Green — ON + flowing
                     } else {
-                        egui::Color32::from_rgb(40, 60, 60) // Dimmed
+                        egui::Color32::from_rgb(80, 80, 80)   // Gray — ON but nothing to flow
                     };
                     let stroke = egui::Stroke::new(1.5, color);
                     
@@ -445,26 +447,82 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         color,
                         egui::Stroke::NONE,
                     ));
+                    
+                    // ON/OFF label centered on shaft
+                    let mid = egui::pos2(
+                        (shaft_from.x + shaft_to.x) / 2.0,
+                        (shaft_from.y + shaft_to.y) / 2.0,
+                    );
+                    let label = if toggle_on { "ON" } else { "OFF" };
+                    painter.text(mid, egui::Align2::CENTER_CENTER, label, 
+                        egui::FontId::proportional(9.0), color);
+                    
+                    // Return clickable rect for Part 3
+                    egui::Rect::from_center_size(mid, egui::vec2(50.0, 30.0))
                 };
                 
                 // Ore → Ingot (toggle-based)
-                draw_arrow(iron_ore, iron_ingot, toggles.refine_iron);
-                draw_arrow(tungsten_ore, tungsten_ingot, toggles.refine_tungsten);
-                draw_arrow(nickel_ore, nickel_ingot, toggles.refine_nickel);
-                draw_arrow(aluminum_ore, aluminum_ingot, toggles.refine_aluminum);
+                let st = station.as_ref();
+                let refine_iron_rect = draw_arrow(iron_ore, iron_ingot, toggles.refine_iron, st.map_or(false, |s| s.iron_reserves > 0.0));
+                let refine_tungsten_rect = draw_arrow(tungsten_ore, tungsten_ingot, toggles.refine_tungsten, st.map_or(false, |s| s.tungsten_reserves > 0.0));
+                let refine_nickel_rect = draw_arrow(nickel_ore, nickel_ingot, toggles.refine_nickel, st.map_or(false, |s| s.nickel_reserves > 0.0));
+                let refine_aluminum_rect = draw_arrow(aluminum_ore, aluminum_ingot, toggles.refine_aluminum, st.map_or(false, |s| s.aluminum_reserves > 0.0));
                 
                 // Ingot → Part (toggle-based)
-                draw_arrow(iron_ingot, hull_plate, toggles.forge_hull);
-                draw_arrow(tungsten_ingot, thruster, toggles.forge_thruster);
-                draw_arrow(nickel_ingot, ai_core, toggles.forge_core);
-                draw_arrow(aluminum_ingot, canister, toggles.forge_aluminum_canister);
+                let forge_hull_rect = draw_arrow(iron_ingot, hull_plate, toggles.forge_hull, st.map_or(false, |s| s.iron_ingots > 0.0));
+                let forge_thruster_rect = draw_arrow(tungsten_ingot, thruster, toggles.forge_thruster, st.map_or(false, |s| s.tungsten_ingots > 0.0));
+                let forge_core_rect = draw_arrow(nickel_ingot, ai_core, toggles.forge_core, st.map_or(false, |s| s.nickel_ingots > 0.0));
+                let forge_canister_rect = draw_arrow(aluminum_ingot, canister, toggles.forge_aluminum_canister, st.map_or(false, |s| s.aluminum_ingots > 0.0));
                 
-                // Part → Drone Bay (always active when parts exist)
-                if let Some(st) = station {
-                    draw_arrow(hull_plate, drone_bay, st.hull_plate_reserves > 0.0);
-                    draw_arrow(thruster, drone_bay, st.thruster_reserves > 0.0);
-                    draw_arrow(ai_core, drone_bay, st.ai_cores > 0.0);
-                }
+                // Part → Drone Bay (shared build_drones toggle)
+                let hull_drone_rect = if let Some(s) = station {
+                    draw_arrow(hull_plate, drone_bay, toggles.build_drones, s.hull_plate_reserves > 0.0)
+                } else {
+                    egui::Rect::NOTHING
+                };
+                let thruster_drone_rect = if let Some(s) = station {
+                    draw_arrow(thruster, drone_bay, toggles.build_drones, s.thruster_reserves > 0.0)
+                } else {
+                    egui::Rect::NOTHING
+                };
+                let core_drone_rect = if let Some(s) = station {
+                    draw_arrow(ai_core, drone_bay, toggles.build_drones, s.ai_cores > 0.0)
+                } else {
+                    egui::Rect::NOTHING
+                };
+                
+                // Click detection for arrows
+                let response = ui.interact(refine_iron_rect, ui.id().with("toggle_refine_iron"), egui::Sense::click());
+                if response.clicked() { toggles.refine_iron = !toggles.refine_iron; }
+                
+                let response = ui.interact(refine_tungsten_rect, ui.id().with("toggle_refine_tungsten"), egui::Sense::click());
+                if response.clicked() { toggles.refine_tungsten = !toggles.refine_tungsten; }
+                
+                let response = ui.interact(refine_nickel_rect, ui.id().with("toggle_refine_nickel"), egui::Sense::click());
+                if response.clicked() { toggles.refine_nickel = !toggles.refine_nickel; }
+                
+                let response = ui.interact(refine_aluminum_rect, ui.id().with("toggle_refine_aluminum"), egui::Sense::click());
+                if response.clicked() { toggles.refine_aluminum = !toggles.refine_aluminum; }
+                
+                let response = ui.interact(forge_hull_rect, ui.id().with("toggle_forge_hull"), egui::Sense::click());
+                if response.clicked() { toggles.forge_hull = !toggles.forge_hull; }
+                
+                let response = ui.interact(forge_thruster_rect, ui.id().with("toggle_forge_thruster"), egui::Sense::click());
+                if response.clicked() { toggles.forge_thruster = !toggles.forge_thruster; }
+                
+                let response = ui.interact(forge_core_rect, ui.id().with("toggle_forge_core"), egui::Sense::click());
+                if response.clicked() { toggles.forge_core = !toggles.forge_core; }
+                
+                let response = ui.interact(forge_canister_rect, ui.id().with("toggle_forge_canister"), egui::Sense::click());
+                if response.clicked() { toggles.forge_aluminum_canister = !toggles.forge_aluminum_canister; }
+                
+                // Shared build_drones toggle — any of the three arrows toggles it
+                let response = ui.interact(hull_drone_rect, ui.id().with("toggle_build_drones"), egui::Sense::click());
+                if response.clicked() { toggles.build_drones = !toggles.build_drones; }
+                let response = ui.interact(thruster_drone_rect, ui.id().with("toggle_build_drones_thruster"), egui::Sense::click());
+                if response.clicked() { toggles.build_drones = !toggles.build_drones; }
+                let response = ui.interact(core_drone_rect, ui.id().with("toggle_build_drones_core"), egui::Sense::click());
+                if response.clicked() { toggles.build_drones = !toggles.build_drones; }
                 
                 // Canister → future (no arrow for now)
                 
@@ -477,8 +535,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     egui::Color32::from_rgb(0, 200, 200),
                 );
                 
-                // Node rendering helper with active state
-                let render_node = |col: usize, row: usize, label: &str, is_wide: bool, active: bool| {
+                // Node rendering helper with active state and inventory display
+                let render_node = |col: usize, row: usize, label: &str, inventory: String, is_wide: bool, active: bool| {
                     let border_color = if active {
                         egui::Color32::from_rgb(0, 200, 200) // Echo cyan
                     } else {
@@ -500,59 +558,64 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     
                     painter.rect_filled(node_rect, 4.0, fill_color);
                     painter.rect_stroke(node_rect, 4.0, border_stroke, egui::StrokeKind::Outside);
+                    
+                    let display = format!("{} ({})", label, inventory);
                     painter.text(
                         node_rect.center(),
                         egui::Align2::CENTER_CENTER,
-                        label,
-                        egui::FontId::proportional(11.0),
+                        &display,
+                        egui::FontId::proportional(10.0),
                         text_color,
                     );
                 };
                 
-                // Render nodes with active states
+                // Render nodes with active states and inventory
                 if let Some(st) = station {
                     // Row 0: Ore nodes
-                    render_node(0, 0, "IRON", false, st.iron_reserves > 0.0);
-                    render_node(1, 0, "TUNGSTEN", false, st.tungsten_reserves > 0.0);
-                    render_node(2, 0, "NICKEL", false, st.nickel_reserves > 0.0);
-                    render_node(3, 0, "ALUMINUM", false, st.aluminum_reserves > 0.0);
+                    render_node(0, 0, "IRON", format!("{:.1}", st.iron_reserves), false, st.iron_reserves > 0.0);
+                    render_node(1, 0, "TUNGSTEN", format!("{:.1}", st.tungsten_reserves), false, st.tungsten_reserves > 0.0);
+                    render_node(2, 0, "NICKEL", format!("{:.1}", st.nickel_reserves), false, st.nickel_reserves > 0.0);
+                    render_node(3, 0, "ALUMINUM", format!("{:.1}", st.aluminum_reserves), false, st.aluminum_reserves > 0.0);
                     
                     // Row 1: Ingot nodes
-                    render_node(0, 1, "IRON INGOT", false, st.iron_ingots > 0.0);
-                    render_node(1, 1, "TUNGSTEN INGOT", false, st.tungsten_ingots > 0.0);
-                    render_node(2, 1, "NICKEL INGOT", false, st.nickel_ingots > 0.0);
-                    render_node(3, 1, "ALUMINUM INGOT", false, st.aluminum_ingots > 0.0);
+                    render_node(0, 1, "IRON INGOT", format!("{:.1}", st.iron_ingots), false, st.iron_ingots > 0.0);
+                    render_node(1, 1, "TUNGSTEN INGOT", format!("{:.1}", st.tungsten_ingots), false, st.tungsten_ingots > 0.0);
+                    render_node(2, 1, "NICKEL INGOT", format!("{:.1}", st.nickel_ingots), false, st.nickel_ingots > 0.0);
+                    render_node(3, 1, "ALUMINUM INGOT", format!("{:.1}", st.aluminum_ingots), false, st.aluminum_ingots > 0.0);
                     
                     // Row 2: Part nodes
-                    render_node(0, 2, "HULL PLATE", false, st.hull_plate_reserves > 0.0);
-                    render_node(1, 2, "THRUSTER", false, st.thruster_reserves > 0.0);
-                    render_node(2, 2, "AI CORE", false, st.ai_cores > 0.0);
-                    render_node(3, 2, "CANISTER", false, st.aluminum_canisters > 0.0);
+                    render_node(0, 2, "HULL PLATE", format!("{:.0}", st.hull_plate_reserves), false, st.hull_plate_reserves > 0.0);
+                    render_node(1, 2, "THRUSTER", format!("{:.0}", st.thruster_reserves), false, st.thruster_reserves > 0.0);
+                    render_node(2, 2, "AI CORE", format!("{:.0}", st.ai_cores), false, st.ai_cores > 0.0);
+                    render_node(3, 2, "CANISTER", format!("{:.0}", st.aluminum_canisters), false, st.aluminum_canisters > 0.0);
                     
-                    // Row 3: Convergence (DRONE BAY)
-                    render_node(1, 3, "DRONE BAY", true, 
+                    // Row 3: Convergence (DRONE BAY) — no inventory number
+                    render_node(1, 3, "DRONE BAY", String::new(), true, 
                         st.hull_plate_reserves > 0.0 && 
                         st.thruster_reserves > 0.0 && 
                         st.ai_cores > 0.0);
                 } else {
                     // Render all nodes as inactive when station not accessible
-                    render_node(0, 0, "IRON", false, false);
-                    render_node(1, 0, "TUNGSTEN", false, false);
-                    render_node(2, 0, "NICKEL", false, false);
-                    render_node(3, 0, "ALUMINUM", false, false);
+                    render_node(0, 0, "IRON", String::new(), false, false);
+                    render_node(1, 0, "TUNGSTEN", String::new(), false, false);
+                    render_node(2, 0, "NICKEL", String::new(), false, false);
+                    render_node(3, 0, "ALUMINUM", String::new(), false, false);
                     
-                    render_node(0, 1, "IRON INGOT", false, false);
-                    render_node(1, 1, "TUNGSTEN INGOT", false, false);
-                    render_node(2, 1, "NICKEL INGOT", false, false);
-                    render_node(3, 1, "ALUMINUM INGOT", false, false);
+                    render_node(0, 1, "IRON INGOT", String::new(), false, false);
+                    render_node(1, 1, "TUNGSTEN INGOT", String::new(), false, false);
+                    render_node(2, 1, "NICKEL INGOT", String::new(), false, false);
+                    render_node(3, 1, "ALUMINUM INGOT", String::new(), false, false);
                     
-                    render_node(0, 2, "HULL PLATE", false, false);
-                    render_node(1, 2, "THRUSTER", false, false);
-                    render_node(2, 2, "AI CORE", false, false);
-                    render_node(3, 2, "CANISTER", false, false);
+                    render_node(0, 2, "HULL PLATE", String::new(), false, false);
+                    render_node(1, 2, "THRUSTER", String::new(), false, false);
+                    render_node(2, 2, "AI CORE", String::new(), false, false);
+                    render_node(3, 2, "CANISTER", String::new(), false, false);
                     
-                    render_node(1, 3, "DRONE BAY", true, false);
+                    render_node(1, 3, "DRONE BAY", String::new(), true, false);
                 }
+                
+                // Write toggles back to resource after any clicks
+                *params.toggles = toggles;
                 
                 // BACK button — bottom center, above DRONE BAY
                 let button_rect = egui::Rect::from_center_size(
