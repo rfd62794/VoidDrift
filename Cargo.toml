@@ -14,6 +14,10 @@ license = "MIT"
 name = "voidrift"
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "voidrift"
+path = "src/lib.rs"
+
 # ----------------------------------------------------------------------------
 # Bevy pinned at 0.15 — confirmed by OQ-001 research (April 2026).
 # DO NOT upgrade without a new directive. Bevy 0.18 is current but 0.15 has
