@@ -381,10 +381,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 params.world_view_rect.h = 0.0;
                 
                 let painter = ui.painter();
-                let border_color = egui::Color32::from_rgb(0, 200, 200); // Echo cyan
-                let fill_color = egui::Color32::from_rgb(4, 8, 16);
                 let text_color = egui::Color32::WHITE;
-                let border_stroke = egui::Stroke::new(1.5, border_color);
                 
                 // Grid dimensions
                 let col_width = rect.width() / 4.0;
@@ -392,17 +389,108 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 let node_size = egui::vec2(100.0, 40.0);
                 let drone_bay_size = egui::vec2(200.0, 40.0);
                 
+                // Access station data for active states
+                let (station, toggles) = if let Ok((_, st, _)) = params.station_query.get_single() {
+                    (Some(st), &params.toggles)
+                } else {
+                    (None, &params.toggles)
+                };
+                
+                // Compute all node centers first
+                let node_center = |col: usize, row: usize| -> egui::Pos2 {
+                    egui::pos2(
+                        rect.min.x + col_width * (col as f32 + 0.5),
+                        rect.min.y + row_height * (row as f32 + 0.5),
+                    )
+                };
+                
+                // Named centers for arrow routing
+                let iron_ore     = node_center(0, 0);
+                let tungsten_ore = node_center(1, 0);
+                let nickel_ore   = node_center(2, 0);
+                let aluminum_ore = node_center(3, 0);
+                
+                let iron_ingot     = node_center(0, 1);
+                let tungsten_ingot = node_center(1, 1);
+                let nickel_ingot   = node_center(2, 1);
+                let aluminum_ingot = node_center(3, 1);
+                
+                let hull_plate = node_center(0, 2);
+                let thruster   = node_center(1, 2);
+                let ai_core    = node_center(2, 2);
+                let canister   = node_center(3, 2);
+                
+                let drone_bay  = node_center(1, 3); // wide, centered
+                
+                // Arrow drawing helper
+                let draw_arrow = |from: egui::Pos2, to: egui::Pos2, active: bool| {
+                    let color = if active {
+                        egui::Color32::from_rgb(0, 200, 200) // Echo cyan
+                    } else {
+                        egui::Color32::from_rgb(40, 60, 60) // Dimmed
+                    };
+                    let stroke = egui::Stroke::new(1.5, color);
+                    
+                    // Arrow shaft — from bottom of source node to top of target node
+                    let shaft_from = egui::pos2(from.x, from.y + 20.0); // bottom of node
+                    let shaft_to = egui::pos2(to.x, to.y - 20.0);       // top of node
+                    painter.line_segment([shaft_from, shaft_to], stroke);
+                    
+                    // Arrowhead — small triangle at shaft_to
+                    let tip = shaft_to;
+                    let left = egui::pos2(tip.x - 5.0, tip.y - 8.0);
+                    let right = egui::pos2(tip.x + 5.0, tip.y - 8.0);
+                    painter.add(egui::Shape::convex_polygon(
+                        vec![tip, left, right],
+                        color,
+                        egui::Stroke::NONE,
+                    ));
+                };
+                
+                // Ore → Ingot (toggle-based)
+                draw_arrow(iron_ore, iron_ingot, toggles.refine_iron);
+                draw_arrow(tungsten_ore, tungsten_ingot, toggles.refine_tungsten);
+                draw_arrow(nickel_ore, nickel_ingot, toggles.refine_nickel);
+                draw_arrow(aluminum_ore, aluminum_ingot, toggles.refine_aluminum);
+                
+                // Ingot → Part (toggle-based)
+                draw_arrow(iron_ingot, hull_plate, toggles.forge_hull);
+                draw_arrow(tungsten_ingot, thruster, toggles.forge_thruster);
+                draw_arrow(nickel_ingot, ai_core, toggles.forge_core);
+                draw_arrow(aluminum_ingot, canister, toggles.forge_aluminum_canister);
+                
+                // Part → Drone Bay (always active when parts exist)
+                if let Some(st) = station {
+                    draw_arrow(hull_plate, drone_bay, st.hull_plate_reserves > 0.0);
+                    draw_arrow(thruster, drone_bay, st.thruster_reserves > 0.0);
+                    draw_arrow(ai_core, drone_bay, st.ai_cores > 0.0);
+                }
+                
+                // Canister → future (no arrow for now)
+                
                 // Title at top (smaller to make room for grid)
                 painter.text(
                     egui::pos2(rect.center().x, rect.min.y + 30.0),
                     egui::Align2::CENTER_CENTER,
                     "PRODUCTION PIPELINE",
                     egui::FontId::proportional(16.0),
-                    border_color,
+                    egui::Color32::from_rgb(0, 200, 200),
                 );
                 
-                // Node rendering helper
-                let render_node = |col: usize, row: usize, label: &str, is_wide: bool| {
+                // Node rendering helper with active state
+                let render_node = |col: usize, row: usize, label: &str, is_wide: bool, active: bool| {
+                    let border_color = if active {
+                        egui::Color32::from_rgb(0, 200, 200) // Echo cyan
+                    } else {
+                        egui::Color32::from_rgb(40, 80, 80) // Dimmed cyan
+                    };
+                    let fill_color = if active {
+                        egui::Color32::from_rgb(4, 16, 20) // Slightly brighter
+                    } else {
+                        egui::Color32::from_rgb(4, 8, 16) // Dark
+                    };
+                    let border_stroke = egui::Stroke::new(1.5, border_color);
+                    
                     let cell_center = egui::pos2(
                         rect.min.x + col_width * (col as f32 + 0.5),
                         rect.min.y + row_height * (row as f32 + 0.5),
@@ -421,26 +509,50 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     );
                 };
                 
-                // Row 0: Ore nodes
-                render_node(0, 0, "IRON", false);
-                render_node(1, 0, "TUNGSTEN", false);
-                render_node(2, 0, "NICKEL", false);
-                render_node(3, 0, "ALUMINUM", false);
-                
-                // Row 1: Ingot nodes
-                render_node(0, 1, "IRON INGOT", false);
-                render_node(1, 1, "TUNGSTEN INGOT", false);
-                render_node(2, 1, "NICKEL INGOT", false);
-                render_node(3, 1, "ALUMINUM INGOT", false);
-                
-                // Row 2: Part nodes
-                render_node(0, 2, "HULL PLATE", false);
-                render_node(1, 2, "THRUSTER", false);
-                render_node(2, 2, "AI CORE", false);
-                render_node(3, 2, "CANISTER", false);
-                
-                // Row 3: Convergence (DRONE BAY)
-                render_node(1, 3, "DRONE BAY", true); // Centered in middle columns
+                // Render nodes with active states
+                if let Some(st) = station {
+                    // Row 0: Ore nodes
+                    render_node(0, 0, "IRON", false, st.iron_reserves > 0.0);
+                    render_node(1, 0, "TUNGSTEN", false, st.tungsten_reserves > 0.0);
+                    render_node(2, 0, "NICKEL", false, st.nickel_reserves > 0.0);
+                    render_node(3, 0, "ALUMINUM", false, st.aluminum_reserves > 0.0);
+                    
+                    // Row 1: Ingot nodes
+                    render_node(0, 1, "IRON INGOT", false, st.iron_ingots > 0.0);
+                    render_node(1, 1, "TUNGSTEN INGOT", false, st.tungsten_ingots > 0.0);
+                    render_node(2, 1, "NICKEL INGOT", false, st.nickel_ingots > 0.0);
+                    render_node(3, 1, "ALUMINUM INGOT", false, st.aluminum_ingots > 0.0);
+                    
+                    // Row 2: Part nodes
+                    render_node(0, 2, "HULL PLATE", false, st.hull_plate_reserves > 0.0);
+                    render_node(1, 2, "THRUSTER", false, st.thruster_reserves > 0.0);
+                    render_node(2, 2, "AI CORE", false, st.ai_cores > 0.0);
+                    render_node(3, 2, "CANISTER", false, st.aluminum_canisters > 0.0);
+                    
+                    // Row 3: Convergence (DRONE BAY)
+                    render_node(1, 3, "DRONE BAY", true, 
+                        st.hull_plate_reserves > 0.0 && 
+                        st.thruster_reserves > 0.0 && 
+                        st.ai_cores > 0.0);
+                } else {
+                    // Render all nodes as inactive when station not accessible
+                    render_node(0, 0, "IRON", false, false);
+                    render_node(1, 0, "TUNGSTEN", false, false);
+                    render_node(2, 0, "NICKEL", false, false);
+                    render_node(3, 0, "ALUMINUM", false, false);
+                    
+                    render_node(0, 1, "IRON INGOT", false, false);
+                    render_node(1, 1, "TUNGSTEN INGOT", false, false);
+                    render_node(2, 1, "NICKEL INGOT", false, false);
+                    render_node(3, 1, "ALUMINUM INGOT", false, false);
+                    
+                    render_node(0, 2, "HULL PLATE", false, false);
+                    render_node(1, 2, "THRUSTER", false, false);
+                    render_node(2, 2, "AI CORE", false, false);
+                    render_node(3, 2, "CANISTER", false, false);
+                    
+                    render_node(1, 3, "DRONE BAY", true, false);
+                }
                 
                 // BACK button — bottom center, above DRONE BAY
                 let button_rect = egui::Rect::from_center_size(
