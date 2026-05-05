@@ -111,6 +111,7 @@ fn main() {
         .insert_resource(QuestConfig::load())
         .insert_resource(RequestConfig::load())
         .insert_resource(ContentState::default())
+        .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -204,8 +205,9 @@ fn main() {
             systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
-            systems::narrative::bottle::bottle_input_system,
         ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::narrative::bottle::bottle_input_system
+            .run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::narrative::content_router::content_event_system,
             systems::narrative::content_router::content_ambient_system,
@@ -272,6 +274,7 @@ pub fn start() {
         .insert_resource(QuestConfig::load())
         .insert_resource(RequestConfig::load())
         .insert_resource(ContentState::default())
+        .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -366,8 +369,9 @@ pub fn start() {
             systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
-            systems::narrative::bottle::bottle_input_system,
         ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::narrative::bottle::bottle_input_system
+            .run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::narrative::content_router::content_event_system,
             systems::narrative::content_router::content_ambient_system,

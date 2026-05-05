@@ -127,6 +127,7 @@ pub struct HudParams<'w, 's> {
     pub balance_cfg: Res<'w, BalanceConfig>,
     pub visual_cfg: Res<'w, VisualConfig>,
     pub request_cfg: Res<'w, crate::config::RequestConfig>,
+    pub view_state: ResMut<'w, ViewState>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -382,6 +383,40 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     }
 
     // ── 8. CENTRAL PANEL (world view — MUST be last) ──────────────────────────
+    // Production Tree viewport — swap if active
+    if params.view_state.show_production_tree {
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgb(2, 4, 8)))
+            .show(ctx, |ui| {
+                let rect = ui.max_rect();
+                
+                // Update WorldViewRect to zero — hide world view
+                params.world_view_rect.w = 0.0;
+                params.world_view_rect.h = 0.0;
+                
+                // Centered title
+                ui.painter().text(
+                    rect.center() - egui::vec2(0.0, 20.0),
+                    egui::Align2::CENTER_CENTER,
+                    "PRODUCTION PIPELINE",
+                    egui::FontId::proportional(24.0),
+                    egui::Color32::from_rgb(0, 200, 200), // Echo cyan
+                );
+                
+                // BACK button — bottom center
+                let button_rect = egui::Rect::from_center_size(
+                    rect.center_bottom() - egui::vec2(0.0, 60.0),
+                    egui::vec2(120.0, 44.0),
+                );
+                if ui.put(button_rect, egui::Button::new("BACK").min_size(egui::vec2(120.0, 44.0))).clicked() {
+                    params.view_state.show_production_tree = false;
+                    // Restore WorldViewRect on next frame naturally
+                }
+            });
+        return; // Skip normal HUD rendering
+    }
+
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
@@ -401,11 +436,15 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
                 // Push buttons to right edge using right_to_left layout
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    // SAVE renders first but appears rightmost due to right_to_left
+                    // PIPELINE renders first but appears leftmost due to right_to_left
+                    if ui.add(egui::Button::new("PIPELINE").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                        params.view_state.show_production_tree = true;
+                    }
+                    // SAVE renders second but appears rightmost due to right_to_left
                     if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {
                         params.menu_state.show_save_overlay = true;
                     }
-                    // FOCUS renders second but appears left of SAVE
+                    // FOCUS renders third but appears left of SAVE
                     if ui.add(egui::Button::new("FOCUS").min_size(egui::vec2(80.0, 44.0))).clicked() {
                         params.pan_state.is_focused = true;
                         params.pan_state.cumulative_offset = Vec2::ZERO;

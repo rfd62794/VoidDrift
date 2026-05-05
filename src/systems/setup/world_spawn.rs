@@ -34,6 +34,7 @@ pub fn reset_game_resources(
     mut drawer_state: ResMut<DrawerState>,
     mut world_view_rect: ResMut<WorldViewRect>,
     mut content_state: ResMut<ContentState>,
+    mut view_state: ResMut<ViewState>,
 ) {
     *queue = ShipQueue::default();
     *cam_delta = CameraDelta::default();
@@ -43,6 +44,7 @@ pub fn reset_game_resources(
     *drawer_state = DrawerState::Collapsed;
     *world_view_rect = WorldViewRect::default();
     *content_state = ContentState::default();
+    view_state.show_production_tree = false;
 }
 
 /// Spawns the world objects, ship, and HUD. Resource reset handled by reset_game_resources.

@@ -1,11 +1,23 @@
 use bevy::prelude::*;
 use std::collections::{VecDeque, HashSet};
 
-#[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
     #[default]
     SpaceView,
     MapView,
+}
+
+#[derive(Resource, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DeviceType {
+    #[default]
+    Desktop,
+    Mobile,
+}
+
+#[derive(Resource, Default)]
+pub struct ViewState {
+    pub show_production_tree: bool,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]

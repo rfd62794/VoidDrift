@@ -25,10 +25,15 @@ pub struct AsteroidInputParams<'w, 's> {
     pub windows: Query<'w, 's, &'static Window>,
     pub mouse_button: Res<'w, ButtonInput<MouseButton>>,
     pub vcfg: Res<'w, VisualConfig>,
+    pub view_state: Res<'w, ViewState>,
 }
 
 pub fn asteroid_input_system(mut p: AsteroidInputParams) {
     if p.opening.phase != OpeningPhase::Complete {
+        return;
+    }
+
+    if p.view_state.show_production_tree {
         return;
     }
 
