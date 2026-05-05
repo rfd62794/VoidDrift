@@ -4,22 +4,24 @@ use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::components::resources::MaxDispatch;
 use crate::constants::*;
+use crate::config::BalanceConfig;
 
 pub fn spawn_opening_drone(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     asset_server: &AssetServer,
+    cfg: &BalanceConfig,
 ) {
     let parent_ent = commands.spawn((
         InOpeningSequence,
         LastHeading(0.0),
         Ship {
             state: ShipState::Idle,
-            speed: SHIP_SPEED,
+            speed: cfg.mining.ship_speed,
             cargo: 0.0,
             cargo_type: OreDeposit::Iron,
-            cargo_capacity: CARGO_CAPACITY,
+            cargo_capacity: cfg.mining.cargo_capacity,
             laser_tier: LaserTier::Basic,
             current_mining_target: None,
         },
@@ -266,21 +268,20 @@ pub fn triangle_mesh(w: f32, h: f32) -> Mesh {
         .with_inserted_indices(Indices::U32(indices))
 }
 
-pub fn generate_ore_mesh(ore: &OreDeposit, seed: u64) -> Mesh {
+pub fn generate_ore_mesh(ore: &OreDeposit, seed: u64, cfg: &BalanceConfig) -> Mesh {
     match ore {
-        OreDeposit::Iron     => generate_iron_mesh(seed),
-        OreDeposit::Tungsten => generate_tungsten_mesh(seed),
-        OreDeposit::Nickel   => generate_nickel_mesh(seed),
-        OreDeposit::Aluminum => generate_iron_mesh(seed),
+        OreDeposit::Iron     => generate_iron_mesh_with_radius(seed, cfg.asteroid.radius_iron),
+        OreDeposit::Tungsten => generate_tungsten_mesh_with_radius(seed, cfg.asteroid.radius_tungsten),
+        OreDeposit::Nickel   => generate_nickel_mesh_with_radius(seed, cfg.asteroid.radius_nickel),
+        OreDeposit::Aluminum => generate_iron_mesh_with_radius(seed, cfg.asteroid.radius_aluminum),
     }
 }
 
 
-pub fn generate_iron_mesh(seed: u64) -> Mesh {
+pub fn generate_iron_mesh_with_radius(seed: u64, base_radius: f32) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_IRON;
     let vertex_count = rng.gen_range(8..=10);
     let mut vertices = vec![[0.0, 0.0, 0.0]];
     let mut normals = vec![[0.0, 0.0, 1.0]];
@@ -301,11 +302,10 @@ pub fn generate_iron_mesh(seed: u64) -> Mesh {
 }
 
 
-pub fn generate_tungsten_mesh(seed: u64) -> Mesh {
+pub fn generate_tungsten_mesh_with_radius(seed: u64, base_radius: f32) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_TUNGSTEN;
     let vertex_count = rng.gen_range(6..=8);
     let mut vertices = vec![[0.0, 0.0, 0.0]];
     let mut normals = vec![[0.0, 0.0, 1.0]];
@@ -327,11 +327,10 @@ pub fn generate_tungsten_mesh(seed: u64) -> Mesh {
     Mesh::new(PrimitiveTopology::TriangleList, Default::default()).with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices).with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals).with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs).with_inserted_indices(Indices::U32(indices))
 }
 
-pub fn generate_nickel_mesh(seed: u64) -> Mesh {
+pub fn generate_nickel_mesh_with_radius(seed: u64, base_radius: f32) -> Mesh {
     use bevy::render::mesh::{Indices, PrimitiveTopology};
     use std::f32::consts::TAU;
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let base_radius = ASTEROID_RADIUS_NICKEL;
     let vertex_count = rng.gen_range(10..=12);
     let mut vertices = vec![[0.0, 0.0, 0.0]];
     let mut normals = vec![[0.0, 0.0, 1.0]];

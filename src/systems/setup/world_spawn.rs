@@ -7,6 +7,7 @@ use crate::components::*;
 use crate::components::resources::MaxDispatch;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
+use crate::config::BalanceConfig;
 
 /// Clean up all entities before setting up a new game
 pub fn cleanup_world_entities(
@@ -50,13 +51,14 @@ pub fn setup_world(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
     mut max_dispatch: ResMut<MaxDispatch>,
+    cfg: Res<BalanceConfig>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");
 
     init_quest_log(&mut commands);
     spawn_starfield(&mut commands, &mut meshes, &mut materials);
     spawn_camera(&mut commands);
-    spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server);
+    spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server, &cfg);
     spawn_station(&mut commands, &mut meshes, &mut materials, max_dispatch);
     spawn_berths(&mut commands);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);

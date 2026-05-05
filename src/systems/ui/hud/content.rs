@@ -2,6 +2,7 @@ use bevy::prelude::EventWriter;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
+use crate::config::BalanceConfig;
 
 fn render_ore_pipeline(
     ui: &mut egui::Ui,
@@ -53,6 +54,7 @@ pub fn render_tab_content(
     req_tab: &mut RequestsTabState,
     repair_events: &mut EventWriter<RepairStationEvent>,
     fulfill_events: &mut EventWriter<FulfillRequestEvent>,
+    cfg: &BalanceConfig,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
@@ -80,9 +82,9 @@ pub fn render_tab_content(
                 
                 // DRONE BUILD PROGRESS BAR
                 let progress = station.drone_build_progress;
-                let can_build = station.hull_plate_reserves >= DRONE_BUILD_COST_HULLS
-                    && station.thruster_reserves >= DRONE_BUILD_COST_THRUSTERS
-                    && station.ai_cores >= DRONE_BUILD_COST_CORES;
+                let can_build = station.hull_plate_reserves >= cfg.drone.cost_hulls
+                    && station.thruster_reserves >= cfg.drone.cost_thrusters
+                    && station.ai_cores >= cfg.drone.cost_cores;
 
                 let bar_color = if can_build {
                     egui::Color32::from_rgb(0, 180, 100)
@@ -90,9 +92,9 @@ pub fn render_tab_content(
                     egui::Color32::from_rgb(180, 60, 0)
                 };
 
-                let stall_label = if station.hull_plate_reserves < DRONE_BUILD_COST_HULLS {
+                let stall_label = if station.hull_plate_reserves < cfg.drone.cost_hulls {
                     "Needs Hull Plates"
-                } else if station.thruster_reserves < DRONE_BUILD_COST_THRUSTERS {
+                } else if station.thruster_reserves < cfg.drone.cost_thrusters {
                     "Needs Thrusters"
                 } else {
                     "Needs AI Core"

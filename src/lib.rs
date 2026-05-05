@@ -50,6 +50,9 @@ fn detect_device_type(mut device_type: ResMut<DeviceType>) {
 mod constants;
 pub use constants::*;
 
+pub mod config;
+use config::BalanceConfig;
+
 mod components;
 pub use crate::components::*;
 use crate::components::events::*;
@@ -103,6 +106,7 @@ fn main() {
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
+        .insert_resource(BalanceConfig::load())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -251,6 +255,7 @@ pub fn start() {
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
+        .insert_resource(BalanceConfig::load())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,

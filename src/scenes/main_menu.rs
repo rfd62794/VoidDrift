@@ -344,6 +344,7 @@ pub fn ingame_startup_system(
     mut requests_tab: ResMut<RequestsTabState>,
     mut tutorial: ResMut<TutorialState>,
     mut pan_state: ResMut<MapPanState>,
+    cfg: Res<crate::config::BalanceConfig>,
 ) {
     // Reset tutorial for every session (new game starts clean; load path overrides below)
     *tutorial = TutorialState::default();
@@ -362,7 +363,7 @@ pub fn ingame_startup_system(
             &mut requests_tab,
             &mut pan_state,
         );
-        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials);
+        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials, &cfg);
         // Suppress all Phase 4a tutorial popups when loading an existing save
         for id in [101u32, 102, 103, 104, 105, 106] {
             tutorial.shown.insert(id);
@@ -455,6 +456,7 @@ fn spawn_saved_drones(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    cfg: &crate::config::BalanceConfig,
 ) {
     use crate::components::{OreDeposit, Ship, ShipState, LaserTier, AutonomousShipTag, LastHeading, AutopilotTarget, ThrusterGlow, MiningBeam, ShipCargoBarFill};
     use crate::constants::*;
@@ -477,10 +479,10 @@ fn spawn_saved_drones(
         let ship_ent = commands.spawn((
             Ship {
                 state,
-                speed: SHIP_SPEED,
+                speed: cfg.mining.ship_speed,
                 cargo: d.cargo,
                 cargo_type: ore_type,
-                cargo_capacity: CARGO_CAPACITY,
+                cargo_capacity: cfg.mining.cargo_capacity,
                 laser_tier: LaserTier::Basic,
                 current_mining_target: None,
             },

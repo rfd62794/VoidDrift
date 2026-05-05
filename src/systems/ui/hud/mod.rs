@@ -8,6 +8,7 @@ use crate::components::*;
 use crate::constants::*;
 use crate::components::resources::MaxDispatch;
 use crate::scenes::main_menu::MainMenuState;
+use crate::config::BalanceConfig;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -118,6 +119,7 @@ pub struct HudParams<'w, 's> {
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
     pub fulfill_events: EventWriter<'w, FulfillRequestEvent>,
+    pub balance_cfg: Res<'w, BalanceConfig>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -206,6 +208,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &mut params.req_tab,
                         &mut params.repair_events,
                         &mut params.fulfill_events,
+                        &params.balance_cfg,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
