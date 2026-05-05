@@ -78,7 +78,21 @@ pub struct BalanceConfig {
 
 impl BalanceConfig {
     pub fn load() -> Self {
-        let src = include_str!("../../assets/balance.toml");
+        let src = Self::read_toml();
         toml::from_str(src).expect("Failed to parse assets/balance.toml")
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn read_toml() -> &'static str {
+        include_str!("../../assets/balance.toml")
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn read_toml() -> &'static str {
+        Box::leak(
+            std::fs::read_to_string("assets/balance.toml")
+                .expect("Failed to read assets/balance.toml")
+                .into_boxed_str(),
+        )
     }
 }
