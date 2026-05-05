@@ -50,7 +50,7 @@ pub fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
-    mut max_dispatch: ResMut<MaxDispatch>,
+    max_dispatch: ResMut<MaxDispatch>,
     cfg: Res<BalanceConfig>,
 ) {
     info!("[Voidrift Phase 4] Final Production Build. PresentMode: Fifo.");

@@ -55,8 +55,6 @@ use config::BalanceConfig;
 
 mod components;
 pub use crate::components::*;
-use crate::components::events::*;
-use crate::components::resources::{ShipQueue, MaxDispatch};
 
 pub mod systems;
 pub mod scenes;
