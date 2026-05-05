@@ -51,7 +51,7 @@ mod constants;
 pub use constants::*;
 
 pub mod config;
-use config::{BalanceConfig, VisualConfig};
+use config::{BalanceConfig, VisualConfig, ContentConfig};
 
 mod components;
 pub use crate::components::*;
@@ -106,6 +106,8 @@ fn main() {
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .insert_resource(BalanceConfig::load())
         .insert_resource(VisualConfig::load())
+        .insert_resource(ContentConfig::load())
+        .insert_resource(ContentState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -201,6 +203,10 @@ fn main() {
             systems::narrative::bottle::bottle_spawn_system,
             systems::narrative::bottle::bottle_input_system,
         ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
+            systems::narrative::content_router::content_event_system,
+            systems::narrative::content_router::content_ambient_system,
+        ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,
             systems::visuals::viewport::drawer_viewport_system
@@ -258,6 +264,8 @@ pub fn start() {
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
         .insert_resource(BalanceConfig::load())
         .insert_resource(VisualConfig::load())
+        .insert_resource(ContentConfig::load())
+        .insert_resource(ContentState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -353,6 +361,10 @@ pub fn start() {
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
             systems::narrative::bottle::bottle_input_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
+            systems::narrative::content_router::content_event_system,
+            systems::narrative::content_router::content_ambient_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,

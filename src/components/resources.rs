@@ -196,5 +196,16 @@ impl Default for MapPanState {
     }
 }
 
+/// Tracks content pipeline state — fired one-shot IDs and ambient timer.
+#[derive(Resource, Default)]
+pub struct ContentState {
+    /// IDs of one-shot lines already fired (prevents re-firing).
+    pub fired_one_shots: HashSet<String>,
+    /// Tracks which trigger conditions have been observed (e.g. "first_bottle_collected").
+    pub observed_triggers: HashSet<String>,
+    /// Seconds until next ambient line fires. Randomised on each fire.
+    pub ambient_timer: f32,
+}
+
 #[derive(Resource, Default)]
 pub struct CameraDelta(pub Vec2);

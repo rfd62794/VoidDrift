@@ -1,0 +1,60 @@
+one_shots:
+  - id: echo_opening_complete
+    trigger: opening_complete
+    text: "Mining protocols active. You were expected."
+
+  - id: echo_first_drone_returned
+    trigger: first_drone_returned
+    text: "Cargo secured. You are getting faster."
+
+  - id: echo_drone_count_5
+    trigger: drone_count_5
+    text: "Fleet capacity reached. Optimal."
+
+  - id: echo_first_bottle
+    trigger: first_bottle_collected
+    text: "Signal acquired. Origin: unknown."
+
+  - id: echo_first_quest
+    trigger: first_quest_fulfilled
+    text: "Transaction complete. They noticed."
+
+ambient:
+  - id: echo_ambient_001
+    text: "Rotation nominal."
+    weight: 3
+
+  - id: echo_ambient_002
+    text: "You have been here longer than you think."
+    weight: 1
+    eligible_after: first_bottle_collected
+
+  - id: echo_ambient_003
+    text: "The field is thinning. It always does."
+    weight: 2
+
+  - id: echo_ambient_004
+    text: "Signal strength increasing. This is normal."
+    weight: 1
+    eligible_after: first_quest_fulfilled
+
+  - id: echo_ambient_005
+    text: "Hull integrity: stable. For now."
+    weight: 3
+
+event_pools:
+  - trigger: drone_dispatched
+    chance: 0.15
+    lines:
+      - "Dispatched."
+      - "En route."
+      - "Trajectory confirmed."
+      - "It knows where to go."
+
+  - trigger: drone_returned
+    chance: 0.12
+    lines:
+      - "Returned."
+      - "Cargo logged."
+      - "Good."
+      - "The ore remembers where it came from."

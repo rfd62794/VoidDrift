@@ -34,6 +34,7 @@ pub fn reset_game_resources(
     mut opening_sequence: ResMut<OpeningSequence>,
     mut drawer_state: ResMut<DrawerState>,
     mut world_view_rect: ResMut<WorldViewRect>,
+    mut content_state: ResMut<ContentState>,
 ) {
     *queue = ShipQueue::default();
     *cam_delta = CameraDelta::default();
@@ -42,6 +43,7 @@ pub fn reset_game_resources(
     *opening_sequence = OpeningSequence { phase: OpeningPhase::Adrift, timer: 0.0, beat_timer: 0.0 };
     *drawer_state = DrawerState::Collapsed;
     *world_view_rect = WorldViewRect::default();
+    *content_state = ContentState::default();
 }
 
 /// Spawns the world objects, ship, and HUD. Resource reset handled by reset_game_resources.
