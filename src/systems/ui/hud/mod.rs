@@ -160,24 +160,26 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     // 6. Central panel (always — MUST be last)
 
     // ── 1. SIGNAL STRIP ───────────────────────────────────────────────────────
-    let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
-    egui::TopBottomPanel::bottom("signal_strip")
-        .frame(egui::Frame::NONE
-            .fill(egui::Color32::from_rgb(5, 8, 12))
-            .inner_margin(4.0))
-        .exact_height(signal_height)
-        .show(ctx, |ui| {
-            let rect = ui.available_rect_before_wrap();
-            let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
-            if response.clicked() { params.expanded.0 = !params.expanded.0; }
-            let display_count = if params.expanded.0 { 8 } else { 3 };
-            let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
-            ui.vertical(|ui| {
-                for line in entries.iter().rev() {
-                    ui.label(egui::RichText::new(*line).monospace().size(11.0).color(egui::Color32::from_rgb(0, 204, 102)));
-                }
+    if !params.view_state.show_production_tree {
+        let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
+        egui::TopBottomPanel::bottom("signal_strip")
+            .frame(egui::Frame::NONE
+                .fill(egui::Color32::from_rgb(5, 8, 12))
+                .inner_margin(4.0))
+            .exact_height(signal_height)
+            .show(ctx, |ui| {
+                let rect = ui.available_rect_before_wrap();
+                let response = ui.interact(rect, ui.id().with("strip_click"), egui::Sense::click());
+                if response.clicked() { params.expanded.0 = !params.expanded.0; }
+                let display_count = if params.expanded.0 { 8 } else { 3 };
+                let entries: Vec<&String> = params.signal_log.entries.iter().rev().take(display_count).collect();
+                ui.vertical(|ui| {
+                    for line in entries.iter().rev() {
+                        ui.label(egui::RichText::new(*line).monospace().size(11.0).color(egui::Color32::from_rgb(0, 204, 102)));
+                    }
+                });
             });
-        });
+    }
 
     // Register CentralPanel early during opening sequence and return
     if !opening_complete {
@@ -194,7 +196,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
     }
 
     // ── 2. CONTENT AREA (if Expanded) ─────────────────────────────────────────
-    if drawer == DrawerState::Expanded {
+    if drawer == DrawerState::Expanded && !params.view_state.show_production_tree {
         // Get station data — available only when docked
         let station_result = params.station_query.get_single_mut();
 
