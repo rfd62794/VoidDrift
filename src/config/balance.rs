@@ -82,12 +82,12 @@ impl BalanceConfig {
         toml::from_str(src).expect("Failed to parse assets/balance.toml")
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
     fn read_toml() -> &'static str {
         include_str!("../../assets/balance.toml")
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
     fn read_toml() -> &'static str {
         Box::leak(
             std::fs::read_to_string("assets/balance.toml")
