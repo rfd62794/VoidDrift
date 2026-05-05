@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 use crate::components::*;
+use crate::config::TutorialConfig;
 
 pub fn tutorial_system(
     mut tutorial: ResMut<TutorialState>,
+    tutorial_cfg: Res<TutorialConfig>,
     opening: Res<OpeningSequence>,
     // T-001 to T-006: require opening ship (despawned at Complete — legacy, preserved)
     opening_ship_query: Query<
@@ -130,88 +132,59 @@ pub fn tutorial_system(
         }
     }
 
-    // ── T-101 to T-106: Phase 4a tutorial — Echo voice ───────────────────────────────────
+    // ── T-101 to T-106: Phase 4a tutorial — Echo voice (YAML-driven) ───────────────
+    for step in &tutorial_cfg.steps {
+        if tutorial.shown.contains(&step.id) {
+            continue;
+        }
 
-    // T-101: Game start — tap the highlighted asteroid
-    if !tutorial.shown.contains(&101) {
+        // Check prerequisites
+        if !step.requires.iter().all(|req_id| tutorial.shown.contains(req_id)) {
+            continue;
+        }
+
+        // Evaluate trigger condition
+        if !evaluate_trigger(&step.trigger, &auto_ship_query, &station_query, &drawer_state, &active_tab, &bottle_query) {
+            continue;
+        }
+
+        // Fire popup
         tutorial.active = Some(TutorialPopup {
-            id: 101,
-            title: "ECHO".into(),
-            body: "Mining protocols active. Tap the highlighted asteroid to dispatch a drone.".into(),
-            button_label: "Understood".into(),
+            id: step.id,
+            title: step.popup.title.clone(),
+            body: step.popup.body.clone(),
+            button_label: step.popup.button.clone(),
         });
         return;
     }
+}
 
-    // T-102: Drone dispatched — first navigation detected
-    if !tutorial.shown.contains(&102) {
-        if auto_ship_query.iter().any(|s| {
+fn evaluate_trigger(
+    trigger: &str,
+    auto_ship_query: &Query<&Ship, (With<AutonomousShipTag>, Without<InOpeningSequence>)>,
+    station_query: &Query<(&Station, &StationQueues), (Without<Ship>, Without<AutonomousShipTag>)>,
+    drawer_state: &Res<DrawerState>,
+    active_tab: &Res<ActiveStationTab>,
+    bottle_query: &Query<&Transform, (With<ActiveBottle>, Without<TutorialHighlight>)>,
+) -> bool {
+    match trigger {
+        "game_start" => true, // Always fires when opening Complete (guard at line 60)
+        "drone_navigating_or_mining" => auto_ship_query.iter().any(|s| {
             s.state == ShipState::Navigating || s.state == ShipState::Mining
-        }) {
-            tutorial.active = Some(TutorialPopup {
-                id: 102,
-                title: "ECHO".into(),
-                body: "Drone en route. It will return automatically when cargo is full.".into(),
-                button_label: "Understood".into(),
-            });
-            return;
-        }
-    }
-
-    // T-103: First dock — ore unloaded at station
-    if !tutorial.shown.contains(&103) && tutorial.shown.contains(&102) {
-        if let Ok((st, _)) = station_query.get_single() {
-            if st.iron_reserves > 0.0
-                || st.tungsten_reserves > 0.0
-                || st.nickel_reserves > 0.0
-                || st.aluminum_reserves > 0.0
-            {
-                tutorial.active = Some(TutorialPopup {
-                    id: 103,
-                    title: "ECHO".into(),
-                    body: "Ore secured. Open the station drawer to check reserves. Tap the grey bar at the bottom of the screen.".into(),
-                    button_label: "Understood".into(),
-                });
-                return;
+        }),
+        "ore_reserves_positive" => {
+            if let Ok((st, _)) = station_query.get_single() {
+                st.iron_reserves > 0.0
+                    || st.tungsten_reserves > 0.0
+                    || st.nickel_reserves > 0.0
+                    || st.aluminum_reserves > 0.0
+            } else {
+                false
             }
         }
-    }
-
-    // T-104: Drawer opened
-    if !tutorial.shown.contains(&104) && tutorial.shown.contains(&103) {
-        if *drawer_state == DrawerState::Expanded {
-            tutorial.active = Some(TutorialPopup {
-                id: 104,
-                title: "ECHO".into(),
-                body: "Production pipeline standing by. Switch to the FORGE tab to enable automatic processing.".into(),
-                button_label: "Understood".into(),
-            });
-            return;
-        }
-    }
-
-    // T-105: FORGE tab opened
-    if !tutorial.shown.contains(&105) && tutorial.shown.contains(&104) {
-        if *active_tab == ActiveStationTab::Production {
-            tutorial.active = Some(TutorialPopup {
-                id: 105,
-                title: "ECHO".into(),
-                body: "Refinery online. Materials will process automatically. Return to mining — more ore means more drones.".into(),
-                button_label: "Understood".into(),
-            });
-            return;
-        }
-    }
-
-    // T-106: Bottle visible in world
-    if !tutorial.shown.contains(&106) && tutorial.shown.contains(&105) {
-        if bottle_query.iter().next().is_some() {
-            tutorial.active = Some(TutorialPopup {
-                id: 106,
-                title: "ECHO".into(),
-                body: "Signal detected. Dispatch a drone to retrieve it. Check the QUESTS tab in the drawer after collection.".into(),
-                button_label: "Understood".into(),
-            });
-        }
+        "drawer_expanded" => **drawer_state == DrawerState::Expanded,
+        "forge_tab_active" => **active_tab == ActiveStationTab::Production,
+        "bottle_exists" => bottle_query.iter().next().is_some(),
+        _ => false,
     }
 }
