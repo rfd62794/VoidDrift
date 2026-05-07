@@ -626,11 +626,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     ui.add_space(12.0);
                     ui.vertical_centered(|ui| {
                         let button_response = ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0)));
+                        println!("[TUTORIAL] Button state - clicked: {}, hovered: {}, rect: {:?}", button_response.clicked(), button_response.hovered(), button_response.rect);
                         if button_response.clicked() {
-                            println!("[TUTORIAL] Button clicked! Dismissing popup ID: {}", popup.id);
+                            println!("[TUTORIAL] Button CLICKED! Dismissing popup ID: {}", popup.id);
                             params.tutorial.active = None;
-                        } else if button_response.hovered() {
-                            println!("[TUTORIAL] Button hovered");
                         }
                     });
                 });
@@ -645,6 +644,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             params.world_view_rect.y = r.min.y;
             params.world_view_rect.w = r.width();
             params.world_view_rect.h = r.height();
+
+            if params.tutorial.active.is_some() {
+                return;
+            }
 
             ui.horizontal(|ui| {
                 // Left: Fleet count indicator (ready/total)
