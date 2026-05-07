@@ -625,8 +625,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     ));
                     
                     // Background rect — centered, fixed size
-                    let w = 300.0;
-                    let h = 180.0;
+                    let w = 380.0;
+                    let h = 200.0;
                     let bg_rect = egui::Rect::from_center_size(
                         screen.center(),
                         egui::vec2(w, h)
@@ -638,16 +638,20 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     
                     // Title — ECHO in cyan
                     painter.text(
-                        bg_rect.center_top() + egui::vec2(0.0, 20.0),
+                        bg_rect.center_top() + egui::vec2(0.0, 16.0),
                         egui::Align2::CENTER_TOP,
                         &popup.title,
                         egui::FontId::proportional(18.0),
                         egui::Color32::CYAN,
                     );
                     
-                    // Body text
+                    // Body text — wrapped to fit box width
+                    let body_rect = egui::Rect::from_min_max(
+                        bg_rect.min + egui::vec2(20.0, 50.0),
+                        bg_rect.max - egui::vec2(20.0, 50.0)
+                    );
                     painter.text(
-                        bg_rect.center() - egui::vec2(0.0, 10.0),
+                        body_rect.center(),
                         egui::Align2::CENTER_CENTER,
                         &popup.body,
                         egui::FontId::proportional(13.0),
