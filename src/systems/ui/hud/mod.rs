@@ -606,6 +606,37 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         return; // Skip normal HUD rendering
     }
 
+    // ── 7. TUTORIAL POP-UP (registered before CentralPanel for input priority) ────────
+    if let Some(popup) = params.tutorial.active.clone() {
+        if !params.view_state.show_production_tree {
+            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
+                .id(egui::Id::new("tutorial_popup"))
+                .collapsible(false)
+                .resizable(false)
+                .interactable(true)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .fixed_size([300.0, 180.0])
+                .order(egui::Order::Foreground)
+                .frame(egui::Frame::window(&ctx.style())
+                    .fill(egui::Color32::from_rgb(5, 5, 10))
+                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
+                    .inner_margin(16.0))
+                .show(ctx, |ui| {
+                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
+                    ui.add_space(12.0);
+                    ui.vertical_centered(|ui| {
+                        let button_response = ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0)));
+                        if button_response.clicked() {
+                            println!("[TUTORIAL] Button clicked! Dismissing popup ID: {}", popup.id);
+                            params.tutorial.active = None;
+                        } else if button_response.hovered() {
+                            println!("[TUTORIAL] Button hovered");
+                        }
+                    });
+                });
+        }
+    }
+
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
@@ -644,35 +675,4 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 });
             });
         });
-
-    // ── 7. TUTORIAL POP-UP (rendered after CentralPanel for input priority) ────────
-    if let Some(popup) = params.tutorial.active.clone() {
-        if !params.view_state.show_production_tree {
-            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
-                .id(egui::Id::new("tutorial_popup"))
-                .collapsible(false)
-                .resizable(false)
-                .interactable(true)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .fixed_size([300.0, 180.0])
-                .order(egui::Order::Foreground)
-                .frame(egui::Frame::window(&ctx.style())
-                    .fill(egui::Color32::from_rgb(5, 5, 10))
-                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
-                    .inner_margin(16.0))
-                .show(ctx, |ui| {
-                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
-                    ui.add_space(12.0);
-                    ui.vertical_centered(|ui| {
-                        let button_response = ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0)));
-                        if button_response.clicked() {
-                            println!("[TUTORIAL] Button clicked! Dismissing popup ID: {}", popup.id);
-                            params.tutorial.active = None;
-                        } else if button_response.hovered() {
-                            println!("[TUTORIAL] Button hovered");
-                        }
-                    });
-                });
-        }
-    }
 }
