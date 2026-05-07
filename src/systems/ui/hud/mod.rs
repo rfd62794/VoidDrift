@@ -664,8 +664,12 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
                     ui.add_space(12.0);
                     ui.vertical_centered(|ui| {
-                        if ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0))).clicked() {
+                        let button_response = ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0)));
+                        if button_response.clicked() {
+                            println!("[TUTORIAL] Button clicked! Dismissing popup ID: {}", popup.id);
                             params.tutorial.active = None;
+                        } else if button_response.hovered() {
+                            println!("[TUTORIAL] Button hovered");
                         }
                     });
                 });

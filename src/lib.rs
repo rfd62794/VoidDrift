@@ -191,6 +191,7 @@ fn main() {
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
+            systems::ui::tutorial::tutorial_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
@@ -202,7 +203,6 @@ fn main() {
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,
-            systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
         ).run_if(in_state(AppState::InGame)))
@@ -355,6 +355,7 @@ pub fn start() {
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
+            systems::ui::tutorial::tutorial_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
@@ -366,7 +367,6 @@ pub fn start() {
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,
-            systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
         ).run_if(in_state(AppState::InGame)))
