@@ -343,30 +343,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             });
     }
 
-    // ── 7. TUTORIAL POP-UP ────────────────────────────────────────────────────
-    if let Some(popup) = params.tutorial.active.clone() {
-        if !params.view_state.show_production_tree {
-            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
-                .id(egui::Id::new("tutorial_popup"))
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .fixed_size([300.0, 180.0])
-                .frame(egui::Frame::window(&ctx.style())
-                    .fill(egui::Color32::from_rgb(5, 5, 10))
-                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
-                    .inner_margin(16.0))
-                .frame(egui::Frame::NONE
-                    .fill(egui::Color32::from_rgb(2, 4, 8)))
-                .show(ctx, |ui| {
-                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
-                    ui.add_space(12.0);
-                    if ui.button(egui::RichText::new(&popup.button_label).strong()).clicked() {
-                        params.tutorial.active = None;
-                    }
-                });
-        }
-    }
 
     // ── 8. PRODUCTION TREE VIEWPORT ───────────────────────────────────────────
     if params.view_state.show_production_tree {
@@ -668,4 +644,28 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 });
             });
         });
+
+    // ── 7. TUTORIAL POP-UP (rendered after CentralPanel for input priority) ────────
+    if let Some(popup) = params.tutorial.active.clone() {
+        if !params.view_state.show_production_tree {
+            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
+                .id(egui::Id::new("tutorial_popup"))
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .fixed_size([300.0, 180.0])
+                .order(egui::Order::Foreground)
+                .frame(egui::Frame::window(&ctx.style())
+                    .fill(egui::Color32::from_rgb(5, 5, 10))
+                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
+                    .inner_margin(16.0))
+                .show(ctx, |ui| {
+                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
+                    ui.add_space(12.0);
+                    if ui.button(egui::RichText::new(&popup.button_label).strong()).clicked() {
+                        params.tutorial.active = None;
+                    }
+                });
+        }
+    }
 }
