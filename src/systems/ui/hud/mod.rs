@@ -618,17 +618,22 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             // Tutorial popup as painted overlay (same pattern as Production Tree arrows)
             if let Some(popup) = params.tutorial.active.clone() {
                 if !params.view_state.show_production_tree {
-                    let screen = ctx.screen_rect();
                     let painter = ctx.layer_painter(egui::LayerId::new(
                         egui::Order::Foreground,
                         egui::Id::new("tutorial_overlay")
                     ));
                     
+                    // Center on viewport (world_view_rect) instead of screen to account for drawer
+                    let viewport_center = egui::pos2(
+                        params.world_view_rect.x + params.world_view_rect.w / 2.0,
+                        params.world_view_rect.y + params.world_view_rect.h / 2.0
+                    );
+                    
                     // Background rect — centered, wider for text wrapping
                     let w = 480.0;
                     let h = 220.0;
                     let bg_rect = egui::Rect::from_center_size(
-                        screen.center(),
+                        viewport_center,
                         egui::vec2(w, h)
                     );
                     
