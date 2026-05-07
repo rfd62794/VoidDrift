@@ -652,6 +652,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 .id(egui::Id::new("tutorial_popup"))
                 .collapsible(false)
                 .resizable(false)
+                .interactable(true)
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .fixed_size([300.0, 180.0])
                 .order(egui::Order::Foreground)
@@ -662,9 +663,11 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 .show(ctx, |ui| {
                     ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
                     ui.add_space(12.0);
-                    if ui.button(egui::RichText::new(&popup.button_label).strong()).clicked() {
-                        params.tutorial.active = None;
-                    }
+                    ui.vertical_centered(|ui| {
+                        if ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0))).clicked() {
+                            params.tutorial.active = None;
+                        }
+                    });
                 });
         }
     }

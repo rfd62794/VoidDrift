@@ -26,6 +26,7 @@ pub struct AsteroidInputParams<'w, 's> {
     pub mouse_button: Res<'w, ButtonInput<MouseButton>>,
     pub vcfg: Res<'w, VisualConfig>,
     pub view_state: Res<'w, ViewState>,
+    pub tutorial: Res<'w, TutorialState>,
 }
 
 pub fn asteroid_input_system(mut p: AsteroidInputParams) {
@@ -34,6 +35,10 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
     }
 
     if p.view_state.show_production_tree {
+        return;
+    }
+
+    if p.tutorial.active.is_some() {
         return;
     }
 
