@@ -606,36 +606,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         return; // Skip normal HUD rendering
     }
 
-    // ── 7. TUTORIAL POP-UP (registered before CentralPanel for input priority) ────────
-    if let Some(popup) = params.tutorial.active.clone() {
-        if !params.view_state.show_production_tree {
-            egui::Window::new(egui::RichText::new(&popup.title).strong().color(egui::Color32::CYAN))
-                .id(egui::Id::new("tutorial_popup"))
-                .collapsible(false)
-                .resizable(false)
-                .interactable(true)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .fixed_size([300.0, 180.0])
-                .order(egui::Order::Foreground)
-                .frame(egui::Frame::window(&ctx.style())
-                    .fill(egui::Color32::from_rgb(5, 5, 10))
-                    .stroke(egui::Stroke::new(2.0, egui::Color32::CYAN))
-                    .inner_margin(16.0))
-                .show(ctx, |ui| {
-                    ui.label(egui::RichText::new(&popup.body).color(egui::Color32::WHITE));
-                    ui.add_space(12.0);
-                    ui.vertical_centered(|ui| {
-                        let button_response = ui.add(egui::Button::new(egui::RichText::new(&popup.button_label).strong()).min_size(egui::vec2(120.0, 32.0)));
-                        println!("[TUTORIAL] Button state - clicked: {}, hovered: {}, rect: {:?}", button_response.clicked(), button_response.hovered(), button_response.rect);
-                        if button_response.clicked() {
-                            println!("[TUTORIAL] Button CLICKED! Dismissing popup ID: {}", popup.id);
-                            params.tutorial.active = None;
-                        }
-                    });
-                });
-        }
-    }
-
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE)
         .show(ctx, |ui| {
@@ -645,7 +615,73 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             params.world_view_rect.w = r.width();
             params.world_view_rect.h = r.height();
 
-            if params.tutorial.active.is_some() {
+            // Tutorial popup as painted overlay (same pattern as Production Tree arrows)
+            if let Some(popup) = params.tutorial.active.clone() {
+                if !params.view_state.show_production_tree {
+                    let screen = ctx.screen_rect();
+                    let painter = ctx.layer_painter(egui::LayerId::new(
+                        egui::Order::Foreground,
+                        egui::Id::new("tutorial_overlay")
+                    ));
+                    
+                    // Background rect — centered, fixed size
+                    let w = 300.0;
+                    let h = 180.0;
+                    let bg_rect = egui::Rect::from_center_size(
+                        screen.center(),
+                        egui::vec2(w, h)
+                    );
+                    
+                    // Draw background
+                    painter.rect_filled(bg_rect, 6.0, egui::Color32::from_rgba_premultiplied(5, 5, 10, 240));
+                    painter.rect_stroke(bg_rect, 6.0, egui::Stroke::new(2.0, egui::Color32::CYAN), egui::StrokeKind::Outside);
+                    
+                    // Title — ECHO in cyan
+                    painter.text(
+                        bg_rect.center_top() + egui::vec2(0.0, 20.0),
+                        egui::Align2::CENTER_TOP,
+                        &popup.title,
+                        egui::FontId::proportional(18.0),
+                        egui::Color32::CYAN,
+                    );
+                    
+                    // Body text
+                    painter.text(
+                        bg_rect.center() - egui::vec2(0.0, 10.0),
+                        egui::Align2::CENTER_CENTER,
+                        &popup.body,
+                        egui::FontId::proportional(13.0),
+                        egui::Color32::WHITE,
+                    );
+                    
+                    // Button rect
+                    let btn_rect = egui::Rect::from_center_size(
+                        bg_rect.center_bottom() - egui::vec2(0.0, 28.0),
+                        egui::vec2(120.0, 32.0)
+                    );
+                    
+                    // Draw button
+                    painter.rect_filled(btn_rect, 4.0, egui::Color32::from_rgb(20, 40, 40));
+                    painter.rect_stroke(btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::CYAN), egui::StrokeKind::Outside);
+                    painter.text(
+                        btn_rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        &popup.button_label,
+                        egui::FontId::proportional(13.0),
+                        egui::Color32::CYAN,
+                    );
+                    
+                    // Click detection — same pattern as Production Tree arrows
+                    let response = ui.interact(
+                        btn_rect,
+                        egui::Id::new("tutorial_btn"),
+                        egui::Sense::click()
+                    );
+                    if response.clicked() {
+                        params.tutorial.shown.insert(popup.id);
+                        params.tutorial.active = None;
+                    }
+                }
                 return;
             }
 
