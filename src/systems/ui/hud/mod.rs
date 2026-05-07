@@ -624,9 +624,9 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         egui::Id::new("tutorial_overlay")
                     ));
                     
-                    // Background rect — centered, fixed size
-                    let w = 380.0;
-                    let h = 200.0;
+                    // Background rect — centered, wider for text wrapping
+                    let w = 480.0;
+                    let h = 220.0;
                     let bg_rect = egui::Rect::from_center_size(
                         screen.center(),
                         egui::vec2(w, h)
@@ -645,18 +645,26 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         egui::Color32::CYAN,
                     );
                     
-                    // Body text — wrapped to fit box width
-                    let body_rect = egui::Rect::from_min_max(
-                        bg_rect.min + egui::vec2(20.0, 50.0),
-                        bg_rect.max - egui::vec2(20.0, 50.0)
-                    );
-                    painter.text(
-                        body_rect.center(),
-                        egui::Align2::CENTER_CENTER,
-                        &popup.body,
-                        egui::FontId::proportional(13.0),
-                        egui::Color32::WHITE,
-                    );
+                    // Body text — break on punctuation and render multiple lines
+                    let body_lines: Vec<&str> = popup.body
+                        .split(|c| c == '.' || c == '!' || c == '?')
+                        .filter(|s| !s.trim().is_empty())
+                        .map(|s| s.trim())
+                        .collect();
+                    
+                    let line_height = 18.0;
+                    let start_y = bg_rect.min.y + 50.0;
+                    
+                    for (i, line) in body_lines.iter().enumerate() {
+                        let y = start_y + (i as f32) * line_height;
+                        painter.text(
+                            egui::pos2(bg_rect.center().x, y),
+                            egui::Align2::CENTER_TOP,
+                            line,
+                            egui::FontId::proportional(13.0),
+                            egui::Color32::WHITE,
+                        );
+                    }
                     
                     // Button rect
                     let btn_rect = egui::Rect::from_center_size(
