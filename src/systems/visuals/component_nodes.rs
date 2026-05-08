@@ -313,11 +313,11 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 3. Left fin — tall spike pointing left from bottom
+    // 3. Left fin — thin spike extending left
     let left_fin_points = vec![
-        egui::pos2(left_x, body_bottom_y - fin_height),
         egui::pos2(left_x, body_bottom_y),
-        egui::pos2(left_x - fin_width, body_bottom_y),
+        egui::pos2(left_x - fin_width * 2.0, body_bottom_y - fin_height),
+        egui::pos2(left_x - fin_width * 1.8, body_bottom_y),
     ];
     painter.add(egui::Shape::convex_polygon(
         left_fin_points,
@@ -325,11 +325,11 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 4. Right fin — tall spike pointing right from bottom
+    // 4. Right fin — thin spike extending right
     let right_fin_points = vec![
-        egui::pos2(right_x, body_bottom_y - fin_height),
         egui::pos2(right_x, body_bottom_y),
-        egui::pos2(right_x + fin_width, body_bottom_y),
+        egui::pos2(right_x + fin_width * 2.0, body_bottom_y - fin_height),
+        egui::pos2(right_x + fin_width * 1.8, body_bottom_y),
     ];
     painter.add(egui::Shape::convex_polygon(
         right_fin_points,
@@ -337,11 +337,11 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 5. Bottom center fin — spike pointing straight down from exhaust
+    // 5. Bottom center fin — thin spike extending straight down
     let bottom_fin_points = vec![
-        egui::pos2(center.x, body_bottom_y - fin_height * 0.6),
-        egui::pos2(center.x, body_bottom_y),
-        egui::pos2(center.x, body_bottom_y + fin_width * 0.8),
+        egui::pos2(center.x - fin_width * 0.5, body_bottom_y),
+        egui::pos2(center.x, body_bottom_y + fin_width * 2.5),
+        egui::pos2(center.x + fin_width * 0.5, body_bottom_y),
     ];
     painter.add(egui::Shape::convex_polygon(
         bottom_fin_points,
