@@ -43,12 +43,12 @@ pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &Or
     for ray_idx in 0..star_points {
         let angle = (ray_idx as f32 / star_points as f32) * TAU;
         
-        let start_radius = config.radius * 0.15;
+        let start_radius = config.radius * 0.2;
         let start_x = angle.cos() * start_radius;
         let start_y = angle.sin() * start_radius;
         let start_pos = egui::Pos2::new(center.x + start_x, center.y + start_y);
 
-        let end_radius = config.radius * 1.0;
+        let end_radius = config.radius * 0.7;
         let end_x = angle.cos() * end_radius;
         let end_y = angle.sin() * end_radius;
         let end_pos = egui::Pos2::new(center.x + end_x, center.y + end_y);

@@ -78,7 +78,7 @@ map_icon_w = 12.0
 map_icon_h = 16.0
 
 [ore.metal]
-color_body         = [85, 85, 95]
+color_body         = [100, 100, 100]
 color_vein         = [200, 210, 255]
 band_count         = 4
 band_width_min     = 0.08
@@ -86,7 +86,7 @@ band_width_max     = 0.18
 grain_angle_deg    = 25.0
 
 [ore.h3_gas]
-color_body         = [25, 45, 35]
+color_body         = [100, 100, 100]
 color_vein         = [80, 255, 160]
 band_count         = 5
 band_width_min     = 0.10
@@ -94,7 +94,7 @@ band_width_max     = 0.22
 grain_angle_deg    = 15.0
 
 [ore.void_essence]
-color_body         = [28, 18, 40]
+color_body         = [100, 100, 100]
 color_vein         = [160, 80, 255]
 band_count         = 3
 band_width_min     = 0.12
