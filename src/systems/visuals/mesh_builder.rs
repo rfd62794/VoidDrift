@@ -38,6 +38,48 @@ pub fn build_mesh_from_polygon(points: &[Vec2]) -> Mesh {
     mesh
 }
 
+/// Build a filled 2D mesh from an ordered polygon point array with vertex colors.
+/// Colors array must match points length. Alternates between body and vein colors to create banding effect.
+pub fn build_mesh_from_polygon_with_colors(points: &[Vec2], colors: &[Color]) -> Mesh {
+    assert!(points.len() >= 3, "Polygon requires at least 3 points");
+    assert_eq!(points.len(), colors.len(), "Points and colors must have same length");
+
+    let vertices: Vec<[f32; 3]> = points
+        .iter()
+        .map(|p| [p.x, p.y, 0.0])
+        .collect();
+
+    // Fan triangulation: triangle (0, i, i+1) for i in 1..n-1
+    let mut indices: Vec<u32> = Vec::new();
+    for i in 1..(points.len() as u32 - 1) {
+        indices.push(0);
+        indices.push(i);
+        indices.push(i + 1);
+    }
+
+    let normals: Vec<[f32; 3]> = vec![[0.0, 0.0, 1.0]; points.len()];
+    let uvs: Vec<[f32; 2]> = points
+        .iter()
+        .map(|p| [p.x, p.y])
+        .collect();
+
+    let vertex_colors: Vec<[f32; 4]> = colors
+        .iter()
+        .map(|c| [c.r(), c.g(), c.b(), c.a()])
+        .collect();
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::RENDER_WORLD,
+    );
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh
+}
+
 /// Build a mesh from a quad (4 points, two triangles).
 /// Used for ore band strips.
 pub fn build_mesh_from_quad(points: &[Vec2; 4]) -> Mesh {

@@ -15,9 +15,6 @@ pub fn mining_system(
     mut commands: Commands,
     cfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
-    children: Query<&Children>,
-    asteroid_body_query: Query<&AsteroidBody>,
-    asteroid_band_query: Query<&AsteroidBand>,
     material_query: Query<&MeshMaterial2d<ColorMaterial>>,
 ) {
     for (ship_ent, mut ship, ship_transform, ship_children) in ship_query.iter_mut() {
@@ -66,24 +63,12 @@ pub fn mining_system(
 
                         // Visual feedback if depleted (asteroid lifecycle handles despawn)
                         if asteroid.ore_remaining <= 0.0 {
-                            // Update child entity materials (AsteroidBody and AsteroidBand)
-                            let depleted_body_color = Color::srgba(0.18, 0.18, 0.18, 0.5); // 50% alpha
-                            let depleted_vein_color = Color::srgba(0.18, 0.18, 0.18, 0.2); // 20% alpha
+                            // Update asteroid material to depleted color
+                            let depleted_color = Color::srgba(0.18, 0.18, 0.18, 0.5); // 50% alpha
 
-                            for child in children.iter_descendants(target_entity) {
-                                if let Some(body) = asteroid_body_query.get(child).ok() {
-                                    if let Ok(mat_h) = material_query.get(child) {
-                                        if let Some(mat) = materials.get_mut(&mat_h.0) {
-                                            mat.color = depleted_body_color;
-                                        }
-                                    }
-                                }
-                                if let Some(band) = asteroid_band_query.get(child).ok() {
-                                    if let Ok(mat_h) = material_query.get(child) {
-                                        if let Some(mat) = materials.get_mut(&mat_h.0) {
-                                            mat.color = depleted_vein_color;
-                                        }
-                                    }
+                            if let Ok(mat_h) = material_query.get(target_entity) {
+                                if let Some(mat) = materials.get_mut(&mat_h.0) {
+                                    mat.color = depleted_color;
                                 }
                             }
 
