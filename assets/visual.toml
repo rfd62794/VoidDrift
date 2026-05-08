@@ -188,8 +188,8 @@ fan_blade_count     = 3
 [component.drone_bay]
 width               = 63.0
 height              = 30.0
-color_ready         = [210, 95, 30]
-color_empty         = [80, 40, 15]
+color_ready         = [50, 180, 50]
+color_empty         = [20, 80, 20]
 nose_height_ratio   = 0.35
 fin_width_ratio     = 0.16
 fin_height_ratio    = 0.15
