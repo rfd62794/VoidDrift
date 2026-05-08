@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use uuid::Uuid;
 
-const TELEMETRY_URL: &str = "https://rfditservices.com/api/telemetry/v1/event";
+const TELEMETRY_URL: &str = "http://localhost:8000/v1/event";
 const CLIENT_VERSION: &str = "3.3.0";
 
 #[derive(Debug, Serialize, Deserialize)]
