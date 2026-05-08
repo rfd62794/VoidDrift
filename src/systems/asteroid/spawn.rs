@@ -3,6 +3,8 @@ use bevy::sprite::AlphaMode2d;
 use rand::Rng;
 use crate::components::*;
 use crate::constants::*;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
 
 pub fn spawn_initial_asteroids(
     mut commands: Commands,
@@ -11,12 +13,14 @@ pub fn spawn_initial_asteroids(
     mut materials: ResMut<Assets<ColorMaterial>>,
     existing_asteroids: Query<&Transform, With<ActiveAsteroid>>,
     asset_server: Res<AssetServer>,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     // Spawn initial asteroids (one of each type around their sectors)
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Iron);
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Tungsten);
-    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Nickel);
-    respawn_timer.timer = Timer::from_seconds(ASTEROID_RESPAWN_TIMER_SECS, TimerMode::Once);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Iron, &cfg, &vcfg);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Tungsten, &cfg, &vcfg);
+    spawn_asteroid(&mut commands, &mut meshes, &mut materials, &existing_asteroids, &asset_server, OreDeposit::Nickel, &cfg, &vcfg);
+    respawn_timer.timer = Timer::from_seconds(cfg.asteroid.respawn_timer_secs, TimerMode::Once);
 }
 
 pub fn spawn_asteroid(
@@ -26,6 +30,8 @@ pub fn spawn_asteroid(
     existing_asteroids: &Query<&Transform, With<ActiveAsteroid>>,
     asset_server: &Res<AssetServer>,
     ore_type: OreDeposit,
+    cfg: &BalanceConfig,
+    vcfg: &VisualConfig,
 ) -> bool {
     let mut rng = rand::thread_rng();
     
@@ -45,7 +51,7 @@ pub fn spawn_asteroid(
         let mut too_close = false;
         for existing_transform in existing_asteroids.iter() {
             let existing_pos = existing_transform.translation.truncate();
-            if candidate_pos.distance(existing_pos) < ASTEROID_MIN_SPAWN_DISTANCE {
+            if candidate_pos.distance(existing_pos) < cfg.asteroid.min_spawn_distance {
                 too_close = true;
                 break;
             }
@@ -62,18 +68,19 @@ pub fn spawn_asteroid(
         return false;
     }
 
+    let av = &vcfg.asteroid;
     let color = match ore_type {
-        OreDeposit::Iron => COLOR_IRON,
-        OreDeposit::Tungsten => COLOR_TUNGSTEN,
-        OreDeposit::Nickel => COLOR_NICKEL,
-        OreDeposit::Aluminum => COLOR_ALUMINUM,
+        OreDeposit::Iron     => rgb(av.color_iron),
+        OreDeposit::Tungsten => rgb(av.color_tungsten),
+        OreDeposit::Nickel   => rgb(av.color_nickel),
+        OreDeposit::Aluminum => rgb(av.color_aluminum),
     };
 
     let radius = match ore_type {
-        OreDeposit::Iron => ASTEROID_RADIUS_IRON,
-        OreDeposit::Tungsten => ASTEROID_RADIUS_TUNGSTEN,
-        OreDeposit::Nickel => ASTEROID_RADIUS_NICKEL,
-        OreDeposit::Aluminum => ASTEROID_RADIUS_ALUMINUM,
+        OreDeposit::Iron => cfg.asteroid.radius_iron,
+        OreDeposit::Tungsten => cfg.asteroid.radius_tungsten,
+        OreDeposit::Nickel => cfg.asteroid.radius_nickel,
+        OreDeposit::Aluminum => cfg.asteroid.radius_aluminum,
     };
 
     let is_gated = match ore_type {
@@ -83,19 +90,19 @@ pub fn spawn_asteroid(
     };
 
     // Vary the ore amount slightly
-    let ore_amount = ASTEROID_BASE_ORE * rng.gen_range(0.8..1.2);
+    let ore_amount = cfg.asteroid.base_ore * rng.gen_range(0.8..1.2);
 
     let asteroid_entity = commands.spawn((
         MapMarker, // Add MapMarker so it can be targeted in MapView
         ActiveAsteroid {
             ore_type,
             ore_remaining: ore_amount,
-            lifespan_timer: ASTEROID_MAX_LIFESPAN_SECS,
+            lifespan_timer: cfg.asteroid.max_lifespan_secs,
         },
         Transform::from_xyz(position.x, position.y, Z_ENVIRONMENT),
         GlobalTransform::default(),
         Visibility::default(),
-        Mesh2d(meshes.add(crate::systems::setup::generate_ore_mesh(&ore_type, rng.gen()))),
+        Mesh2d(meshes.add(crate::systems::setup::generate_ore_mesh(&ore_type, rng.gen(), cfg))),
         MeshMaterial2d(materials.add(color)),
     )).id();
 
@@ -176,6 +183,8 @@ pub fn asteroid_respawn_system(
     transform_query: Query<&Transform, With<ActiveAsteroid>>,
     asset_server: Res<AssetServer>,
     station_query: Query<&Station>,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     respawn_timer.timer.tick(time.delta());
     
@@ -196,7 +205,7 @@ pub fn asteroid_respawn_system(
             _ => OreDeposit::Aluminum,
         };
 
-        spawn_asteroid(&mut commands, &mut meshes, &mut materials, &transform_query, &asset_server, target_ore_type);
+        spawn_asteroid(&mut commands, &mut meshes, &mut materials, &transform_query, &asset_server, target_ore_type, &cfg, &vcfg);
         respawn_timer.timer.reset();
     }
 }

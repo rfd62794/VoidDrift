@@ -1,0 +1,55 @@
+quest_objectives:
+  - id: 1
+    description: "Locate the signal source"
+    progress_target: null
+    initial_state: Active
+    triggers:
+      complete_on_signal: 4
+
+  - id: 2
+    description: "Dock at the derelict station"
+    progress_target: null
+    initial_state: Locked
+    triggers:
+      activate_on_signal: 4
+      complete_on_signal: 5
+
+  - id: 3
+    description: "Repair the station"
+    progress_target: 25
+    initial_state: Locked
+    triggers:
+      activate_on_signal: 5
+      complete_on_signal: 11
+
+  - id: 4
+    description: "Build an AI Core"
+    progress_target: null
+    initial_state: Locked
+    triggers:
+      activate_on_signal: 11
+      complete_on_signal: 13
+
+  - id: 5
+    description: "Discover Sector 3"
+    progress_target: null
+    initial_state: Active
+    triggers:
+      activate_on_signal: 13
+      complete_on_signal: 14
+
+  - id: 6
+    description: "Mine Carbon 3"
+    progress_target: null
+    initial_state: Locked
+    triggers:
+      activate_on_signal: 14
+      complete_on_signal: 16
+
+  - id: 7
+    description: "Assemble autonomous ship"
+    progress_target: null
+    initial_state: Locked
+    triggers:
+      activate_on_signal: 16
+      complete_on_signal: 17

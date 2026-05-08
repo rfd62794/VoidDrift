@@ -1,0 +1,53 @@
+# VoidDrift — Balance Configuration
+# Part 1: Pure balance data. Z-layers, colors, positions, structural indices in Part 2.
+
+[mining]
+ship_speed = 210.0
+cargo_capacity = 100
+mining_rate = 22.0
+arrival_threshold = 8.0
+arrival_threshold_mining = 40.0
+
+[refinery]
+ratio = 10
+iron_time = 4.0
+tungsten_time = 5.0
+nickel_time = 3.0
+aluminum_time = 4.0
+
+[forge]
+hull_time = 5.0
+thruster_time = 10.0
+core_time = 12.0
+aluminum_canister_time = 8.0
+hull_plate_cost_iron = 2
+thruster_cost_tungsten = 1
+ai_core_cost_nickel = 1
+aluminum_canister_cost_aluminum = 2
+
+[drone]
+build_time = 18.0
+cost_hulls = 3.0
+cost_thrusters = 1.0
+cost_cores = 1.0
+max_queue = 5
+
+[asteroid]
+base_ore = 100.0
+max_lifespan_secs = 40.0
+respawn_timer_secs = 5.0
+min_spawn_distance = 50.0
+radius_iron = 20.0
+radius_tungsten = 22.0
+radius_nickel = 24.0
+radius_aluminum = 20.0
+
+[station]
+repair_cost = 25
+rotation_speed_divisor = 90.0
+
+[narrative]
+bottle_spawn_delay = 45.0
+signal_pause_s2 = 2.0
+signal_pause_dock_report = 1.0
+signal_pause_complete = 1.5

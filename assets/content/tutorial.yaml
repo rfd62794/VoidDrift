@@ -1,0 +1,54 @@
+steps:
+  - id: 101
+    trigger: game_start
+    highlight: asteroid_nearest
+    requires: []
+    popup:
+      title: "ECHO"
+      body: "Mining protocols active. Tap the highlighted asteroid to dispatch a drone."
+      button: "Understood"
+
+  - id: 102
+    trigger: drone_navigating_or_mining
+    highlight: asteroid_nearest
+    requires: [101]
+    popup:
+      title: "ECHO"
+      body: "Drone en route. It will return automatically when cargo is full."
+      button: "Understood"
+
+  - id: 103
+    trigger: ore_reserves_positive
+    highlight: none
+    requires: [102]
+    popup:
+      title: "ECHO"
+      body: "Ore secured. Open the station drawer to check reserves. Tap the grey bar at the bottom of the screen."
+      button: "Understood"
+
+  - id: 104
+    trigger: drawer_expanded
+    highlight: none
+    requires: [103]
+    popup:
+      title: "ECHO"
+      body: "Production pipeline standing by. Switch to the FORGE tab to enable automatic processing."
+      button: "Understood"
+
+  - id: 105
+    trigger: forge_tab_active
+    highlight: none
+    requires: [104]
+    popup:
+      title: "ECHO"
+      body: "Refinery online. Materials will process automatically. Return to mining — more ore means more drones."
+      button: "Understood"
+
+  - id: 106
+    trigger: bottle_exists
+    highlight: bottle
+    requires: [105]
+    popup:
+      title: "ECHO"
+      body: "Signal detected. Dispatch a drone to retrieve it. Check the QUESTS tab in the drawer after collection."
+      button: "Understood"

@@ -1,11 +1,23 @@
 use bevy::prelude::*;
 use std::collections::{VecDeque, HashSet};
 
-#[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
     #[default]
     SpaceView,
     MapView,
+}
+
+#[derive(Resource, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DeviceType {
+    #[default]
+    Desktop,
+    Mobile,
+}
+
+#[derive(Resource, Default)]
+pub struct ViewState {
+    pub show_production_tree: bool,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -132,6 +144,7 @@ pub enum ProcessingOperation {
     NickelRefinery,
     AluminumRefinery,
     HullForge,
+    ThrusterForge,
     CoreFabricator,
     AluminumCanisterForge,
 }
@@ -194,6 +207,17 @@ impl Default for MapPanState {
             is_focused: false,
         }
     }
+}
+
+/// Tracks content pipeline state — fired one-shot IDs and ambient timer.
+#[derive(Resource, Default)]
+pub struct ContentState {
+    /// IDs of one-shot lines already fired (prevents re-firing).
+    pub fired_one_shots: HashSet<String>,
+    /// Tracks which trigger conditions have been observed (e.g. "first_bottle_collected").
+    pub observed_triggers: HashSet<String>,
+    /// Seconds until next ambient line fires. Randomised on each fire.
+    pub ambient_timer: f32,
 }
 
 #[derive(Resource, Default)]

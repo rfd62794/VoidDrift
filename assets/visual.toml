@@ -1,0 +1,198 @@
+# VoidDrift — Visual Configuration
+# Part 2: Object visual definitions. Balance data lives in balance.toml.
+
+[starfield]
+far_count = 800
+near_count = 300
+far_size = 2.0
+near_size = 3.0
+far_parallax = 0.05
+near_parallax = 0.15
+radius = 2400.0
+
+[asteroid]
+color_iron     = [0.75, 0.38, 0.15]  # Rust orange
+color_tungsten = [0.72, 0.68, 0.35]  # Yellow-grey
+color_nickel   = [0.75, 0.75, 0.75]  # Silver
+color_aluminum = [0.65, 0.75, 0.85]  # Pale blue-grey
+color_depleted = [0.18, 0.18, 0.18]  # Very dark grey
+
+[bottle]
+width  = 16.0
+height = 32.0
+spawn_x = 150.0
+spawn_y = 200.0
+hit_radius = 60.0
+color = [0.8, 0.2, 0.8]  # Magenta
+
+[station]
+hub_radius     = 40.0
+arm_length     = 120.0
+arm_thickness  = 6.0
+berth_radius   = 22.0
+stub_length    = 60.0
+berth_initial  = 3
+
+color_hub_offline   = [0.33, 0.27, 0.0]   # Dark gold
+color_hub_online    = [1.0,  0.84, 0.0]   # Bright gold
+color_arm_active    = [0.6,  0.6,  0.6]   # Mid grey
+color_arm_stub      = [0.12, 0.12, 0.12]  # Very dark grey
+color_berth_empty   = [0.4,  0.4,  0.4]   # Grey
+color_berth_player  = [0.0,  0.67, 1.0]   # Cyan
+color_berth_drone   = [1.0,  0.53, 0.0]   # Orange
+
+# Docking kinematics
+dock_slowdown_distance = 200.0
+slowdown_rate_multiplier = 3.0
+resume_delay = 1.5
+resume_rate_multiplier = 2.0
+
+[drone.opening]
+# Echo's vessel — cyan throughout, cinematic
+hull_w = 20.0
+hull_h = 28.0
+color_hull       = [0.0, 0.6,  1.0]  # Cyan
+color_beam       = [0.0, 1.0,  1.0]  # Cyan
+beam_alpha       = 0.6
+color_thruster   = [1.0, 0.3,  0.0]  # Orange
+color_cargo_fill = [0.0, 1.0,  1.0]  # Cyan
+color_cargo_bg   = [0.2, 0.2,  0.2]  # Dark grey
+cargo_bar_w = 40.0
+cargo_bar_h = 6.0
+map_icon_w = 12.0
+map_icon_h = 16.0
+
+[drone.mission]
+# The fleet — matrix green hull, orange thruster, industrial
+hull_w = 20.0
+hull_h = 28.0
+color_hull       = [0.0, 1.0,  0.2]  # Matrix green
+color_beam       = [0.0, 1.0,  0.2]  # Matrix green
+beam_alpha       = 0.6
+color_thruster   = [1.0, 0.3,  0.0]  # Orange
+color_cargo_fill = [0.0, 1.0,  0.2]  # Matrix green
+color_cargo_bg   = [0.2, 0.2,  0.2]  # Dark grey
+cargo_bar_w = 30.0
+cargo_bar_h = 4.0
+map_icon_w = 12.0
+map_icon_h = 16.0
+
+[ore.metal]
+color_body         = [100, 100, 100]
+color_vein         = [200, 210, 255]
+band_count         = 4
+band_width_min     = 0.08
+band_width_max     = 0.18
+grain_angle_deg    = 25.0
+
+[ore.h3_gas]
+color_body         = [100, 100, 100]
+color_vein         = [80, 255, 160]
+band_count         = 5
+band_width_min     = 0.10
+band_width_max     = 0.22
+grain_angle_deg    = 15.0
+
+[ore.void_essence]
+color_body         = [100, 100, 100]
+color_vein         = [160, 80, 255]
+band_count         = 3
+band_width_min     = 0.12
+band_width_max     = 0.28
+grain_angle_deg    = 50.0
+
+[asteroid.inner_ring]
+radius         = 14.0
+vertex_count   = 9
+jaggedness     = 0.35
+ore_type       = "metal"
+
+[asteroid.middle_ring]
+radius         = 22.0
+vertex_count   = 11
+jaggedness     = 0.40
+ore_type       = "h3_gas"
+
+[asteroid.outer_ring]
+radius         = 34.0
+vertex_count   = 13
+jaggedness     = 0.45
+ore_type       = "void_essence"
+
+[production_tree.ore_node]
+radius         = 22.0
+vertex_count   = 9
+jaggedness     = 0.35              # matches inner_ring — same shape, same scale
+
+[production_tree.ingot_node]
+width                  = 30.0
+height                 = 20.0
+depth_offset_x         = 10.0
+depth_offset_y         = -7.0
+color_face_light_factor = 1.25
+color_face_dark_factor  = 0.55
+
+[ingot.metal]
+color = [180, 185, 200]
+
+[ingot.crystal]
+color = [140, 120, 220]
+
+[ingot.void]
+color = [80, 40, 120]
+
+[particles.depletion]
+count          = 12
+speed_min      = 50.0
+speed_max      = 150.0
+lifetime_secs  = 1.2
+size_min       = 1.0
+size_max       = 3.0
+
+[component.thruster]
+width               = 38.0
+color_nozzle        = [210, 215, 225]
+color_body          = [140, 145, 155]
+color_wire          = [200, 60, 60]
+wire_count          = 3
+nozzle_width_ratio  = 0.55
+body_width_ratio    = 0.45
+
+[component.hull]
+width               = 40.0
+rib_count           = 7
+color_frame         = [160, 155, 140]
+color_outline       = [200, 195, 185]
+stroke_width        = 1.2
+
+[component.canister]
+width               = 28.0
+height              = 34.0
+lid_height_ratio    = 0.18
+color_body          = [148, 130, 50]
+color_lid           = [130, 115, 42]
+color_highlight     = [190, 175, 90]
+color_handle        = [120, 105, 35]
+
+[component.ai_core]
+radius              = 20.0
+fin_count           = 14
+fin_length          = 8.0
+fin_width           = 2.5
+color_body          = [28, 28, 32]
+color_fins          = [190, 200, 215]
+color_fan_housing   = [45, 45, 52]
+fan_radius_ratio    = 0.45
+fan_blade_count     = 3
+
+[component.drone_bay]
+width               = 63.0
+height              = 30.0
+color_ready         = [50, 180, 50]
+color_empty         = [20, 80, 20]
+nose_height_ratio   = 0.35
+fin_width_ratio     = 0.16
+fin_height_ratio    = 0.15
+porthole_radius     = 4.5
+porthole_offset_y   = -0.1
+exhaust_radius      = 5.4

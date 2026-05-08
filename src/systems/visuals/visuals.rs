@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::constants::*;
+use crate::config::VisualConfig;
+use crate::config::visual::rgb;
 
 pub fn thruster_glow_system(
     mut query: Query<(&Parent, &mut Visibility), With<ThrusterGlow>>,
@@ -160,6 +162,7 @@ pub fn berth_occupancy_system(
     drone_query: Query<(&AutonomousShip, &AutonomousAssignment)>,
     berth_visual_query: Query<(&BerthVisual, &MeshMaterial2d<ColorMaterial>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    vcfg: Res<VisualConfig>,
 ) {
     // 1. Determine occupancy per arm index
     let mut occupancy = [BerthType::Open; 6];
@@ -185,10 +188,11 @@ pub fn berth_occupancy_system(
     // 2. Update visuals
     for (visual, material_handle) in berth_visual_query.iter() {
         if let Some(material) = materials.get_mut(&material_handle.0) {
+            let sv = &vcfg.station;
             material.color = match occupancy[visual.0 as usize] {
-                crate::components::BerthType::Player => Color::srgb(0.0, 0.67, 1.0),   // Cyan
-                crate::components::BerthType::Drone  => Color::srgb(1.0, 0.53, 0.0),   // Orange
-                _ => Color::srgb(0.4, 0.4, 0.4),                    // Grey
+                crate::components::BerthType::Player => rgb(sv.color_berth_player),
+                crate::components::BerthType::Drone  => rgb(sv.color_berth_drone),
+                _ => rgb(sv.color_berth_empty),
             };
         }
     }

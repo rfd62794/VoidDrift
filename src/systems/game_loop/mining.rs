@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
 
 pub fn mining_system(
     time: Res<Time>,
@@ -12,6 +13,8 @@ pub fn mining_system(
     station_query: Query<(&Station, &Transform), With<Station>>,
     berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     for (ship_ent, mut ship, ship_transform, children) in ship_query.iter_mut() {
         let is_mining = ship.state == ShipState::Mining;
@@ -52,7 +55,7 @@ pub fn mining_system(
                         } else {
                             1.0
                         };
-                        let effective_mining_rate = MINING_RATE * power_multiplier;
+                        let effective_mining_rate = cfg.mining.mining_rate * power_multiplier;
                         let ore_amount = effective_mining_rate * time.delta_secs();
                         ship.cargo = (ship.cargo + ore_amount).min(ship.cargo_capacity as f32);
                         asteroid.ore_remaining -= ore_amount;
@@ -61,7 +64,7 @@ pub fn mining_system(
                         if asteroid.ore_remaining <= 0.0 {
                             if let Some(mat_h) = mat_handle {
                                 if let Some(mat) = materials.get_mut(&mat_h.0) {
-                                    mat.color = COLOR_DEPLETED;
+                                    mat.color = rgb(vcfg.asteroid.color_depleted);
                                 }
                             }
 

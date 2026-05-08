@@ -2,6 +2,7 @@ use bevy::prelude::EventWriter;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
+use crate::config::{BalanceConfig, RequestConfig};
 
 fn render_ore_pipeline(
     ui: &mut egui::Ui,
@@ -53,17 +54,25 @@ pub fn render_tab_content(
     req_tab: &mut RequestsTabState,
     repair_events: &mut EventWriter<RepairStationEvent>,
     fulfill_events: &mut EventWriter<FulfillRequestEvent>,
+    cfg: &BalanceConfig,
+    request_cfg: &RequestConfig,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
             ui.vertical(|ui| {
                 ui.heading("CARGO BAY");
                 ui.add_space(8.0);
-                egui::Grid::new("res_grid").spacing([20.0, 8.0]).show(ui, |ui| {
-                    ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1}", station.iron_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1}", station.tungsten_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("NICKEL:"); ui.label(egui::RichText::new(format!("{:.1}", station.nickel_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_reserves)).color(egui::Color32::WHITE)); ui.end_row();
+                ui.label(egui::RichText::new("ORE / INGOTS").color(egui::Color32::from_gray(140)).size(11.0));
+                egui::Grid::new("ore_grid").spacing([20.0, 8.0]).show(ui, |ui| {
+                    ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.iron_reserves, station.iron_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.tungsten_reserves, station.tungsten_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("NICKEL:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.nickel_reserves, station.nickel_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.aluminum_reserves, station.aluminum_ingots)).color(egui::Color32::WHITE)); ui.end_row();
+                });
+
+                ui.add_space(4.0);
+                ui.label(egui::RichText::new("PARTS").color(egui::Color32::from_gray(140)).size(11.0));
+                egui::Grid::new("parts_grid").spacing([20.0, 8.0]).show(ui, |ui| {
                     ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
@@ -74,9 +83,9 @@ pub fn render_tab_content(
                 
                 // DRONE BUILD PROGRESS BAR
                 let progress = station.drone_build_progress;
-                let can_build = station.hull_plate_reserves >= DRONE_BUILD_COST_HULLS
-                    && station.thruster_reserves >= DRONE_BUILD_COST_THRUSTERS
-                    && station.ai_cores >= DRONE_BUILD_COST_CORES;
+                let can_build = station.hull_plate_reserves >= cfg.drone.cost_hulls
+                    && station.thruster_reserves >= cfg.drone.cost_thrusters
+                    && station.ai_cores >= cfg.drone.cost_cores;
 
                 let bar_color = if can_build {
                     egui::Color32::from_rgb(0, 180, 100)
@@ -84,11 +93,19 @@ pub fn render_tab_content(
                     egui::Color32::from_rgb(180, 60, 0)
                 };
 
+                let stall_label = if station.hull_plate_reserves < cfg.drone.cost_hulls {
+                    "Needs Hull Plates"
+                } else if station.thruster_reserves < cfg.drone.cost_thrusters {
+                    "Needs Thrusters"
+                } else {
+                    "Needs AI Core"
+                };
+
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("NEXT DRONE:").color(egui::Color32::from_gray(160)).size(12.0));
                     let progress_bar = egui::ProgressBar::new(progress)
                         .fill(bar_color)
-                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { "STALLED".to_string() });
+                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { stall_label.to_string() });
                     ui.add(progress_bar);
                 });
             });
@@ -154,33 +171,48 @@ pub fn render_tab_content(
                 ui.label(egui::RichText::new("Something may be out there.").color(egui::Color32::GRAY).italics());
             } else {
                 for req in filtered.iter_mut().rev() {
-                    ui.group(|ui| {
-                        ui.vertical(|ui| {
-                            match req.id {
-                                RequestId::FirstLight => {
-                                    ui.heading(egui::RichText::new("First Light").color(egui::Color32::GOLD));
-                                    ui.label(egui::RichText::new("Something has been noticed about you.").italics());
-                                    ui.add_space(8.0);
-                                    ui.label("Requires: 25 Iron Ingots");
-                                    ui.label(egui::RichText::new("Reward: Power +25%").color(egui::Color32::CYAN));
-                                    ui.add_space(8.0);
-                                    
-                                    if req.fulfilled {
-                                        ui.label(egui::RichText::new("COMPLETE").strong().color(egui::Color32::GREEN));
-                                    } else {
-                                        let can_afford = station.iron_ingots >= 25.0;
-                                        if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
-                                            fulfill_events.send(FulfillRequestEvent {
-                                                request_id: req.id,
-                                                faction_id: req.faction,
-                                            });
+                    // Look up request definition from config
+                    if let Some(req_def) = request_cfg.faction_requests.iter().find(|r| r.id == format!("{:?}", req.id)) {
+                        ui.group(|ui| {
+                            ui.vertical(|ui| {
+                                ui.heading(egui::RichText::new(&req_def.title).color(egui::Color32::GOLD));
+                                ui.label(egui::RichText::new(&req_def.flavor).italics());
+                                ui.add_space(8.0);
+                                
+                                // Build requirements string
+                                for req_item in &req_def.requirements {
+                                    ui.label(format!("Requires: {:.0} {}", req_item.amount, req_item.resource));
+                                }
+                                
+                                // Build rewards string
+                                for reward in &req_def.rewards {
+                                    ui.label(egui::RichText::new(format!("Reward: {} {:.2}", reward.r#type, reward.value)).color(egui::Color32::CYAN));
+                                }
+                                
+                                ui.add_space(8.0);
+                                
+                                if req.fulfilled {
+                                    ui.label(egui::RichText::new("COMPLETE").strong().color(egui::Color32::GREEN));
+                                } else {
+                                    // Check if player can afford (simplified for FirstLight: iron_ingots >= 25)
+                                    let can_afford = req_def.requirements.iter().all(|r| {
+                                        match r.resource.as_str() {
+                                            "iron_ingots" => station.iron_ingots >= r.amount,
+                                            _ => false,
                                         }
+                                    });
+                                    
+                                    if ui.add_enabled(can_afford, egui::Button::new("FULFILL").min_size(egui::vec2(120.0, 44.0))).clicked() {
+                                        fulfill_events.send(FulfillRequestEvent {
+                                            request_id: req.id,
+                                            faction_id: req.faction,
+                                        });
                                     }
                                 }
-                            }
+                            });
                         });
-                    });
-                    ui.add_space(8.0);
+                        ui.add_space(8.0);
+                    }
                 }
             }
         }

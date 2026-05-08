@@ -1,0 +1,15 @@
+faction_requests:
+  - id: FirstLight
+    title: "First Light"
+    flavor: "Something has been noticed about you."
+    faction: Signal
+    repeatable: false
+    repeat_cooldown_seconds: null
+    reputation_reward: 10
+    min_reputation: 0
+    requirements:
+      - resource: iron_ingots
+        amount: 25
+    rewards:
+      - type: power_multiplier
+        value: 0.25

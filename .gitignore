@@ -35,3 +35,6 @@ logcat_gate0.txt
 
 # Android Studio project files
 /android/app/
+
+# Save Files
+/saves/

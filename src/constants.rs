@@ -12,7 +12,6 @@ pub const CARGO_CAPACITY: u32 = 100;
 pub const MINING_RATE: f32 = 22.0;
 
 pub const REFINERY_RATIO: u32 = 10;
-pub const HULL_REFINERY_RATIO: u32 = 5;
 pub const REPAIR_COST: u32 = 25;
 
 // [PHASE 9] PRODUCTION CHAIN COSTS

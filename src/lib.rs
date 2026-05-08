@@ -50,10 +50,11 @@ fn detect_device_type(mut device_type: ResMut<DeviceType>) {
 mod constants;
 pub use constants::*;
 
+pub mod config;
+use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig};
+
 mod components;
 pub use crate::components::*;
-use crate::components::events::*;
-use crate::components::resources::{ShipQueue, MaxDispatch};
 
 pub mod systems;
 pub mod scenes;
@@ -103,6 +104,14 @@ fn main() {
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
+        .insert_resource(BalanceConfig::load())
+        .insert_resource(VisualConfig::load())
+        .insert_resource(ContentConfig::load())
+        .insert_resource(TutorialConfig::load())
+        .insert_resource(QuestConfig::load())
+        .insert_resource(RequestConfig::load())
+        .insert_resource(ContentState::default())
+        .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -182,19 +191,26 @@ fn main() {
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
+            systems::ui::tutorial::tutorial_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
             systems::visuals::map::pinch_zoom_system,
             systems::visuals::map::map_pan_system,
             systems::narrative::opening_sequence::opening_sequence_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,
-            systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
-            systems::narrative::bottle::bottle_input_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::narrative::bottle::bottle_input_system
+            .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
+            systems::narrative::content_router::content_event_system,
+            systems::narrative::content_router::content_ambient_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,
@@ -252,6 +268,14 @@ pub fn start() {
         .insert_resource(ProductionTabState::default())
         .insert_resource(DeviceType::default())
         .insert_resource(systems::narrative::bottle::BottleSpawnTimer::default())
+        .insert_resource(BalanceConfig::load())
+        .insert_resource(VisualConfig::load())
+        .insert_resource(ContentConfig::load())
+        .insert_resource(TutorialConfig::load())
+        .insert_resource(QuestConfig::load())
+        .insert_resource(RequestConfig::load())
+        .insert_resource(ContentState::default())
+        .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .add_systems(Startup, (
             configure_egui_scale,
@@ -332,19 +356,26 @@ pub fn start() {
         ).chain().run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
+            systems::ui::tutorial::tutorial_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
             systems::ship_control::asteroid_input::asteroid_input_system,
             systems::visuals::map::pinch_zoom_system,
             systems::visuals::map::map_pan_system,
             systems::narrative::opening_sequence::opening_sequence_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
             systems::narrative::opening_sequence::opening_drone_move_system,
             systems::narrative::signal::signal_system,
             systems::narrative::quest::quest_signal_system,
-            systems::ui::tutorial::tutorial_system,
             systems::narrative::quest::quest_update_system,
             systems::narrative::bottle::bottle_spawn_system,
-            systems::narrative::bottle::bottle_input_system,
+        ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::narrative::bottle::bottle_input_system
+            .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
+            systems::narrative::content_router::content_event_system,
+            systems::narrative::content_router::content_ambient_system,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,
