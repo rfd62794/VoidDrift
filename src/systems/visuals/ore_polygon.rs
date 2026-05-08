@@ -39,8 +39,9 @@ pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &Or
 
     rng = StdRng::seed_from_u64(config.seed);
 
-    for ray_idx in 0..config.band_count {
-        let angle = (ray_idx as f32 / config.band_count as f32) * TAU;
+    let star_points = 5;
+    for ray_idx in 0..star_points {
+        let angle = (ray_idx as f32 / star_points as f32) * TAU;
         
         let start_radius = config.radius * 0.15;
         let start_x = angle.cos() * start_radius;
