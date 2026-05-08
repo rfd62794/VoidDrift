@@ -201,11 +201,26 @@ pub struct ComponentAICoreConfig {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+pub struct ComponentDroneBayConfig {
+    pub width: f32,
+    pub height: f32,
+    pub color_ready: [u8; 3],
+    pub color_empty: [u8; 3],
+    pub nose_height_ratio: f32,
+    pub fin_width_ratio: f32,
+    pub fin_height_ratio: f32,
+    pub porthole_radius: f32,
+    pub porthole_offset_y: f32,
+    pub exhaust_radius: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
 pub struct ComponentConfig {
     pub thruster: ComponentThrusterConfig,
     pub hull: ComponentHullConfig,
     pub canister: ComponentCanisterConfig,
     pub ai_core: ComponentAICoreConfig,
+    pub drone_bay: ComponentDroneBayConfig,
 }
 
 #[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]

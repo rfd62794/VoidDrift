@@ -11,7 +11,7 @@ use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::{rgb, rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
-use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig};
+use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -656,6 +656,23 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                                 };
                                 component_nodes::draw_canister(painter, node_center, &canister_config);
                             },
+                            "drone_bay" => {
+                                let drone_bay_cfg = &params.visual_cfg.component.drone_bay;
+                                let drone_bay_config = DroneBayConfig {
+                                    width: drone_bay_cfg.width,
+                                    height: drone_bay_cfg.height,
+                                    color_ready: rgb_u8_to_egui(drone_bay_cfg.color_ready),
+                                    color_empty: rgb_u8_to_egui(drone_bay_cfg.color_empty),
+                                    nose_height_ratio: drone_bay_cfg.nose_height_ratio,
+                                    fin_width_ratio: drone_bay_cfg.fin_width_ratio,
+                                    fin_height_ratio: drone_bay_cfg.fin_height_ratio,
+                                    porthole_radius: drone_bay_cfg.porthole_radius,
+                                    porthole_offset_y: drone_bay_cfg.porthole_offset_y,
+                                    exhaust_radius: drone_bay_cfg.exhaust_radius,
+                                };
+                                let is_ready = if let Some(st) = station { st.drone_build_progress >= 1.0 } else { false };
+                                component_nodes::draw_drone_bay(painter, node_center, &drone_bay_config, is_ready);
+                            },
                             _ => {}
                         }
                     }
@@ -694,7 +711,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     render_node(1, 3, "DRONE BAY", String::new(), true, 
                         st.hull_plate_reserves > 0.0 && 
                         st.thruster_reserves > 0.0 && 
-                        st.ai_cores > 0.0, None, false, None);
+                        st.ai_cores > 0.0, None, false, Some("drone_bay"));
                 } else {
                     // Render all nodes as inactive when station not accessible
                     render_node(0, 0, "IRON", String::new(), false, false, Some(OreDeposit::Iron), false, None);
@@ -712,7 +729,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     render_node(2, 2, "AI CORE", String::new(), false, false, None, false, Some("ai_core"));
                     render_node(3, 2, "CANISTER", String::new(), false, false, None, false, Some("canister"));
                     
-                    render_node(1, 3, "DRONE BAY", String::new(), true, false, None, false, None);
+                    render_node(1, 3, "DRONE BAY", String::new(), true, false, None, false, Some("drone_bay"));
                 }
                 
                 // Write toggles back to resource after any clicks
