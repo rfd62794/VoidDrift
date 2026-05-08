@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use uuid::Uuid;
 
-const TELEMETRY_URL: &str = "http://localhost:8000/v1/event";
 const CLIENT_VERSION: &str = "3.3.0";
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,6 +22,16 @@ impl Default for SessionId {
     fn default() -> Self {
         Self(Uuid::new_v4().to_string())
     }
+}
+
+#[derive(Resource, Default, Clone, Copy)]
+pub struct TelemetryConsent {
+    pub opted_in: Option<bool>,
+}
+
+#[derive(Resource, Default)]
+pub struct TelemetryOptInPrompt {
+    pub active: bool,
 }
 
 #[derive(Resource, Default)]
@@ -71,6 +80,8 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SessionId>()
+            .init_resource::<TelemetryConsent>()
+            .init_resource::<TelemetryOptInPrompt>()
             .init_resource::<LoopStallTimer>()
             .init_resource::<LoopStallConfig>()
             .init_resource::<LogTabState>()
@@ -84,6 +95,7 @@ impl Plugin for TelemetryPlugin {
                     track_log_tab_open,
                     track_log_heartbeat,
                     reset_log_heartbeat_timer,
+                    check_telemetry_opt_in_trigger,
                 ).run_if(in_state(crate::components::resources::AppState::InGame))
             );
     }
@@ -100,7 +112,24 @@ fn get_platform() -> String {
     }
 }
 
-fn send_session_start(session_id: Res<SessionId>) {
+fn get_telemetry_url() -> &'static str {
+    #[cfg(debug_assertions)]
+    {
+        "http://localhost:8000/v1/event"
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        "https://rfditservices.com/api/telemetry/v1/event"
+    }
+}
+
+fn send_session_start(session_id: Res<SessionId>, consent: Res<TelemetryConsent>) {
+    // Consent gate: only send if player has opted in
+    if consent.opted_in != Some(true) {
+        return;
+    }
+
     let event = TelemetryEvent {
         event_type: "session_start".to_string(),
         timestamp: Utc::now().to_rfc3339(),
@@ -126,6 +155,7 @@ fn track_loop_stall(
     config: Res<LoopStallConfig>,
     mut timer: ResMut<LoopStallTimer>,
     session_id: Res<SessionId>,
+    consent: Res<TelemetryConsent>,
     station_query: Query<&crate::components::game_state::Station>,
     view_state: Res<crate::components::resources::ViewState>,
     balance_config: Res<crate::config::balance::BalanceConfig>,
@@ -166,7 +196,7 @@ fn track_loop_stall(
                 elapsed_seconds: elapsed,
                 has_fired: timer.has_fired,
             };
-            send_loop_stall_internal(session_id, timer_snapshot);
+            send_loop_stall_internal(session_id, timer_snapshot, consent);
         }
     } else {
         // Reset timer if condition not met
@@ -174,7 +204,12 @@ fn track_loop_stall(
     }
 }
 
-fn send_loop_stall_internal(session_id: Res<SessionId>, timer_snapshot: LoopStallTimer) {
+fn send_loop_stall_internal(session_id: Res<SessionId>, timer_snapshot: LoopStallTimer, consent: Res<TelemetryConsent>) {
+    // Consent gate: only send if player has opted in
+    if consent.opted_in != Some(true) {
+        return;
+    }
+
     let meta = serde_json::json!({
         "time_since_last_upgrade_seconds": timer_snapshot.elapsed_seconds as u32,
         "pipeline_opened": false,
@@ -221,7 +256,12 @@ fn reset_loop_stall_timer_on_upgrade(
     timer.has_fired = false;
 }
 
-fn send_intentional_log_open_internal(session_id: Res<SessionId>, log_state: LogTabState) {
+fn send_intentional_log_open_internal(session_id: Res<SessionId>, log_state: LogTabState, consent: Res<TelemetryConsent>) {
+    // Consent gate: only send if player has opted in
+    if consent.opted_in != Some(true) {
+        return;
+    }
+
     let meta = serde_json::json!({
         "log_id": log_state.current_log_id,
         "previous_ui_state": "space_view",
@@ -248,7 +288,12 @@ fn send_intentional_log_open_internal(session_id: Res<SessionId>, log_state: Log
     }
 }
 
-fn send_log_heartbeat_internal(session_id: Res<SessionId>, log_state: LogTabState, heartbeat_timer: LogHeartbeatTimer) {
+fn send_log_heartbeat_internal(session_id: Res<SessionId>, log_state: LogTabState, heartbeat_timer: LogHeartbeatTimer, consent: Res<TelemetryConsent>) {
+    // Consent gate: only send if player has opted in
+    if consent.opted_in != Some(true) {
+        return;
+    }
+
     let meta = serde_json::json!({
         "log_id": log_state.current_log_id,
         "elapsed_seconds": heartbeat_timer.elapsed_seconds as u32
@@ -278,6 +323,7 @@ fn track_log_tab_open(
     active_tab: Res<crate::components::ui_state::ActiveStationTab>,
     mut log_state: ResMut<LogTabState>,
     session_id: Res<SessionId>,
+    consent: Res<TelemetryConsent>,
     app_state: Res<State<crate::components::resources::AppState>>,
 ) {
     if !app_state.get().eq(&crate::components::resources::AppState::InGame) {
@@ -305,7 +351,7 @@ fn track_log_tab_open(
             current_log_id: log_state.current_log_id.clone(),
             has_fired_open_event: log_state.has_fired_open_event,
         };
-        send_intentional_log_open_internal(session_id, log_state_snapshot);
+        send_intentional_log_open_internal(session_id, log_state_snapshot, consent);
     }
 }
 
@@ -314,6 +360,7 @@ fn track_log_heartbeat(
     mut heartbeat_timer: ResMut<LogHeartbeatTimer>,
     log_state: Res<LogTabState>,
     session_id: Res<SessionId>,
+    consent: Res<TelemetryConsent>,
     app_state: Res<State<crate::components::resources::AppState>>,
 ) {
     if !app_state.get().eq(&crate::components::resources::AppState::InGame) {
@@ -337,7 +384,7 @@ fn track_log_heartbeat(
             elapsed_seconds: heartbeat_timer.elapsed_seconds,
             heartbeat_interval: heartbeat_timer.heartbeat_interval,
         };
-        send_log_heartbeat_internal(session_id, log_state_snapshot, heartbeat_timer_snapshot);
+        send_log_heartbeat_internal(session_id, log_state_snapshot, heartbeat_timer_snapshot, consent);
     }
 }
 
@@ -357,6 +404,20 @@ fn reset_log_heartbeat_timer(
     // Log entry change detection would go here in a future task
 }
 
+fn check_telemetry_opt_in_trigger(
+    mut opt_in_prompt: ResMut<TelemetryOptInPrompt>,
+    consent: Res<TelemetryConsent>,
+    tutorial: Res<crate::components::resources::TutorialState>,
+    opening: Res<crate::components::resources::OpeningSequence>,
+) {
+    // Show prompt if consent is None (not yet asked) AND tutorial is complete
+    if consent.opted_in.is_none() 
+        && opening.phase == crate::components::resources::OpeningPhase::Complete 
+        && !tutorial.shown.is_empty() {
+        opt_in_prompt.active = true;
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 fn send_event_wasm(event: TelemetryEvent) {
     // WASM implementation using wasm-bindgen fetch
@@ -370,13 +431,13 @@ fn send_event_native(event: TelemetryEvent) {
     use std::thread;
     use std::time::Duration;
 
-    let url = TELEMETRY_URL.to_string();
-    
+    let url = get_telemetry_url().to_string();
+
     thread::spawn(move || {
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(5))
             .build();
-        
+
         match client {
             Ok(client) => {
                 match client.post(&url).json(&event).send() {
