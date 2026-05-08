@@ -39,35 +39,24 @@ pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &Or
 
     rng = StdRng::seed_from_u64(config.seed);
 
-    let segment_size = (config.radius * 2.0) / (config.band_count + 1) as f32;
+    for ray_idx in 0..config.band_count {
+        let angle = (ray_idx as f32 / config.band_count as f32) * TAU;
+        
+        let start_radius = config.radius * 0.15;
+        let start_x = angle.cos() * start_radius;
+        let start_y = angle.sin() * start_radius;
+        let start_pos = egui::Pos2::new(center.x + start_x, center.y + start_y);
 
-    for band_idx in 0..config.band_count {
-        let band_center_y = -config.radius + (band_idx as f32 + 1.0) * segment_size;
-        let band_center_offset = rng.gen_range(-segment_size * 0.2..segment_size * 0.2);
-        let band_center = band_center_y + band_center_offset;
+        let end_radius = config.radius * 1.0;
+        let end_x = angle.cos() * end_radius;
+        let end_y = angle.sin() * end_radius;
+        let end_pos = egui::Pos2::new(center.x + end_x, center.y + end_y);
 
-        let band_width = rng.gen_range(config.band_width_min..=config.band_width_max) * config.radius;
+        let vein_width = rng.gen_range(config.band_width_min..=config.band_width_max) * config.radius;
 
-        for i in 0..32 {
-            let angle = (i as f32 / 32.0) * TAU;
-            let x = angle.cos() * config.radius * 1.2;
-            let y = angle.sin() * config.radius * 1.2;
-
-            let next_angle = ((i + 1) as f32 / 32.0) * TAU;
-            let next_x = next_angle.cos() * config.radius * 1.2;
-            let next_y = next_angle.sin() * config.radius * 1.2;
-
-            let dist_to_band = (y - band_center).abs();
-            let next_dist_to_band = (next_y - band_center).abs();
-
-            if dist_to_band < band_width || next_dist_to_band < band_width {
-                let p1 = egui::pos2(center.x + x, center.y + y);
-                let p2 = egui::pos2(center.x + next_x, center.y + next_y);
-                painter.line_segment(
-                    [p1, p2],
-                    egui::Stroke::new(band_width, config.color_vein),
-                );
-            }
-        }
+        painter.line_segment(
+            [start_pos, end_pos],
+            egui::Stroke::new(vein_width, config.color_vein),
+        );
     }
 }
