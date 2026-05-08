@@ -543,10 +543,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                             // Draw ingot node (3-rect isometric)
                             let ingot_cfg = &params.visual_cfg.production_tree.ingot_node;
                             let base_color = match ore {
-                                OreDeposit::Iron => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_body),
-                                OreDeposit::Tungsten => rgb_u8_to_egui(params.visual_cfg.ore.h3_gas.color_body),
-                                OreDeposit::Nickel => rgb_u8_to_egui(params.visual_cfg.ore.void_essence.color_body),
-                                OreDeposit::Aluminum => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_body),
+                                OreDeposit::Iron => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_vein),
+                                OreDeposit::Tungsten => rgb_u8_to_egui(params.visual_cfg.ore.h3_gas.color_vein),
+                                OreDeposit::Nickel => rgb_u8_to_egui(params.visual_cfg.ore.void_essence.color_vein),
+                                OreDeposit::Aluminum => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_vein),
                             };
                             let ingot_config = IngotNodeConfig {
                                 width: ingot_cfg.width,
