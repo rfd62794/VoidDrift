@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use bevy_egui::egui;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct StarfieldConfig {
@@ -18,6 +19,85 @@ pub struct AsteroidVisualConfig {
     pub color_nickel: [f32; 3],
     pub color_aluminum: [f32; 3],
     pub color_depleted: [f32; 3],
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct OreTypeConfig {
+    pub color_body: [u8; 3],
+    pub color_vein: [u8; 3],
+    pub vein_count: usize,
+    pub vein_width: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct OreConfig {
+    pub metal: OreTypeConfig,
+    pub h3_gas: OreTypeConfig,
+    pub void_essence: OreTypeConfig,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct AsteroidRingConfig {
+    pub radius: f32,
+    pub vertex_count: usize,
+    pub jaggedness: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct AsteroidRingsConfig {
+    pub inner_ring: AsteroidRingConfig,
+    pub middle_ring: AsteroidRingConfig,
+    pub outer_ring: AsteroidRingConfig,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct OreNodeConfig {
+    pub radius: f32,
+    pub vertex_count: usize,
+    pub jaggedness: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct IngotNodeConfig {
+    pub width: f32,
+    pub height: f32,
+    pub depth_offset_x: f32,
+    pub depth_offset_y: f32,
+    pub color_face_light_factor: f32,
+    pub color_face_dark_factor: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ProductionTreeConfig {
+    pub ore_node: OreNodeConfig,
+    pub ingot_node: IngotNodeConfig,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct DepletionParticlesConfig {
+    pub count: u32,
+    pub speed_min: f32,
+    pub speed_max: f32,
+    pub lifetime_secs: f32,
+    pub size_min: f32,
+    pub size_max: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ParticlesConfig {
+    pub depletion: DepletionParticlesConfig,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct IngotTypeConfig {
+    pub color: [u8; 3],
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct IngotsConfig {
+    pub metal: IngotTypeConfig,
+    pub crystal: IngotTypeConfig,
+    pub void: IngotTypeConfig,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -80,6 +160,10 @@ pub struct VisualConfig {
     pub bottle: BottleVisualConfig,
     pub station: StationVisualConfig,
     pub drone: DroneVisualConfig,
+    pub ore: OreConfig,
+    pub production_tree: ProductionTreeConfig,
+    pub particles: ParticlesConfig,
+    pub ingot: IngotsConfig,
 }
 
 impl VisualConfig {
@@ -109,4 +193,12 @@ pub fn rgb(c: [f32; 3]) -> bevy::prelude::Color {
 
 pub fn rgba(c: [f32; 3], a: f32) -> bevy::prelude::Color {
     bevy::prelude::Color::srgba(c[0], c[1], c[2], a)
+}
+
+pub fn rgb_u8(c: [u8; 3]) -> bevy::prelude::Color {
+    bevy::prelude::Color::srgb(c[0] as f32 / 255.0, c[1] as f32 / 255.0, c[2] as f32 / 255.0)
+}
+
+pub fn rgb_u8_to_egui(c: [u8; 3]) -> egui::Color32 {
+    egui::Color32::from_rgb(c[0], c[1], c[2])
 }

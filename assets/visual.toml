@@ -76,3 +76,66 @@ cargo_bar_w = 30.0
 cargo_bar_h = 4.0
 map_icon_w = 12.0
 map_icon_h = 16.0
+
+[ore.metal]
+color_body     = [120, 120, 130]   # grey-silver base
+color_vein     = [200, 210, 255]   # pale blue-white veins
+vein_count     = 4
+vein_width     = 1.5
+
+[ore.h3_gas]
+color_body     = [60, 100, 80]     # dark teal base
+color_vein     = [80, 255, 160]    # bright green veins
+vein_count     = 5
+vein_width     = 1.5
+
+[ore.void_essence]
+color_body     = [30, 20, 45]      # near-black purple base
+color_vein     = [160, 80, 255]    # violet veins
+vein_count     = 6
+vein_width     = 2.0
+
+[asteroid.inner_ring]
+radius         = 18.0
+vertex_count   = 9
+jaggedness     = 0.35              # 0.0 = circle, 1.0 = very jagged
+
+[asteroid.middle_ring]
+radius         = 28.0
+vertex_count   = 11
+jaggedness     = 0.40
+
+[asteroid.outer_ring]
+radius         = 42.0
+vertex_count   = 13
+jaggedness     = 0.45
+
+[production_tree.ore_node]
+radius         = 22.0
+vertex_count   = 9
+jaggedness     = 0.35              # matches inner_ring — same shape, same scale
+
+[production_tree.ingot_node]
+width          = 28.0
+height         = 18.0
+depth_offset_x = 8.0              # depth face offset right
+depth_offset_y = -6.0             # depth face offset up
+color_face_light_factor = 1.3     # front face is lightest
+color_face_dark_factor  = 0.6     # depth face is darkest
+
+[ingot.metal]
+color = [180, 185, 200]
+
+[ingot.crystal]
+color = [140, 120, 220]
+
+[ingot.void]
+color = [80, 40, 120]
+
+[particles.depletion]
+count          = 5                 # fragments per depletion event (4–6)
+speed_min      = 40.0
+speed_max      = 110.0
+lifetime_secs  = 0.7
+size_min       = 3.0
+size_max       = 8.0

@@ -8,7 +8,9 @@ use crate::components::*;
 use crate::components::resources::MaxDispatch;
 use crate::scenes::main_menu::MainMenuState;
 use crate::config::{BalanceConfig, VisualConfig};
-use crate::config::visual::rgb;
+use crate::config::visual::{rgb, rgb_u8_to_egui};
+use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
+use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -512,7 +514,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 );
                 
                 // Node rendering helper with active state and inventory display
-                let render_node = |col: usize, row: usize, label: &str, inventory: String, is_wide: bool, active: bool| {
+                let render_node = |col: usize, row: usize, label: &str, inventory: String, is_wide: bool, active: bool, ore_type: Option<OreDeposit>, is_ingot: bool| {
                     let border_color = if active {
                         egui::Color32::from_rgb(0, 200, 200) // Echo cyan
                     } else {
@@ -535,9 +537,70 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     painter.rect_filled(node_rect, 4.0, fill_color);
                     painter.rect_stroke(node_rect, 4.0, border_stroke, egui::StrokeKind::Outside);
                     
+                    // Draw procedural visuals for ore/ingot nodes
+                    if let Some(ore) = ore_type {
+                        if is_ingot {
+                            // Draw ingot node (3-rect isometric)
+                            let ingot_cfg = &params.visual_cfg.production_tree.ingot_node;
+                            let base_color = match ore {
+                                OreDeposit::Iron => rgb_u8_to_egui(params.visual_cfg.ingot.metal.color),
+                                OreDeposit::Tungsten => rgb_u8_to_egui(params.visual_cfg.ingot.crystal.color),
+                                OreDeposit::Nickel => rgb_u8_to_egui(params.visual_cfg.ingot.void.color),
+                                OreDeposit::Aluminum => rgb_u8_to_egui(params.visual_cfg.ingot.metal.color),
+                            };
+                            let ingot_config = IngotNodeConfig {
+                                width: ingot_cfg.width,
+                                height: ingot_cfg.height,
+                                depth_offset_x: ingot_cfg.depth_offset_x,
+                                depth_offset_y: ingot_cfg.depth_offset_y,
+                                color_face_light_factor: ingot_cfg.color_face_light_factor,
+                                color_face_dark_factor: ingot_cfg.color_face_dark_factor,
+                            };
+                            ingot_node::draw_ingot_node(painter, node_rect.center(), &ingot_config, base_color);
+                        } else {
+                            // Draw ore node (procedural polygon)
+                            let ore_cfg = &params.visual_cfg.production_tree.ore_node;
+                            let (body_color, vein_color, vein_count, vein_width) = match ore {
+                                OreDeposit::Iron => {
+                                    let cfg = &params.visual_cfg.ore.metal;
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                },
+                                OreDeposit::Tungsten => {
+                                    let cfg = &params.visual_cfg.ore.h3_gas;
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                },
+                                OreDeposit::Nickel => {
+                                    let cfg = &params.visual_cfg.ore.void_essence;
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                },
+                                OreDeposit::Aluminum => {
+                                    let cfg = &params.visual_cfg.ore.metal;
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                },
+                            };
+                            let ore_seed = match ore {
+                                OreDeposit::Iron => 1u64,
+                                OreDeposit::Tungsten => 2u64,
+                                OreDeposit::Nickel => 3u64,
+                                OreDeposit::Aluminum => 4u64,
+                            };
+                            let ore_config = OrePolygonConfig {
+                                radius: ore_cfg.radius,
+                                vertex_count: ore_cfg.vertex_count,
+                                jaggedness: ore_cfg.jaggedness,
+                                color_body: body_color,
+                                color_vein: vein_color,
+                                vein_count,
+                                vein_width,
+                                seed: ore_seed,
+                            };
+                            ore_polygon::draw_ore_polygon(painter, node_rect.center(), &ore_config);
+                        }
+                    }
+                    
                     let display = format!("{} ({})", label, inventory);
                     painter.text(
-                        node_rect.center(),
+                        node_rect.center() + egui::vec2(0.0, 35.0),
                         egui::Align2::CENTER_CENTER,
                         &display,
                         egui::FontId::proportional(10.0),
@@ -548,46 +611,46 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 // Render nodes with active states and inventory
                 if let Some(st) = station {
                     // Row 0: Ore nodes
-                    render_node(0, 0, "IRON", format!("{:.1}", st.iron_reserves), false, st.iron_reserves > 0.0);
-                    render_node(1, 0, "TUNGSTEN", format!("{:.1}", st.tungsten_reserves), false, st.tungsten_reserves > 0.0);
-                    render_node(2, 0, "NICKEL", format!("{:.1}", st.nickel_reserves), false, st.nickel_reserves > 0.0);
-                    render_node(3, 0, "ALUMINUM", format!("{:.1}", st.aluminum_reserves), false, st.aluminum_reserves > 0.0);
+                    render_node(0, 0, "IRON", format!("{:.1}", st.iron_reserves), false, st.iron_reserves > 0.0, Some(OreDeposit::Iron), false);
+                    render_node(1, 0, "TUNGSTEN", format!("{:.1}", st.tungsten_reserves), false, st.tungsten_reserves > 0.0, Some(OreDeposit::Tungsten), false);
+                    render_node(2, 0, "NICKEL", format!("{:.1}", st.nickel_reserves), false, st.nickel_reserves > 0.0, Some(OreDeposit::Nickel), false);
+                    render_node(3, 0, "ALUMINUM", format!("{:.1}", st.aluminum_reserves), false, st.aluminum_reserves > 0.0, Some(OreDeposit::Aluminum), false);
                     
                     // Row 1: Ingot nodes
-                    render_node(0, 1, "IRON INGOT", format!("{:.1}", st.iron_ingots), false, st.iron_ingots > 0.0);
-                    render_node(1, 1, "TUNGSTEN INGOT", format!("{:.1}", st.tungsten_ingots), false, st.tungsten_ingots > 0.0);
-                    render_node(2, 1, "NICKEL INGOT", format!("{:.1}", st.nickel_ingots), false, st.nickel_ingots > 0.0);
-                    render_node(3, 1, "ALUMINUM INGOT", format!("{:.1}", st.aluminum_ingots), false, st.aluminum_ingots > 0.0);
+                    render_node(0, 1, "IRON INGOT", format!("{:.1}", st.iron_ingots), false, st.iron_ingots > 0.0, Some(OreDeposit::Iron), true);
+                    render_node(1, 1, "TUNGSTEN INGOT", format!("{:.1}", st.tungsten_ingots), false, st.tungsten_ingots > 0.0, Some(OreDeposit::Tungsten), true);
+                    render_node(2, 1, "NICKEL INGOT", format!("{:.1}", st.nickel_ingots), false, st.nickel_ingots > 0.0, Some(OreDeposit::Nickel), true);
+                    render_node(3, 1, "ALUMINUM INGOT", format!("{:.1}", st.aluminum_ingots), false, st.aluminum_ingots > 0.0, Some(OreDeposit::Aluminum), true);
                     
                     // Row 2: Part nodes
-                    render_node(0, 2, "HULL PLATE", format!("{:.0}", st.hull_plate_reserves), false, st.hull_plate_reserves > 0.0);
-                    render_node(1, 2, "THRUSTER", format!("{:.0}", st.thruster_reserves), false, st.thruster_reserves > 0.0);
-                    render_node(2, 2, "AI CORE", format!("{:.0}", st.ai_cores), false, st.ai_cores > 0.0);
-                    render_node(3, 2, "CANISTER", format!("{:.0}", st.aluminum_canisters), false, st.aluminum_canisters > 0.0);
+                    render_node(0, 2, "HULL PLATE", format!("{:.0}", st.hull_plate_reserves), false, st.hull_plate_reserves > 0.0, None, false);
+                    render_node(1, 2, "THRUSTER", format!("{:.0}", st.thruster_reserves), false, st.thruster_reserves > 0.0, None, false);
+                    render_node(2, 2, "AI CORE", format!("{:.0}", st.ai_cores), false, st.ai_cores > 0.0, None, false);
+                    render_node(3, 2, "CANISTER", format!("{:.0}", st.aluminum_canisters), false, st.aluminum_canisters > 0.0, None, false);
                     
                     // Row 3: Convergence (DRONE BAY) — no inventory number
                     render_node(1, 3, "DRONE BAY", String::new(), true, 
                         st.hull_plate_reserves > 0.0 && 
                         st.thruster_reserves > 0.0 && 
-                        st.ai_cores > 0.0);
+                        st.ai_cores > 0.0, None, false);
                 } else {
                     // Render all nodes as inactive when station not accessible
-                    render_node(0, 0, "IRON", String::new(), false, false);
-                    render_node(1, 0, "TUNGSTEN", String::new(), false, false);
-                    render_node(2, 0, "NICKEL", String::new(), false, false);
-                    render_node(3, 0, "ALUMINUM", String::new(), false, false);
+                    render_node(0, 0, "IRON", String::new(), false, false, Some(OreDeposit::Iron), false);
+                    render_node(1, 0, "TUNGSTEN", String::new(), false, false, Some(OreDeposit::Tungsten), false);
+                    render_node(2, 0, "NICKEL", String::new(), false, false, Some(OreDeposit::Nickel), false);
+                    render_node(3, 0, "ALUMINUM", String::new(), false, false, Some(OreDeposit::Aluminum), false);
                     
-                    render_node(0, 1, "IRON INGOT", String::new(), false, false);
-                    render_node(1, 1, "TUNGSTEN INGOT", String::new(), false, false);
-                    render_node(2, 1, "NICKEL INGOT", String::new(), false, false);
-                    render_node(3, 1, "ALUMINUM INGOT", String::new(), false, false);
+                    render_node(0, 1, "IRON INGOT", String::new(), false, false, Some(OreDeposit::Iron), true);
+                    render_node(1, 1, "TUNGSTEN INGOT", String::new(), false, false, Some(OreDeposit::Tungsten), true);
+                    render_node(2, 1, "NICKEL INGOT", String::new(), false, false, Some(OreDeposit::Nickel), true);
+                    render_node(3, 1, "ALUMINUM INGOT", String::new(), false, false, Some(OreDeposit::Aluminum), true);
                     
-                    render_node(0, 2, "HULL PLATE", String::new(), false, false);
-                    render_node(1, 2, "THRUSTER", String::new(), false, false);
-                    render_node(2, 2, "AI CORE", String::new(), false, false);
-                    render_node(3, 2, "CANISTER", String::new(), false, false);
+                    render_node(0, 2, "HULL PLATE", String::new(), false, false, None, false);
+                    render_node(1, 2, "THRUSTER", String::new(), false, false, None, false);
+                    render_node(2, 2, "AI CORE", String::new(), false, false, None, false);
+                    render_node(3, 2, "CANISTER", String::new(), false, false, None, false);
                     
-                    render_node(1, 3, "DRONE BAY", String::new(), true, false);
+                    render_node(1, 3, "DRONE BAY", String::new(), true, false, None, false);
                 }
                 
                 // Write toggles back to resource after any clicks
