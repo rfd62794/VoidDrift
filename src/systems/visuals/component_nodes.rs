@@ -375,24 +375,85 @@ pub fn draw_ai_core(painter: &egui::Painter, center: egui::Pos2, config: &AICore
 
 pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &DroneBayConfig, is_ready: bool) {
     let base_color = if is_ready { config.color_ready } else { config.color_empty };
-    let exhaust_color = multiply_color(base_color, 0.6);
 
-    let rocket_config = RocketConfig {
-        width: config.width,
-        height: config.height,
-        color_body: base_color,
-        color_nose: base_color,
-        color_fins: base_color,
-        color_exhaust: exhaust_color,
-        nose_height_ratio: config.nose_height_ratio,
-        fin_width_ratio: config.fin_width_ratio,
-        fin_height_ratio: config.fin_height_ratio,
-        exhaust_radius: config.exhaust_radius,
-        porthole_radius: config.porthole_radius,
-        porthole_offset_y: config.porthole_offset_y,
-    };
+    // Horizontal orientation: width becomes horizontal, height becomes vertical
+    let total_width = config.width;
+    let nose_width = total_width * config.nose_height_ratio;
+    let body_height = config.height;
+    let fin_height = body_height * config.fin_height_ratio;
+    let fin_width = total_width * config.fin_width_ratio;
 
-    draw_rocket(painter, center, &rocket_config);
+    let left_x = center.x - total_width * 0.5;
+    let right_x = center.x + total_width * 0.5;
+    let nose_base_x = left_x + nose_width;
+    let top_y = center.y - body_height * 0.5;
+    let bottom_y = center.y + body_height * 0.5;
+
+    // 1. Body — rectangle from nose base to right
+    painter.rect_filled(
+        egui::Rect::from_min_max(egui::pos2(nose_base_x, top_y), egui::pos2(right_x, bottom_y)),
+        0.0,
+        base_color,
+    );
+
+    // 2. Nose cone — triangle pointing left
+    let nose_points = vec![
+        egui::pos2(left_x, center.y),
+        egui::pos2(nose_base_x, top_y),
+        egui::pos2(nose_base_x, bottom_y),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        nose_points,
+        base_color,
+        egui::Stroke::NONE,
+    ));
+
+    // 3. Top fin — thin spike extending up
+    let top_fin_points = vec![
+        egui::pos2(right_x, top_y),
+        egui::pos2(right_x + fin_width * 1.5, top_y - fin_height * 1.5),
+        egui::pos2(right_x, top_y - fin_height * 0.5),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        top_fin_points,
+        base_color,
+        egui::Stroke::NONE,
+    ));
+
+    // 4. Bottom fin — thin spike extending down
+    let bottom_fin_points = vec![
+        egui::pos2(right_x, bottom_y),
+        egui::pos2(right_x + fin_width * 1.5, bottom_y + fin_height * 1.5),
+        egui::pos2(right_x, bottom_y + fin_height * 0.5),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        bottom_fin_points,
+        base_color,
+        egui::Stroke::NONE,
+    ));
+
+    // 5. Center fin — thin spike extending right
+    let center_fin_points = vec![
+        egui::pos2(right_x - fin_height * 0.3, center.y),
+        egui::pos2(right_x + fin_width * 1.5, center.y),
+        egui::pos2(right_x - fin_height * 0.3, center.y),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        center_fin_points,
+        base_color,
+        egui::Stroke::NONE,
+    ));
+
+    // 6. Porthole — circle outline on body
+    let porthole_center = egui::pos2(center.x + total_width * config.porthole_offset_y, center.y);
+    painter.circle_stroke(
+        porthole_center,
+        config.porthole_radius,
+        egui::Stroke::new(1.5, multiply_color(base_color, 1.4)),
+    );
+
+    // 7. Exhaust port — filled circle at right end
+    painter.circle_filled(egui::pos2(right_x, center.y), config.exhaust_radius, multiply_color(base_color, 0.6));
 }
 
 fn multiply_color(color: egui::Color32, factor: f32) -> egui::Color32 {
