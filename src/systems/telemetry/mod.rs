@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use crate::components::resources::AppState;
 use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use uuid::Uuid;
@@ -31,7 +30,7 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SessionId>()
-            .add_systems(OnEnter(AppState::InGame), send_session_start);
+            .add_systems(OnEnter(crate::components::resources::AppState::InGame), send_session_start);
     }
 }
 
