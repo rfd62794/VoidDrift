@@ -6,3 +6,4 @@ pub mod ui;
 pub mod persistence;
 pub mod narrative;
 pub mod visuals;
+pub mod telemetry;
