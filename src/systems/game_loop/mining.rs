@@ -6,7 +6,7 @@ use crate::config::visual::rgb;
 pub fn mining_system(
     time: Res<Time>,
     mut ship_query: Query<(Entity, &mut Ship, &Transform, &Children), (Without<MiningBeam>, Without<ActiveAsteroid>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
-    mut insufficient_laser_events: EventWriter<InsufficientLaserEvent>, 
+    mut insufficient_laser_events: EventWriter<InsufficientLaserEvent>,
     mut asteroid_query: Query<(Entity, &mut ActiveAsteroid, &Transform, Option<&MeshMaterial2d<ColorMaterial>>), (Without<Ship>, Without<MiningBeam>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut beam_query: Query<(Entity, &mut Transform, &mut Visibility), (With<MiningBeam>, Without<Ship>, Without<ActiveAsteroid>, Without<Station>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<Berth>)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -15,8 +15,12 @@ pub fn mining_system(
     mut commands: Commands,
     cfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
+    children: Query<&Children>,
+    asteroid_body_query: Query<&AsteroidBody>,
+    asteroid_band_query: Query<&AsteroidBand>,
+    material_query: Query<&MeshMaterial2d<ColorMaterial>>,
 ) {
-    for (ship_ent, mut ship, ship_transform, children) in ship_query.iter_mut() {
+    for (ship_ent, mut ship, ship_transform, ship_children) in ship_query.iter_mut() {
         let is_mining = ship.state == ShipState::Mining;
         let mut target_dist = None;
 
@@ -62,9 +66,24 @@ pub fn mining_system(
 
                         // Visual feedback if depleted (asteroid lifecycle handles despawn)
                         if asteroid.ore_remaining <= 0.0 {
-                            if let Some(mat_h) = mat_handle {
-                                if let Some(mat) = materials.get_mut(&mat_h.0) {
-                                    mat.color = rgb(vcfg.asteroid.color_depleted);
+                            // Update child entity materials (AsteroidBody and AsteroidBand)
+                            let depleted_body_color = Color::srgba(0.18, 0.18, 0.18, 0.5); // 50% alpha
+                            let depleted_vein_color = Color::srgba(0.18, 0.18, 0.18, 0.2); // 20% alpha
+
+                            for child in children.iter_descendants(target_entity) {
+                                if let Some(body) = asteroid_body_query.get(child).ok() {
+                                    if let Ok(mat_h) = material_query.get(child) {
+                                        if let Some(mat) = materials.get_mut(&mat_h.0) {
+                                            mat.color = depleted_body_color;
+                                        }
+                                    }
+                                }
+                                if let Some(band) = asteroid_band_query.get(child).ok() {
+                                    if let Ok(mat_h) = material_query.get(child) {
+                                        if let Some(mat) = materials.get_mut(&mat_h.0) {
+                                            mat.color = depleted_vein_color;
+                                        }
+                                    }
                                 }
                             }
 
@@ -168,7 +187,7 @@ pub fn mining_system(
         }
         
         // Handle beam visibility and scaling
-        for &child in children.iter() {
+        for &child in ship_children.iter() {
             if let Ok((_, mut b_transform, mut b_vis)) = beam_query.get_mut(child) {
                 if let Some(dist) = target_dist {
                     *b_vis = Visibility::Visible;
