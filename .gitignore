@@ -38,3 +38,6 @@ logcat_gate0.txt
 
 # Save Files
 /saves/
+
+*.pyc
+__pycache__
