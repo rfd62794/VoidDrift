@@ -543,10 +543,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                             // Draw ingot node (3-rect isometric)
                             let ingot_cfg = &params.visual_cfg.production_tree.ingot_node;
                             let base_color = match ore {
-                                OreDeposit::Iron => rgb_u8_to_egui(params.visual_cfg.ingot.metal.color),
-                                OreDeposit::Tungsten => rgb_u8_to_egui(params.visual_cfg.ingot.crystal.color),
-                                OreDeposit::Nickel => rgb_u8_to_egui(params.visual_cfg.ingot.void.color),
-                                OreDeposit::Aluminum => rgb_u8_to_egui(params.visual_cfg.ingot.metal.color),
+                                OreDeposit::Iron => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_body),
+                                OreDeposit::Tungsten => rgb_u8_to_egui(params.visual_cfg.ore.h3_gas.color_body),
+                                OreDeposit::Nickel => rgb_u8_to_egui(params.visual_cfg.ore.void_essence.color_body),
+                                OreDeposit::Aluminum => rgb_u8_to_egui(params.visual_cfg.ore.metal.color_body),
                             };
                             let ingot_config = IngotNodeConfig {
                                 width: ingot_cfg.width,
@@ -560,22 +560,22 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         } else {
                             // Draw ore node (procedural polygon)
                             let ore_cfg = &params.visual_cfg.production_tree.ore_node;
-                            let (body_color, vein_color, vein_count, vein_width) = match ore {
+                            let (body_color, vein_color, band_count, band_width_min, band_width_max, grain_angle_deg) = match ore {
                                 OreDeposit::Iron => {
                                     let cfg = &params.visual_cfg.ore.metal;
-                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.band_count, cfg.band_width_min, cfg.band_width_max, cfg.grain_angle_deg)
                                 },
                                 OreDeposit::Tungsten => {
                                     let cfg = &params.visual_cfg.ore.h3_gas;
-                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.band_count, cfg.band_width_min, cfg.band_width_max, cfg.grain_angle_deg)
                                 },
                                 OreDeposit::Nickel => {
                                     let cfg = &params.visual_cfg.ore.void_essence;
-                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.band_count, cfg.band_width_min, cfg.band_width_max, cfg.grain_angle_deg)
                                 },
                                 OreDeposit::Aluminum => {
                                     let cfg = &params.visual_cfg.ore.metal;
-                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.vein_count, cfg.vein_width)
+                                    (rgb_u8_to_egui(cfg.color_body), rgb_u8_to_egui(cfg.color_vein), cfg.band_count, cfg.band_width_min, cfg.band_width_max, cfg.grain_angle_deg)
                                 },
                             };
                             let ore_seed = match ore {
@@ -590,8 +590,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                                 jaggedness: ore_cfg.jaggedness,
                                 color_body: body_color,
                                 color_vein: vein_color,
-                                vein_count,
-                                vein_width,
+                                band_count,
+                                band_width_min,
+                                band_width_max,
+                                grain_angle_deg,
                                 seed: ore_seed,
                             };
                             ore_polygon::draw_ore_polygon(painter, node_rect.center(), &ore_config);

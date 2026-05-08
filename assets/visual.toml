@@ -78,37 +78,46 @@ map_icon_w = 12.0
 map_icon_h = 16.0
 
 [ore.metal]
-color_body     = [120, 120, 130]   # grey-silver base
-color_vein     = [200, 210, 255]   # pale blue-white veins
-vein_count     = 4
-vein_width     = 1.5
+color_body         = [85, 85, 95]
+color_vein         = [200, 210, 255]
+band_count         = 4
+band_width_min     = 0.08
+band_width_max     = 0.18
+grain_angle_deg    = 25.0
 
 [ore.h3_gas]
-color_body     = [60, 100, 80]     # dark teal base
-color_vein     = [80, 255, 160]    # bright green veins
-vein_count     = 5
-vein_width     = 1.5
+color_body         = [25, 45, 35]
+color_vein         = [80, 255, 160]
+band_count         = 5
+band_width_min     = 0.10
+band_width_max     = 0.22
+grain_angle_deg    = 15.0
 
 [ore.void_essence]
-color_body     = [30, 20, 45]      # near-black purple base
-color_vein     = [160, 80, 255]    # violet veins
-vein_count     = 6
-vein_width     = 2.0
+color_body         = [28, 18, 40]
+color_vein         = [160, 80, 255]
+band_count         = 3
+band_width_min     = 0.12
+band_width_max     = 0.28
+grain_angle_deg    = 50.0
 
 [asteroid.inner_ring]
-radius         = 18.0
+radius         = 14.0
 vertex_count   = 9
-jaggedness     = 0.35              # 0.0 = circle, 1.0 = very jagged
+jaggedness     = 0.35
+ore_type       = "metal"
 
 [asteroid.middle_ring]
-radius         = 28.0
+radius         = 22.0
 vertex_count   = 11
 jaggedness     = 0.40
+ore_type       = "h3_gas"
 
 [asteroid.outer_ring]
-radius         = 42.0
+radius         = 34.0
 vertex_count   = 13
 jaggedness     = 0.45
+ore_type       = "void_essence"
 
 [production_tree.ore_node]
 radius         = 22.0

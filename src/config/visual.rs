@@ -25,8 +25,10 @@ pub struct AsteroidVisualConfig {
 pub struct OreTypeConfig {
     pub color_body: [u8; 3],
     pub color_vein: [u8; 3],
-    pub vein_count: usize,
-    pub vein_width: f32,
+    pub band_count: usize,
+    pub band_width_min: f32,
+    pub band_width_max: f32,
+    pub grain_angle_deg: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -41,6 +43,7 @@ pub struct AsteroidRingConfig {
     pub radius: f32,
     pub vertex_count: usize,
     pub jaggedness: f32,
+    pub ore_type: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
