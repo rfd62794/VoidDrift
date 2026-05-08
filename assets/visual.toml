@@ -142,9 +142,45 @@ color = [140, 120, 220]
 color = [80, 40, 120]
 
 [particles.depletion]
-count          = 5                 # fragments per depletion event (4–6)
-speed_min      = 40.0
-speed_max      = 110.0
-lifetime_secs  = 0.7
-size_min       = 3.0
-size_max       = 8.0
+count          = 12
+speed_min      = 50.0
+speed_max      = 150.0
+lifetime_secs  = 1.2
+size_min       = 1.0
+size_max       = 3.0
+
+[component.thruster]
+width               = 38.0
+color_nozzle        = [210, 215, 225]
+color_body          = [140, 145, 155]
+color_wire          = [200, 60, 60]
+wire_count          = 3
+nozzle_width_ratio  = 0.55
+body_width_ratio    = 0.45
+
+[component.hull]
+width               = 40.0
+rib_count           = 7
+color_frame         = [160, 155, 140]
+color_outline       = [200, 195, 185]
+stroke_width        = 1.2
+
+[component.canister]
+width               = 28.0
+height              = 34.0
+lid_height_ratio    = 0.18
+color_body          = [148, 130, 50]
+color_lid           = [130, 115, 42]
+color_highlight     = [190, 175, 90]
+color_handle        = [120, 105, 35]
+
+[component.ai_core]
+radius              = 20.0
+fin_count           = 14
+fin_length          = 8.0
+fin_width           = 2.5
+color_body          = [28, 28, 32]
+color_fins          = [190, 200, 215]
+color_fan_housing   = [45, 45, 52]
+fan_radius_ratio    = 0.45
+fan_blade_count     = 3

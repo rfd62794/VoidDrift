@@ -156,6 +156,58 @@ pub struct DroneVisualConfig {
     pub mission: DroneVisualEntry,
 }
 
+#[derive(Deserialize, Clone, Debug)]
+pub struct ComponentThrusterConfig {
+    pub width: f32,
+    pub color_nozzle: [u8; 3],
+    pub color_body: [u8; 3],
+    pub color_wire: [u8; 3],
+    pub wire_count: usize,
+    pub nozzle_width_ratio: f32,
+    pub body_width_ratio: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ComponentHullConfig {
+    pub width: f32,
+    pub rib_count: usize,
+    pub color_frame: [u8; 3],
+    pub color_outline: [u8; 3],
+    pub stroke_width: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ComponentCanisterConfig {
+    pub width: f32,
+    pub height: f32,
+    pub lid_height_ratio: f32,
+    pub color_body: [u8; 3],
+    pub color_lid: [u8; 3],
+    pub color_highlight: [u8; 3],
+    pub color_handle: [u8; 3],
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ComponentAICoreConfig {
+    pub radius: f32,
+    pub fin_count: usize,
+    pub fin_length: f32,
+    pub fin_width: f32,
+    pub color_body: [u8; 3],
+    pub color_fins: [u8; 3],
+    pub color_fan_housing: [u8; 3],
+    pub fan_radius_ratio: f32,
+    pub fan_blade_count: usize,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ComponentConfig {
+    pub thruster: ComponentThrusterConfig,
+    pub hull: ComponentHullConfig,
+    pub canister: ComponentCanisterConfig,
+    pub ai_core: ComponentAICoreConfig,
+}
+
 #[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]
 pub struct VisualConfig {
     pub starfield: StarfieldConfig,
@@ -167,6 +219,7 @@ pub struct VisualConfig {
     pub production_tree: ProductionTreeConfig,
     pub particles: ParticlesConfig,
     pub ingot: IngotsConfig,
+    pub component: ComponentConfig,
 }
 
 impl VisualConfig {
