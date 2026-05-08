@@ -15,24 +15,47 @@ pub fn draw_ingot_node(
     config: &IngotNodeConfig,
     base_color: egui::Color32,
 ) {
+    let w = config.width / 2.0;
+    let h = config.height / 2.0;
+    let dx = config.depth_offset_x;
+    let dy = config.depth_offset_y;
+
     let depth_face_color = multiply_color(base_color, config.color_face_dark_factor);
     let side_face_color = multiply_color(base_color, 0.85);
     let front_face_color = multiply_color(base_color, config.color_face_light_factor);
 
-    let depth_offset = egui::vec2(config.depth_offset_x, config.depth_offset_y);
-    let side_offset = depth_offset * 0.5;
+    let top_left = egui::pos2(center.x - w + dx, center.y - h + dy);
+    let top_right = egui::pos2(center.x + w + dx, center.y - h + dy);
+    let bottom_right = egui::pos2(center.x + w, center.y - h);
+    let bottom_left = egui::pos2(center.x - w, center.y - h);
 
-    let depth_center = center + depth_offset;
-    let side_center = center + side_offset;
-    let front_center = center;
+    painter.add(egui::Shape::convex_polygon(
+        vec![top_left, top_right, bottom_right, bottom_left],
+        depth_face_color,
+        egui::Stroke::NONE,
+    ));
 
-    let depth_rect = egui::Rect::from_center_size(depth_center, egui::vec2(config.width, config.height));
-    let side_rect = egui::Rect::from_center_size(side_center, egui::vec2(config.width, config.height));
-    let front_rect = egui::Rect::from_center_size(front_center, egui::vec2(config.width, config.height));
+    let right_top_left = egui::pos2(center.x + w, center.y - h);
+    let right_top_right = egui::pos2(center.x + w + dx, center.y - h + dy);
+    let right_bottom_right = egui::pos2(center.x + w + dx, center.y + h + dy);
+    let right_bottom_left = egui::pos2(center.x + w, center.y + h);
 
-    painter.rect_filled(depth_rect, 2.0, depth_face_color);
-    painter.rect_filled(side_rect, 2.0, side_face_color);
-    painter.rect_filled(front_rect, 2.0, front_face_color);
+    painter.add(egui::Shape::convex_polygon(
+        vec![right_top_left, right_top_right, right_bottom_right, right_bottom_left],
+        side_face_color,
+        egui::Stroke::NONE,
+    ));
+
+    let front_top_left = egui::pos2(center.x - w, center.y - h);
+    let front_top_right = egui::pos2(center.x + w, center.y - h);
+    let front_bottom_right = egui::pos2(center.x + w, center.y + h);
+    let front_bottom_left = egui::pos2(center.x - w, center.y + h);
+
+    painter.add(egui::Shape::convex_polygon(
+        vec![front_top_left, front_top_right, front_bottom_right, front_bottom_left],
+        front_face_color,
+        egui::Stroke::NONE,
+    ));
 }
 
 fn multiply_color(color: egui::Color32, factor: f32) -> egui::Color32 {
