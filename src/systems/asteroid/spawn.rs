@@ -5,6 +5,16 @@ use crate::components::*;
 use crate::constants::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
+use crate::systems::visuals::{build_mesh_from_polygon, build_mesh_from_quad, generate_ore_polygon_points, generate_ore_band_quads, OreBandConfig};
+
+fn ore_config_key(ore_type: &OreDeposit) -> &'static str {
+    match ore_type {
+        OreDeposit::Iron => "metal",
+        OreDeposit::Tungsten => "h3_gas",
+        OreDeposit::Nickel => "void_essence",
+        OreDeposit::Aluminum => "metal",
+    }
+}
 
 pub fn spawn_initial_asteroids(
     mut commands: Commands,
@@ -92,8 +102,42 @@ pub fn spawn_asteroid(
     // Vary the ore amount slightly
     let ore_amount = cfg.asteroid.base_ore * rng.gen_range(0.8..1.2);
 
+    // Procedural mesh generation
+    let ore_key = ore_config_key(&ore_type);
+    let ore_config = match ore_key {
+        "metal" => &vcfg.ore.metal,
+        "h3_gas" => &vcfg.ore.h3_gas,
+        "void_essence" => &vcfg.ore.void_essence,
+        _ => &vcfg.ore.metal,
+    };
+
+    // Body polygon
+    let body_points = generate_ore_polygon_points(
+        radius,
+        12, // vertex_count
+        0.25, // jaggedness
+        rng.gen(),
+    );
+    let body_mesh = build_mesh_from_polygon(&body_points);
+    let body_color = Color::srgb_u8(ore_config.color_body[0], ore_config.color_body[1], ore_config.color_body[2]);
+
+    // Band quads
+    let band_config = OreBandConfig {
+        radius,
+        band_count: ore_config.band_count,
+        band_width_min: ore_config.band_width_min,
+        band_width_max: ore_config.band_width_max,
+        grain_angle_deg: ore_config.grain_angle_deg,
+        seed: rng.gen(),
+    };
+    let band_quads = generate_ore_band_quads(&band_config);
+    let vein_color = Color::srgb_u8(ore_config.color_vein[0], ore_config.color_vein[1], ore_config.color_vein[2]);
+
+    // Space background color for outline mask
+    let space_bg_color = Color::srgb(0.02, 0.02, 0.03);
+
     let asteroid_entity = commands.spawn((
-        MapMarker, // Add MapMarker so it can be targeted in MapView
+        MapMarker,
         ActiveAsteroid {
             ore_type,
             ore_remaining: ore_amount,
@@ -102,9 +146,41 @@ pub fn spawn_asteroid(
         Transform::from_xyz(position.x, position.y, Z_ENVIRONMENT),
         GlobalTransform::default(),
         Visibility::default(),
-        Mesh2d(meshes.add(crate::systems::setup::generate_ore_mesh(&ore_type, rng.gen(), cfg))),
-        MeshMaterial2d(materials.add(color)),
     )).id();
+
+    // Body mesh at z=0
+    commands.entity(asteroid_entity).with_children(|parent| {
+        parent.spawn((
+            AsteroidBody,
+            Mesh2d(meshes.add(body_mesh)),
+            MeshMaterial2d(materials.add(ColorMaterial::from(body_color))),
+            Transform::from_translation(Vec3::Z * 0.0),
+        ));
+    });
+
+    // Band meshes at z=1
+    for quad in &band_quads {
+        let band_mesh = build_mesh_from_quad(quad);
+        commands.entity(asteroid_entity).with_children(|parent| {
+            parent.spawn((
+                AsteroidBand,
+                Mesh2d(meshes.add(band_mesh)),
+                MeshMaterial2d(materials.add(ColorMaterial::from(vein_color))),
+                Transform::from_translation(Vec3::Z * 1.0),
+            ));
+        });
+    }
+
+    // Outline mask at z=2 - stroke matching space background to hide band overflow
+    let outline_mesh = build_mesh_from_polygon(&body_points);
+    commands.entity(asteroid_entity).with_children(|parent| {
+        parent.spawn((
+            AsteroidBody,
+            Mesh2d(meshes.add(outline_mesh)),
+            MeshMaterial2d(materials.add(ColorMaterial::from(space_bg_color))),
+            Transform::from_translation(Vec3::Z * 2.0),
+        ));
+    });
 
     let sector_id = match ore_type {
         OreDeposit::Iron => "S1",

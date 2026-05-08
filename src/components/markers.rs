@@ -91,3 +91,9 @@ pub struct AutopilotTarget {
 
 #[derive(Component)]
 pub struct MenuStar;
+
+#[derive(Component)]
+pub struct AsteroidBody;
+
+#[derive(Component)]
+pub struct AsteroidBand;
