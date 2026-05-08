@@ -65,7 +65,10 @@ pub fn build_mesh_from_polygon_with_colors(points: &[Vec2], colors: &[Color]) ->
 
     let vertex_colors: Vec<[f32; 4]> = colors
         .iter()
-        .map(|c| [c.r(), c.g(), c.b(), c.a()])
+        .map(|c| {
+            let c = c.to_srgba();
+            [c.red, c.green, c.blue, c.alpha]
+        })
         .collect();
 
     let mut mesh = Mesh::new(
