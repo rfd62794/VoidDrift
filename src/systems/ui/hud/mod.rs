@@ -11,6 +11,7 @@ use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::{rgb, rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
+use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig};
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -514,7 +515,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 );
                 
                 // Node rendering helper with active state and inventory display
-                let render_node = |col: usize, row: usize, label: &str, inventory: String, is_wide: bool, active: bool, ore_type: Option<OreDeposit>, is_ingot: bool| {
+                let render_node = |col: usize, row: usize, label: &str, inventory: String, is_wide: bool, active: bool, ore_type: Option<OreDeposit>, is_ingot: bool, component_type: Option<&str>| {
                     let border_color = if active {
                         egui::Color32::from_rgb(0, 200, 200) // Echo cyan
                     } else {
@@ -600,6 +601,65 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         }
                     }
                     
+                    if let Some(component) = component_type {
+                        let node_center = node_rect.center();
+                        match component {
+                            "hull" => {
+                                let hull_cfg = &params.visual_cfg.component.hull;
+                                let hull_config = HullConfig {
+                                    width: hull_cfg.width,
+                                    rib_count: hull_cfg.rib_count,
+                                    color_frame: rgb_u8_to_egui(hull_cfg.color_frame),
+                                    color_outline: rgb_u8_to_egui(hull_cfg.color_outline),
+                                    stroke_width: hull_cfg.stroke_width,
+                                };
+                                component_nodes::draw_hull(painter, node_center, &hull_config);
+                            },
+                            "thruster" => {
+                                let thruster_cfg = &params.visual_cfg.component.thruster;
+                                let thruster_config = ThrusterConfig {
+                                    width: thruster_cfg.width,
+                                    color_nozzle: rgb_u8_to_egui(thruster_cfg.color_nozzle),
+                                    color_body: rgb_u8_to_egui(thruster_cfg.color_body),
+                                    color_wire: rgb_u8_to_egui(thruster_cfg.color_wire),
+                                    wire_count: thruster_cfg.wire_count,
+                                    nozzle_width_ratio: thruster_cfg.nozzle_width_ratio,
+                                    body_width_ratio: thruster_cfg.body_width_ratio,
+                                };
+                                component_nodes::draw_thruster(painter, node_center, &thruster_config);
+                            },
+                            "ai_core" => {
+                                let ai_core_cfg = &params.visual_cfg.component.ai_core;
+                                let ai_core_config = AICoreConfig {
+                                    radius: ai_core_cfg.radius,
+                                    fin_count: ai_core_cfg.fin_count,
+                                    fin_length: ai_core_cfg.fin_length,
+                                    fin_width: ai_core_cfg.fin_width,
+                                    color_body: rgb_u8_to_egui(ai_core_cfg.color_body),
+                                    color_fins: rgb_u8_to_egui(ai_core_cfg.color_fins),
+                                    color_fan_housing: rgb_u8_to_egui(ai_core_cfg.color_fan_housing),
+                                    fan_radius_ratio: ai_core_cfg.fan_radius_ratio,
+                                    fan_blade_count: ai_core_cfg.fan_blade_count,
+                                };
+                                component_nodes::draw_ai_core(painter, node_center, &ai_core_config);
+                            },
+                            "canister" => {
+                                let canister_cfg = &params.visual_cfg.component.canister;
+                                let canister_config = CanisterConfig {
+                                    width: canister_cfg.width,
+                                    height: canister_cfg.height,
+                                    lid_height_ratio: canister_cfg.lid_height_ratio,
+                                    color_body: rgb_u8_to_egui(canister_cfg.color_body),
+                                    color_lid: rgb_u8_to_egui(canister_cfg.color_lid),
+                                    color_highlight: rgb_u8_to_egui(canister_cfg.color_highlight),
+                                    color_handle: rgb_u8_to_egui(canister_cfg.color_handle),
+                                };
+                                component_nodes::draw_canister(painter, node_center, &canister_config);
+                            },
+                            _ => {}
+                        }
+                    }
+                    
                     let display = format!("{} ({})", label, inventory);
                     painter.text(
                         node_rect.center() + egui::vec2(0.0, 35.0),
@@ -613,46 +673,46 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 // Render nodes with active states and inventory
                 if let Some(st) = station {
                     // Row 0: Ore nodes
-                    render_node(0, 0, "IRON", format!("{:.1}", st.iron_reserves), false, st.iron_reserves > 0.0, Some(OreDeposit::Iron), false);
-                    render_node(1, 0, "TUNGSTEN", format!("{:.1}", st.tungsten_reserves), false, st.tungsten_reserves > 0.0, Some(OreDeposit::Tungsten), false);
-                    render_node(2, 0, "NICKEL", format!("{:.1}", st.nickel_reserves), false, st.nickel_reserves > 0.0, Some(OreDeposit::Nickel), false);
-                    render_node(3, 0, "ALUMINUM", format!("{:.1}", st.aluminum_reserves), false, st.aluminum_reserves > 0.0, Some(OreDeposit::Aluminum), false);
+                    render_node(0, 0, "IRON", format!("{:.1}", st.iron_reserves), false, st.iron_reserves > 0.0, Some(OreDeposit::Iron), false, None);
+                    render_node(1, 0, "TUNGSTEN", format!("{:.1}", st.tungsten_reserves), false, st.tungsten_reserves > 0.0, Some(OreDeposit::Tungsten), false, None);
+                    render_node(2, 0, "NICKEL", format!("{:.1}", st.nickel_reserves), false, st.nickel_reserves > 0.0, Some(OreDeposit::Nickel), false, None);
+                    render_node(3, 0, "ALUMINUM", format!("{:.1}", st.aluminum_reserves), false, st.aluminum_reserves > 0.0, Some(OreDeposit::Aluminum), false, None);
                     
                     // Row 1: Ingot nodes
-                    render_node(0, 1, "IRON INGOT", format!("{:.1}", st.iron_ingots), false, st.iron_ingots > 0.0, Some(OreDeposit::Iron), true);
-                    render_node(1, 1, "TUNGSTEN INGOT", format!("{:.1}", st.tungsten_ingots), false, st.tungsten_ingots > 0.0, Some(OreDeposit::Tungsten), true);
-                    render_node(2, 1, "NICKEL INGOT", format!("{:.1}", st.nickel_ingots), false, st.nickel_ingots > 0.0, Some(OreDeposit::Nickel), true);
-                    render_node(3, 1, "ALUMINUM INGOT", format!("{:.1}", st.aluminum_ingots), false, st.aluminum_ingots > 0.0, Some(OreDeposit::Aluminum), true);
+                    render_node(0, 1, "IRON INGOT", format!("{:.1}", st.iron_ingots), false, st.iron_ingots > 0.0, Some(OreDeposit::Iron), true, None);
+                    render_node(1, 1, "TUNGSTEN INGOT", format!("{:.1}", st.tungsten_ingots), false, st.tungsten_ingots > 0.0, Some(OreDeposit::Tungsten), true, None);
+                    render_node(2, 1, "NICKEL INGOT", format!("{:.1}", st.nickel_ingots), false, st.nickel_ingots > 0.0, Some(OreDeposit::Nickel), true, None);
+                    render_node(3, 1, "ALUMINUM INGOT", format!("{:.1}", st.aluminum_ingots), false, st.aluminum_ingots > 0.0, Some(OreDeposit::Aluminum), true, None);
                     
                     // Row 2: Part nodes
-                    render_node(0, 2, "HULL PLATE", format!("{:.0}", st.hull_plate_reserves), false, st.hull_plate_reserves > 0.0, None, false);
-                    render_node(1, 2, "THRUSTER", format!("{:.0}", st.thruster_reserves), false, st.thruster_reserves > 0.0, None, false);
-                    render_node(2, 2, "AI CORE", format!("{:.0}", st.ai_cores), false, st.ai_cores > 0.0, None, false);
-                    render_node(3, 2, "CANISTER", format!("{:.0}", st.aluminum_canisters), false, st.aluminum_canisters > 0.0, None, false);
+                    render_node(0, 2, "HULL PLATE", format!("{:.0}", st.hull_plate_reserves), false, st.hull_plate_reserves > 0.0, None, false, Some("hull"));
+                    render_node(1, 2, "THRUSTER", format!("{:.0}", st.thruster_reserves), false, st.thruster_reserves > 0.0, None, false, Some("thruster"));
+                    render_node(2, 2, "AI CORE", format!("{:.0}", st.ai_cores), false, st.ai_cores > 0.0, None, false, Some("ai_core"));
+                    render_node(3, 2, "CANISTER", format!("{:.0}", st.aluminum_canisters), false, st.aluminum_canisters > 0.0, None, false, Some("canister"));
                     
                     // Row 3: Convergence (DRONE BAY) — no inventory number
                     render_node(1, 3, "DRONE BAY", String::new(), true, 
                         st.hull_plate_reserves > 0.0 && 
                         st.thruster_reserves > 0.0 && 
-                        st.ai_cores > 0.0, None, false);
+                        st.ai_cores > 0.0, None, false, None);
                 } else {
                     // Render all nodes as inactive when station not accessible
-                    render_node(0, 0, "IRON", String::new(), false, false, Some(OreDeposit::Iron), false);
-                    render_node(1, 0, "TUNGSTEN", String::new(), false, false, Some(OreDeposit::Tungsten), false);
-                    render_node(2, 0, "NICKEL", String::new(), false, false, Some(OreDeposit::Nickel), false);
-                    render_node(3, 0, "ALUMINUM", String::new(), false, false, Some(OreDeposit::Aluminum), false);
+                    render_node(0, 0, "IRON", String::new(), false, false, Some(OreDeposit::Iron), false, None);
+                    render_node(1, 0, "TUNGSTEN", String::new(), false, false, Some(OreDeposit::Tungsten), false, None);
+                    render_node(2, 0, "NICKEL", String::new(), false, false, Some(OreDeposit::Nickel), false, None);
+                    render_node(3, 0, "ALUMINUM", String::new(), false, false, Some(OreDeposit::Aluminum), false, None);
                     
-                    render_node(0, 1, "IRON INGOT", String::new(), false, false, Some(OreDeposit::Iron), true);
-                    render_node(1, 1, "TUNGSTEN INGOT", String::new(), false, false, Some(OreDeposit::Tungsten), true);
-                    render_node(2, 1, "NICKEL INGOT", String::new(), false, false, Some(OreDeposit::Nickel), true);
-                    render_node(3, 1, "ALUMINUM INGOT", String::new(), false, false, Some(OreDeposit::Aluminum), true);
+                    render_node(0, 1, "IRON INGOT", String::new(), false, false, Some(OreDeposit::Iron), true, None);
+                    render_node(1, 1, "TUNGSTEN INGOT", String::new(), false, false, Some(OreDeposit::Tungsten), true, None);
+                    render_node(2, 1, "NICKEL INGOT", String::new(), false, false, Some(OreDeposit::Nickel), true, None);
+                    render_node(3, 1, "ALUMINUM INGOT", String::new(), false, false, Some(OreDeposit::Aluminum), true, None);
                     
-                    render_node(0, 2, "HULL PLATE", String::new(), false, false, None, false);
-                    render_node(1, 2, "THRUSTER", String::new(), false, false, None, false);
-                    render_node(2, 2, "AI CORE", String::new(), false, false, None, false);
-                    render_node(3, 2, "CANISTER", String::new(), false, false, None, false);
+                    render_node(0, 2, "HULL PLATE", String::new(), false, false, None, false, Some("hull"));
+                    render_node(1, 2, "THRUSTER", String::new(), false, false, None, false, Some("thruster"));
+                    render_node(2, 2, "AI CORE", String::new(), false, false, None, false, Some("ai_core"));
+                    render_node(3, 2, "CANISTER", String::new(), false, false, None, false, Some("canister"));
                     
-                    render_node(1, 3, "DRONE BAY", String::new(), true, false, None, false);
+                    render_node(1, 3, "DRONE BAY", String::new(), true, false, None, false, None);
                 }
                 
                 // Write toggles back to resource after any clicks
