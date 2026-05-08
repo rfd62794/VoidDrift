@@ -48,24 +48,24 @@ pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &Or
 
         let band_width = rng.gen_range(config.band_width_min..=config.band_width_max) * config.radius;
 
-        for i in 0..24 {
-            let angle = (i as f32 / 24.0) * TAU;
-            let x = angle.cos() * config.radius * 1.3;
-            let y = angle.sin() * config.radius * 1.3;
+        for i in 0..32 {
+            let angle = (i as f32 / 32.0) * TAU;
+            let x = angle.cos() * config.radius * 1.2;
+            let y = angle.sin() * config.radius * 1.2;
 
-            let next_angle = ((i + 1) as f32 / 24.0) * TAU;
-            let next_x = next_angle.cos() * config.radius * 1.3;
-            let next_y = next_angle.sin() * config.radius * 1.3;
+            let next_angle = ((i + 1) as f32 / 32.0) * TAU;
+            let next_x = next_angle.cos() * config.radius * 1.2;
+            let next_y = next_angle.sin() * config.radius * 1.2;
 
             let dist_to_band = (y - band_center).abs();
             let next_dist_to_band = (next_y - band_center).abs();
 
-            if dist_to_band < band_width && next_dist_to_band < band_width {
+            if dist_to_band < band_width || next_dist_to_band < band_width {
                 let p1 = egui::pos2(center.x + x, center.y + y);
                 let p2 = egui::pos2(center.x + next_x, center.y + next_y);
                 painter.line_segment(
                     [p1, p2],
-                    egui::Stroke::new(band_width * 0.8, config.color_vein),
+                    egui::Stroke::new(band_width, config.color_vein),
                 );
             }
         }
