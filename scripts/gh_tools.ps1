@@ -31,8 +31,18 @@ function Add-Issue {
     }
 }
 
+function Update-Issue {
+    param([int]$Number, [string]$Body)
+    gh issue edit $Number --repo $REPO --body $Body
+}
+
+function Comment-Issue {
+    param([int]$Number, [string]$Comment)
+    gh issue comment $Number --repo $REPO --body $Comment
+}
+
 function List-ProjectItems {
     gh project item-list $PROJECT_NUMBER --owner rfd62794
 }
 
-Write-Host "gh_tools loaded. Commands: List-Issues, View-Issue, Close-Issue, Add-Issue, List-ProjectItems" -ForegroundColor Cyan
+Write-Host "gh_tools loaded. Commands: List-Issues, View-Issue, Close-Issue, Add-Issue, Update-Issue, Comment-Issue, List-ProjectItems" -ForegroundColor Cyan
