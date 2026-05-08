@@ -186,13 +186,13 @@ fan_radius_ratio    = 0.45
 fan_blade_count     = 3
 
 [component.drone_bay]
-width               = 32.0
+width               = 16.0
 height              = 52.0
 color_ready         = [210, 95, 30]
 color_empty         = [80, 40, 15]
 nose_height_ratio   = 0.28
-fin_width_ratio     = 0.28
+fin_width_ratio     = 0.15
 fin_height_ratio    = 0.22
-porthole_radius     = 3.5
+porthole_radius     = 2.0
 porthole_offset_y   = -0.15
-exhaust_radius      = 4.0
+exhaust_radius      = 2.5

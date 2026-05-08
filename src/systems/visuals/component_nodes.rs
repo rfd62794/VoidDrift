@@ -313,7 +313,7 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 3. Left fin — triangle at bottom left
+    // 3. Left fin — tall spike pointing left from bottom
     let left_fin_points = vec![
         egui::pos2(left_x, body_bottom_y - fin_height),
         egui::pos2(left_x, body_bottom_y),
@@ -325,7 +325,7 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 4. Right fin — triangle at bottom right
+    // 4. Right fin — tall spike pointing right from bottom
     let right_fin_points = vec![
         egui::pos2(right_x, body_bottom_y - fin_height),
         egui::pos2(right_x, body_bottom_y),
@@ -337,7 +337,19 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::NONE,
     ));
 
-    // 5. Porthole — circle outline on body
+    // 5. Bottom center fin — spike pointing straight down from exhaust
+    let bottom_fin_points = vec![
+        egui::pos2(center.x, body_bottom_y - fin_height * 0.6),
+        egui::pos2(center.x, body_bottom_y),
+        egui::pos2(center.x, body_bottom_y + fin_width * 0.8),
+    ];
+    painter.add(egui::Shape::convex_polygon(
+        bottom_fin_points,
+        base_color,
+        egui::Stroke::NONE,
+    ));
+
+    // 6. Porthole — circle outline on body
     let porthole_center = egui::pos2(center.x, center.y + total_height * config.porthole_offset_y);
     painter.circle_stroke(
         porthole_center,
@@ -345,7 +357,7 @@ pub fn draw_drone_bay(painter: &egui::Painter, center: egui::Pos2, config: &Dron
         egui::Stroke::new(1.5, multiply_color(base_color, 1.4)),
     );
 
-    // 6. Exhaust port — filled circle at bottom center
+    // 7. Exhaust port — filled circle at bottom center
     painter.circle_filled(egui::pos2(center.x, body_bottom_y), config.exhaust_radius, multiply_color(base_color, 0.6));
 }
 
