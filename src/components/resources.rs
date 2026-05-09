@@ -18,6 +18,7 @@ pub enum DeviceType {
 #[derive(Resource, Default)]
 pub struct ViewState {
     pub show_production_tree: bool,
+    pub production_tree_ever_opened: bool,
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]

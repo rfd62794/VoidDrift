@@ -990,6 +990,26 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     let pipeline_response = ui.add(egui::Button::new("PIPELINE").min_size(egui::vec2(80.0, 44.0)));
                     if pipeline_response.clicked() {
                         params.view_state.show_production_tree = true;
+                        params.view_state.production_tree_ever_opened = true;
+                    }
+
+                    // Pipeline highlight: amber pulsing stroke when drone built and production tree never opened
+                    let station = params.station_query.get_single();
+                    let drone_built = station.as_ref().ok().map(|(_, _, queues)| {
+                        queues.hull_forge.is_some() || queues.core_fabricator.is_some()
+                    }).unwrap_or(false);
+                    if drone_built && !params.view_state.production_tree_ever_opened {
+                        let t = ui.ctx().input(|i| i.time as f32);
+                        let alpha = ((t * 2.0).sin() * 0.3 + 0.7) * 255.0;
+                        let center_rect = egui::Rect::from_center_size(pipeline_response.rect.center(), egui::vec2(200.0, pipeline_response.rect.height()));
+                        let layer_id = egui::LayerId::new(egui::Order::Foreground, egui::Id::new("pipeline_highlight"));
+                        let painter = ui.ctx().layer_painter(layer_id);
+                        painter.rect_stroke(
+                            center_rect,
+                            0.0,
+                            egui::Stroke::new(8.0, egui::Color32::from_rgba_unmultiplied(255, 200, 50, alpha as u8)),
+                            egui::StrokeKind::Outside,
+                        );
                     }
 
                     // SAVE renders second but appears rightmost due to right_to_left
