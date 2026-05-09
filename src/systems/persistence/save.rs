@@ -312,6 +312,8 @@ pub fn collect_save_data(
     requests_tab: &RequestsTabState,
     signal_log: &SignalLog,
     time: &Res<Time>,
+    telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
+    telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -363,8 +365,8 @@ pub fn collect_save_data(
         active_tab: format!("{:?}", active_tab),
         drawer_state: "default".to_string(),
         collected_requests: requests_tab.collected_requests.clone(),
-        telemetry_consent: None, // Collected from GameState resource in a future task
-        telemetry_sessions: 0, // Collected from GameState resource in a future task
+        telemetry_consent: telemetry_consent.opted_in,
+        telemetry_sessions: telemetry_session_counter.sessions,
         unlocked_logs: vec![], // Collected from GameState resource in a future task
     }
 }
@@ -385,6 +387,8 @@ pub fn autosave_system(
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
     time: Res<Time>,
+    telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
+    telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -400,6 +404,8 @@ pub fn autosave_system(
                 &requests_tab,
                 &signal_log,
                 &time,
+                telemetry_consent,
+                telemetry_session_counter,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -419,6 +425,8 @@ pub fn save_request_system(
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
     time: Res<Time>,
+    telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
+    telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for event in events.read() {
@@ -434,6 +442,8 @@ pub fn save_request_system(
                 &requests_tab,
                 &signal_log,
                 &time,
+                telemetry_consent,
+                telemetry_session_counter,
             );
             
             if let Err(e) = save_game(&data) {

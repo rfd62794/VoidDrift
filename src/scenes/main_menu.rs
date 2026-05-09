@@ -449,6 +449,14 @@ fn restore_save_state(
     signal_log.fired = save_data.signal_fired_ids.iter().copied().collect();
     signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
     signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
+
+    // Restore telemetry consent and session counter
+    commands.insert_resource(crate::systems::telemetry::TelemetryConsent {
+        opted_in: save_data.telemetry_consent,
+    });
+    commands.insert_resource(crate::systems::telemetry::TelemetrySessionCounter {
+        sessions: save_data.telemetry_sessions,
+    });
 }
 
 /// Spawns saved drone entities from save data. State restore only — no game logic.
