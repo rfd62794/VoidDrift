@@ -322,16 +322,15 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     egui::Color32::from_gray(60),
                 );
 
-                // Part B: Drawer button highlight (pulsing amber border)
-                info!("drawer highlight flag: {}", params.tutorial.show_drawer_highlight);
-                if params.tutorial.show_drawer_highlight {
-                    let amber = egui::Color32::from_rgb(180, 140, 50);
-                    let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
-                    let stroke = egui::Stroke {
-                        width: 3.0,
-                        color: egui::Color32::from_rgba_unmultiplied(amber.r(), amber.g(), amber.b(), (pulse * 255.0) as u8),
-                    };
-                    ui.painter().rect_stroke(rect.expand(4.0), 0.0, stroke, egui::StrokeKind::Outside);
+                // Drawer highlight during T-103 (ore_reserves_positive trigger)
+                if params.tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false) {
+                    let t = ui.ctx().input(|i| i.time as f32);
+                    let alpha = ((t * 2.0).sin() * 0.3 + 0.7) * 255.0;
+                    ui.painter().rect_stroke(
+                        rect,
+                        0.0,
+                        egui::Stroke::new(2.5, egui::Color32::from_rgba_unmultiplied(180, 140, 50, alpha as u8)),
+                    );
                 }
             });
     }

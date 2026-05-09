@@ -182,8 +182,6 @@ impl Default for ProductionToggles {
 pub struct TutorialState {
     pub shown: HashSet<u32>,            // IDs of pop-ups already shown
     pub active: Option<TutorialPopup>,  // currently visible pop-up
-    pub show_drawer_highlight: bool,   // Part B: Show drawer button highlight for T-103/T-104
-    pub show_pipeline_highlight: bool, // Part C: Show pipeline button highlight for T-107
 }
 
 #[derive(Clone, Debug)]

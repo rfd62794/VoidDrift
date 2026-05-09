@@ -194,14 +194,16 @@ fn evaluate_trigger(
             s.state == ShipState::Navigating || s.state == ShipState::Mining
         }),
         "ore_reserves_positive" => {
-            if let Ok((st, _)) = station_query.get_single() {
+            let result = if let Ok((st, _)) = station_query.get_single() {
                 st.iron_reserves > 0.0
                     || st.tungsten_reserves > 0.0
                     || st.nickel_reserves > 0.0
                     || st.aluminum_reserves > 0.0
             } else {
                 false
-            }
+            };
+            info!("ore_reserves_positive trigger: {}", result);
+            result
         }
         "drawer_expanded" => **drawer_state == DrawerState::Expanded,
         "forge_tab_active" => **active_tab == ActiveStationTab::Production,
