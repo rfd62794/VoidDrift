@@ -69,13 +69,11 @@ pub fn tutorial_system(
             *h_vis = Visibility::Hidden;
         }
 
-        // Set drawer highlight flag for HUD rendering (show during T-103 popup)
-        let should_show = tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
-        info!("T-103 check: active={:?}, should_show={}", tutorial.active, should_show);
-        tutorial.show_drawer_highlight = should_show;
+        // Set drawer highlight flag for HUD rendering (show when T-103 is shown, until T-104 is shown)
+        tutorial.show_drawer_highlight = tutorial.shown.contains(&103) && !tutorial.shown.contains(&104);
 
-        // Part C: Set pipeline highlight flag for HUD rendering (show during T-107 popup)
-        tutorial.show_pipeline_highlight = tutorial.active.as_ref().map(|p| p.id == 107).unwrap_or(false);
+        // Part C: Set pipeline highlight flag for HUD rendering (show when T-105 is shown, until T-107 is shown)
+        tutorial.show_pipeline_highlight = tutorial.shown.contains(&105) && !tutorial.shown.contains(&107);
     }
 
     // Skip popup triggers while opening is incomplete or a popup is already visible
