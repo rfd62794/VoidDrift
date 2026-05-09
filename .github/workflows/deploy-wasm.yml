@@ -33,9 +33,8 @@ jobs:
         run: |
           curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
           unzip -o butler.zip
-          chmod +x butler
-          sudo mv butler /usr/local/bin/
-          ./butler -V
+          find . -name "butler" -type f -exec chmod +x {} \;
+          find . -name "butler" -type f -exec sudo mv {} /usr/local/bin/ \;
 
       - name: Setup Butler credentials
         run: |

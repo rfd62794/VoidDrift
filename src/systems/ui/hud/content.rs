@@ -292,18 +292,22 @@ pub fn render_tab_content(
             if unlocked_logs.is_empty() {
                 ui.label(egui::RichText::new("No signals received.").color(egui::Color32::GRAY));
             } else {
-                for log in unlocked_logs {
-                    ui.add_space(12.0);
-                    ui.label(egui::RichText::new(&log.title)
-                        .color(egui::Color32::from_rgb(180, 140, 50))
-                        .size(14.0));
-                    ui.add_space(4.0);
-                    ui.label(egui::RichText::new(&log.body)
-                        .color(egui::Color32::from_rgb(220, 215, 210))
-                        .size(12.0));
-                    ui.add_space(8.0);
-                    ui.separator();
-                }
+                egui::ScrollArea::vertical()
+                    .max_height(400.0)
+                    .show(ui, |ui| {
+                        for log in unlocked_logs {
+                            ui.add_space(12.0);
+                            ui.label(egui::RichText::new(&log.title)
+                                .color(egui::Color32::from_rgb(180, 140, 50))
+                                .size(14.0));
+                            ui.add_space(4.0);
+                            ui.label(egui::RichText::new(&log.body)
+                                .color(egui::Color32::from_rgb(220, 215, 210))
+                                .size(12.0));
+                            ui.add_space(8.0);
+                            ui.separator();
+                        }
+                    });
             }
         }
     }
