@@ -40,4 +40,5 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_CREDENTIALS }}
         run: |
-          butler push pkg rdug627/voidrift:html5 --userversion ${GITHUB_REF#refs/tags/}
+          cd pkg
+          butler push . rdug627/voidrift:html5 --userversion ${GITHUB_REF#refs/tags/}
