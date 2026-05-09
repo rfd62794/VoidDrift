@@ -534,7 +534,7 @@ pub fn render_tab_content(
                             lid_height_ratio: canister_cfg.lid_height_ratio,
                             color_body: egui::Color32::from_rgba_unmultiplied(180, 180, 140, alpha),
                             color_lid: egui::Color32::from_rgba_unmultiplied(150, 150, 110, alpha),
-                            color_highlight: egui::Color32::from_rgba_unmultiplied(255, 255, 255, alpha * 100 / 255),
+                            color_highlight: egui::Color32::from_rgba_unmultiplied(255, 255, 255, alpha),
                             color_handle: egui::Color32::from_rgba_unmultiplied(100, 100, 80, alpha),
                         };
                         component_nodes::draw_canister(&symbol_painter, symbol_rect.center(), &canister_config);
