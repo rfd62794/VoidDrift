@@ -187,11 +187,15 @@ fn evaluate_trigger(
         }),
         "ore_reserves_positive" => {
             if let Ok((st, _)) = station_query.get_single() {
-                st.iron_reserves > 0.0
+                let result = st.iron_reserves > 0.0
                     || st.tungsten_reserves > 0.0
                     || st.nickel_reserves > 0.0
-                    || st.aluminum_reserves > 0.0
+                    || st.aluminum_reserves > 0.0;
+                info!("ore_reserves_positive trigger: iron={}, tungsten={}, nickel={}, aluminum={}, result={}",
+                    st.iron_reserves, st.tungsten_reserves, st.nickel_reserves, st.aluminum_reserves, result);
+                result
             } else {
+                info!("ore_reserves_positive trigger: station query failed");
                 false
             }
         }
