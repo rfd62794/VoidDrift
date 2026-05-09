@@ -322,7 +322,9 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 );
 
                 // Drawer highlight during T-103 (ore_reserves_positive trigger)
-                if params.tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false) {
+                let should_highlight = params.tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
+                info!("Drawer highlight check: active={:?}, should_highlight={}", params.tutorial.active, should_highlight);
+                if should_highlight {
                     let t = ui.ctx().input(|i| i.time as f32);
                     let alpha = ((t * 2.0).sin() * 0.3 + 0.7) * 255.0;
                     ui.painter().rect_stroke(
