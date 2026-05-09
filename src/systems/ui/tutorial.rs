@@ -70,12 +70,10 @@ pub fn tutorial_system(
         }
 
         // Set drawer highlight flag for HUD rendering (show during T-103 popup)
-        tutorial.show_drawer_highlight = tutorial.shown.contains(&102)
-            && !tutorial.shown.contains(&104);
+        tutorial.show_drawer_highlight = tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
 
-        // Part C: Set pipeline highlight flag for HUD rendering (simplified - no save data check needed)
-        tutorial.show_pipeline_highlight = tutorial.shown.contains(&105)
-            && !tutorial.shown.contains(&107);
+        // Part C: Set pipeline highlight flag for HUD rendering (show during T-107 popup)
+        tutorial.show_pipeline_highlight = tutorial.active.as_ref().map(|p| p.id == 107).unwrap_or(false);
     }
 
     // Skip popup triggers while opening is incomplete or a popup is already visible
