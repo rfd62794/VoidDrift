@@ -119,15 +119,7 @@ fn get_platform() -> String {
 }
 
 fn get_telemetry_url() -> &'static str {
-    #[cfg(debug_assertions)]
-    {
-        "http://localhost:8000/v1/event"
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        "https://rfditservices.com/api/telemetry/v1/event"
-    }
+    "https://rfditservices.com/api/telemetry/v1/event"
 }
 
 fn send_session_start(session_id: Res<SessionId>, consent: Res<TelemetryConsent>, mut session_counter: ResMut<TelemetrySessionCounter>) {
