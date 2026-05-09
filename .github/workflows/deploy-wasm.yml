@@ -29,6 +29,9 @@ jobs:
           wasm-pack build --target web --out-dir ../pkg
           cd ..
 
+      - name: Copy index.html to pkg
+        run: cp index.html pkg/
+
       - name: Install Butler
         run: |
           curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
