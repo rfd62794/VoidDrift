@@ -20,15 +20,10 @@
 <body>
     <canvas id="bevy-canvas"></canvas>
     <script type="module">
-        import init from './voidrift.js';
+        import init from './pkg/voidrift.js';
         init().then(() => {
             console.log('VoidDrift WASM loaded successfully');
         }).catch(err => {
-            // Filter out wasm-bindgen control flow exceptions
-            if (err && err.message && err.message.includes('Using exceptions for control flow')) {
-                console.log('VoidDrift WASM loaded successfully (control flow exception ignored)');
-                return;
-            }
             console.error('Failed to load VoidDrift WASM:', err);
         });
     </script>
