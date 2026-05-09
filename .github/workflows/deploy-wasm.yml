@@ -31,10 +31,10 @@ jobs:
 
       - name: Install Butler
         run: |
-          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/latest/archive/default
+          curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
           unzip butler.zip
           chmod +x butler
-          sudo mv butler /usr/local/bin/
+          ./butler -V
 
       - name: Setup Butler credentials
         run: |
