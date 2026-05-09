@@ -4,3 +4,4 @@ pub mod quest;
 pub mod bottle;
 pub mod narrative_events;
 pub mod content_router;
+pub mod logs;

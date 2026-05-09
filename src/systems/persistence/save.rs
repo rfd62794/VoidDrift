@@ -6,9 +6,9 @@ use crate::components::*;
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
 
-pub const SAVE_VERSION: u32 = 6;
+pub const SAVE_VERSION: u32 = 7;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, bevy::prelude::Resource)]
 pub struct SaveData {
     // Meta
     pub save_version: u32,
@@ -71,6 +71,10 @@ pub struct SaveData {
     // Requests state
     #[serde(default)]
     pub collected_requests: Vec<CollectedRequest>,
+
+    // Logs state
+    #[serde(default)]
+    pub unlocked_logs: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -197,6 +201,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
             data.telemetry_sessions = 0;
         }
 
+        // Migration: add unlocked_logs for old saves
+        if data.save_version < 7 {
+            data.unlocked_logs = Vec::new();
+        }
+
         if data.save_version != SAVE_VERSION {
             return Ok(data);
         }
@@ -220,6 +229,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         // Migration: add telemetry_sessions for old saves
         if data.save_version < 6 {
             data.telemetry_sessions = 0;
+        }
+
+        // Migration: add unlocked_logs for old saves
+        if data.save_version < 7 {
+            data.unlocked_logs = Vec::new();
         }
 
         if data.save_version != SAVE_VERSION {
@@ -350,6 +364,7 @@ pub fn collect_save_data(
         collected_requests: requests_tab.collected_requests.clone(),
         telemetry_consent: None, // Collected from GameState resource in a future task
         telemetry_sessions: 0, // Collected from GameState resource in a future task
+        unlocked_logs: vec![], // Collected from GameState resource in a future task
     }
 }
 

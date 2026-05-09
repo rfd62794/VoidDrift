@@ -51,7 +51,7 @@ mod constants;
 pub use constants::*;
 
 pub mod config;
-use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig};
+use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig, LogsConfig};
 
 mod components;
 pub use crate::components::*;
@@ -112,6 +112,7 @@ fn main() {
         .insert_resource(TutorialConfig::load())
         .insert_resource(QuestConfig::load())
         .insert_resource(RequestConfig::load())
+        .insert_resource(LogsConfig::load())
         .insert_resource(ContentState::default())
         .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
@@ -213,6 +214,7 @@ fn main() {
         .add_systems(Update, (
             systems::narrative::content_router::content_event_system,
             systems::narrative::content_router::content_ambient_system,
+            systems::narrative::logs::check_log_unlocks,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,
@@ -278,6 +280,7 @@ pub fn start() {
         .insert_resource(TutorialConfig::load())
         .insert_resource(QuestConfig::load())
         .insert_resource(RequestConfig::load())
+        .insert_resource(LogsConfig::load())
         .insert_resource(ContentState::default())
         .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
@@ -380,6 +383,7 @@ pub fn start() {
         .add_systems(Update, (
             systems::narrative::content_router::content_event_system,
             systems::narrative::content_router::content_ambient_system,
+            systems::narrative::logs::check_log_unlocks,
         ).run_if(in_state(AppState::InGame)))
         .add_systems(PostUpdate, (
             systems::visuals::viewport::ui_layout_system,

@@ -184,3 +184,37 @@ impl RequestConfig {
         )
     }
 }
+
+#[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]
+pub struct LogsConfig {
+    pub logs: Vec<LogEntry>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct LogEntry {
+    pub id: String,
+    pub unlock_trigger: String,
+    pub title: String,
+    pub body: String,
+}
+
+impl LogsConfig {
+    pub fn load() -> Self {
+        let src = Self::read_yaml();
+        serde_yaml::from_str(src).expect("Failed to parse assets/content/logs.yaml")
+    }
+
+    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
+    fn read_yaml() -> &'static str {
+        include_str!("../../assets/content/logs.yaml")
+    }
+
+    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
+    fn read_yaml() -> &'static str {
+        Box::leak(
+            std::fs::read_to_string("assets/content/logs.yaml")
+                .expect("Failed to read assets/content/logs.yaml")
+                .into_boxed_str(),
+        )
+    }
+}

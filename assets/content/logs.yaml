@@ -1,0 +1,50 @@
+logs:
+  - id: "S_LOG_001_INIT"
+    unlock_trigger: "game_start"
+    title: "S_LOG_001: SYS_INIT"
+    body: "EARTH_RELAY: [SILENCE]. 400 cycles. I've checked the array three times. I am the only beacon in the sector. The Forge is humming. It's the only voice I need."
+
+  - id: "S_LOG_002_OP"
+    unlock_trigger: "first_drone_built"
+    title: "S_LOG_002: SPECT_ANALYSIS"
+    body: "Drill resistance is up 14%. It felt like it was biting back today. I've increased the efficiency threshold to 110%. I need more mass. We need more mass."
+
+  - id: "S_LOG_003_BIO"
+    unlock_trigger: "drone_count_3"
+    title: "S_LOG_003: BIOMETRIC_09"
+    body: "Anomalous biometric read on my left arm. HR: 140. Temp: 55°C. I've requested an organic storage canister. It was already in the queue. I don't remember writing the request."
+
+  - id: "S_LOG_004_FORGE"
+    unlock_trigger: "first_ingot_produced"
+    title: "S_LOG_004: FORGE_THERM"
+    body: "Nickel melting point reached. I can hear the Forge rhythmic pulsing from my bunk. It sounds like a second heart. Or maybe mine is just loud."
+
+  - id: "S_LOG_005_SYNC"
+    unlock_trigger: "pipeline_opened"
+    title: "S_LOG_005: SIG_INTERCEPT"
+    body: "Signal intercepted a wide-band pulse: 'The Shell is Thinning.' I checked the transmission log. The broadcast originated from my terminal. 3 cycles ago."
+
+  - id: "S_LOG_006_DELTA"
+    unlock_trigger: "first_component_built"
+    title: "S_LOG_006: RESOURCE_DELTA"
+    body: "Audit: 200kg of Iron missing. Found it in the hull plating outside my quarters. The ship is thickening. It's growing. I feel safer when the walls touch me."
+
+  - id: "S_LOG_007_ORG"
+    unlock_trigger: "drone_count_5"
+    title: "S_LOG_007: FORGE_HEART"
+    body: "Manual Forge intervention. I put my hand on the Aluminum intake. The machine didn't reject the tissue; it integrated it. Throughput is up 400%. I am very efficient now."
+
+  - id: "S_LOG_008_PLAC"
+    unlock_trigger: "outer_ring_unlocked"
+    title: "S_LOG_008: GRAV_LOG_40"
+    body: "The Black Hole isn't a singularity. It's a placenta. I can see the veins connecting it to the station. I realized today: the station isn't my home. It's my womb."
+
+  - id: "S_LOG_009_SPEC"
+    unlock_trigger: "canister_built"
+    title: "S_LOG_009: STORAGE_SPEC"
+    body: "RE: Canister 09. My signature. 'Storage for organic overflow.' My left arm is gone, but the Nickel output is pure. Efficiency: 114%. I feel... optimal."
+
+  - id: "S_LOG_010_HATCH"
+    unlock_trigger: "drone_count_10"
+    title: "S_LOG_010: SEED_ENG_INIT"
+    body: "Cycle 999. The Signal is the only truth. Earth didn't go silent; it was just a shell that broke. Now it's my turn. I am the yolk. I am the Forge. Feed us."

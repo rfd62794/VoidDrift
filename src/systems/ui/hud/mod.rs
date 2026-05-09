@@ -133,6 +133,8 @@ pub struct HudParams<'w, 's> {
     pub balance_cfg: Res<'w, BalanceConfig>,
     pub visual_cfg: Res<'w, VisualConfig>,
     pub request_cfg: Res<'w, crate::config::RequestConfig>,
+    pub logs_cfg: Res<'w, crate::config::LogsConfig>,
+    pub save_data: ResMut<'w, crate::systems::persistence::save::SaveData>,
     pub view_state: ResMut<'w, ViewState>,
     pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
     pub telemetry_consent: ResMut<'w, TelemetryConsent>,
@@ -229,6 +231,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &mut params.fulfill_events,
                         &params.balance_cfg,
                         &params.request_cfg,
+                        &params.logs_cfg,
+                        &params.save_data,
                     );
                 } else {
                     ui.vertical_centered(|ui| {

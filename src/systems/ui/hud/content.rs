@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
-use crate::config::{BalanceConfig, RequestConfig};
+use crate::config::{BalanceConfig, RequestConfig, LogsConfig};
+use crate::systems::persistence::save::SaveData;
 
 // Part D: Symbol bar drawing function
 fn draw_symbol_bar(ui: &mut egui::Ui, _name: &str, has_any: bool, count: f32, size: f32) {
@@ -88,6 +89,8 @@ pub fn render_tab_content(
     fulfill_events: &mut EventWriter<FulfillRequestEvent>,
     cfg: &BalanceConfig,
     request_cfg: &RequestConfig,
+    logs_cfg: &LogsConfig,
+    save_data: &SaveData,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
@@ -281,7 +284,27 @@ pub fn render_tab_content(
         ActiveStationTab::Logs => {
             ui.heading("SIGNAL LOGS");
             ui.add_space(8.0);
-            ui.label(egui::RichText::new("No signals received.").color(egui::Color32::GRAY));
+
+            let unlocked_logs: Vec<_> = logs_cfg.logs.iter()
+                .filter(|log| save_data.unlocked_logs.contains(&log.id))
+                .collect();
+
+            if unlocked_logs.is_empty() {
+                ui.label(egui::RichText::new("No signals received.").color(egui::Color32::GRAY));
+            } else {
+                for log in unlocked_logs {
+                    ui.add_space(12.0);
+                    ui.label(egui::RichText::new(&log.title)
+                        .color(egui::Color32::from_rgb(180, 140, 50))
+                        .size(14.0));
+                    ui.add_space(4.0);
+                    ui.label(egui::RichText::new(&log.body)
+                        .color(egui::Color32::from_rgb(220, 215, 210))
+                        .size(12.0));
+                    ui.add_space(8.0);
+                    ui.separator();
+                }
+            }
         }
     }
 }
