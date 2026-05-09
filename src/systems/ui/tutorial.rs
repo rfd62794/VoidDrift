@@ -152,15 +152,18 @@ pub fn tutorial_system(
 
         // Check prerequisites
         if !step.requires.iter().all(|req_id| tutorial.shown.contains(req_id)) {
+            info!("Step {} skipped: prerequisites not met. requires={:?}, shown={:?}", step.id, step.requires, tutorial.shown);
             continue;
         }
 
         // Evaluate trigger condition
         if !evaluate_trigger(&step.trigger, &auto_ship_query, &station_query, &drawer_state, &active_tab, &bottle_query, &tutorial) {
+            info!("Step {} skipped: trigger '{}' not met", step.id, step.trigger);
             continue;
         }
 
         // Fire popup
+        info!("Firing popup for step {}", step.id);
         tutorial.active = Some(TutorialPopup {
             id: step.id,
             title: step.popup.title.clone(),
