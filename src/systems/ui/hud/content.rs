@@ -149,7 +149,7 @@ fn draw_symbol_bar(
         }
 
         // Draw count label below symbol (not for locked state)
-        let count_y = rect.center().y + 14.0;
+        let count_y = rect.center().y + 8.0;
         let count_text = match state {
             SymbolState::Locked => String::new(),
             SymbolState::ActiveEmpty => "0".to_string(),
@@ -157,8 +157,8 @@ fn draw_symbol_bar(
         };
         let count_color = match state {
             SymbolState::Locked => egui::Color32::TRANSPARENT,
-            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(255, 255, 255, 102),
-            SymbolState::ActivePopulated => egui::Color32::WHITE,
+            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(0, 204, 102, 102),
+            SymbolState::ActivePopulated => egui::Color32::from_rgb(0, 204, 102),
         };
         if !count_text.is_empty() {
             painter.text(
