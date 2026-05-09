@@ -624,7 +624,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                                 grain_angle_deg,
                                 seed: ore_seed,
                             };
-                            ore_polygon::draw_ore_polygon(painter, node_rect.center(), &ore_config);
+                            ore_polygon::draw_ore_polygon(painter, node_rect.center(), &ore_config, 1.0);
                         }
                     }
                     

@@ -16,7 +16,7 @@ pub struct OrePolygonConfig {
     pub seed: u64,
 }
 
-pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &OrePolygonConfig) {
+pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &OrePolygonConfig, scale: f32) {
     let mut rng = StdRng::seed_from_u64(config.seed);
 
     let mut vertices = Vec::new();
@@ -53,7 +53,7 @@ pub fn draw_ore_polygon(painter: &egui::Painter, center: egui::Pos2, config: &Or
         let end_y = angle.sin() * end_radius;
         let end_pos = egui::Pos2::new(center.x + end_x, center.y + end_y);
 
-        let vein_width = rng.gen_range(config.band_width_min..=config.band_width_max) * config.radius;
+        let vein_width = rng.gen_range(config.band_width_min..=config.band_width_max) * config.radius * scale;
 
         painter.line_segment(
             [start_pos, end_pos],
