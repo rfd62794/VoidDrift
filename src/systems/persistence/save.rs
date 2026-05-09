@@ -312,8 +312,8 @@ pub fn collect_save_data(
     requests_tab: &RequestsTabState,
     signal_log: &SignalLog,
     time: &Res<Time>,
-    telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
-    telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
+    telemetry_consent: &Res<crate::systems::telemetry::TelemetryConsent>,
+    telemetry_session_counter: &Res<crate::systems::telemetry::TelemetrySessionCounter>,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -404,8 +404,8 @@ pub fn autosave_system(
                 &requests_tab,
                 &signal_log,
                 &time,
-                telemetry_consent,
-                telemetry_session_counter,
+                &telemetry_consent,
+                &telemetry_session_counter,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -442,8 +442,8 @@ pub fn save_request_system(
                 &requests_tab,
                 &signal_log,
                 &time,
-                telemetry_consent,
-                telemetry_session_counter,
+                &telemetry_consent,
+                &telemetry_session_counter,
             );
             
             if let Err(e) = save_game(&data) {
