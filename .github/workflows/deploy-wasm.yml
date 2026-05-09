@@ -3,7 +3,7 @@ name: Deploy WASM to itch.io
 on:
   push:
     tags:
-      - 'v*'
+      - 'publish-*'
   workflow_dispatch:
 
 jobs:
