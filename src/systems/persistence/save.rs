@@ -351,7 +351,6 @@ pub fn collect_save_data(
         collected_requests: requests_tab.collected_requests.clone(),
         telemetry_consent: None, // Collected from GameState resource in a future task
         telemetry_sessions: 0, // Collected from GameState resource in a future task
-        pipeline_nudge_shown: false, // Part C: Initialize pipeline nudge flag
     }
 }
 
