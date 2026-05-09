@@ -43,9 +43,6 @@ pub fn tutorial_system(
             && !tutorial.shown.contains(&102);
         let show_for_bottle = tutorial.shown.contains(&105)
             && !tutorial.shown.contains(&106);
-        // Part B: Drawer button highlight for T-103 and T-104
-        let show_for_drawer = (tutorial.shown.contains(&102) && !tutorial.shown.contains(&103))
-            || (tutorial.shown.contains(&103) && !tutorial.shown.contains(&104));
 
         if show_for_asteroid {
             if let Some((_, ast_t)) = ast_query.iter().min_by(|(_, a), (_, b)| {
@@ -72,8 +69,9 @@ pub fn tutorial_system(
             *h_vis = Visibility::Hidden;
         }
 
-        // Set drawer highlight flag for HUD rendering
-        tutorial.show_drawer_highlight = show_for_drawer;
+        // Set drawer highlight flag for HUD rendering (show during T-103 popup)
+        tutorial.show_drawer_highlight = tutorial.shown.contains(&102)
+            && !tutorial.shown.contains(&104);
 
         // Part C: Set pipeline highlight flag for HUD rendering (simplified - no save data check needed)
         tutorial.show_pipeline_highlight = tutorial.shown.contains(&105)

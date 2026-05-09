@@ -327,10 +327,10 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     let amber = egui::Color32::from_rgb(180, 140, 50);
                     let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
                     let stroke = egui::Stroke {
-                        width: 1.5,
+                        width: 3.0,
                         color: egui::Color32::from_rgba_unmultiplied(amber.r(), amber.g(), amber.b(), (pulse * 255.0) as u8),
                     };
-                    ui.painter().rect_stroke(rect.expand(2.0), 0.0, stroke, egui::StrokeKind::Outside);
+                    ui.painter().rect_stroke(rect.expand(4.0), 0.0, stroke, egui::StrokeKind::Outside);
                 }
             });
     }
