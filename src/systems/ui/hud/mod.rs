@@ -233,6 +233,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &params.request_cfg,
                         &params.logs_cfg,
                         &params.save_data,
+                        &params.visual_cfg,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
