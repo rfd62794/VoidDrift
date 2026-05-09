@@ -174,6 +174,7 @@ pub fn tutorial_system(
         // Set highlight flags immediately after activating popup
         tutorial.show_drawer_highlight = step.id == 103;
         tutorial.show_pipeline_highlight = step.id == 107;
+        info!("Popup {} activated, drawer_highlight={}, pipeline_highlight={}", step.id, tutorial.show_drawer_highlight, tutorial.show_pipeline_highlight);
         return;
     }
 }
