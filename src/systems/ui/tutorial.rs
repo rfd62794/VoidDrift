@@ -152,18 +152,15 @@ pub fn tutorial_system(
 
         // Check prerequisites
         if !step.requires.iter().all(|req_id| tutorial.shown.contains(req_id)) {
-            info!("Step {} skipped: prerequisites not met. requires={:?}, shown={:?}", step.id, step.requires, tutorial.shown);
             continue;
         }
 
         // Evaluate trigger condition
         if !evaluate_trigger(&step.trigger, &auto_ship_query, &station_query, &drawer_state, &active_tab, &bottle_query, &tutorial) {
-            info!("Step {} skipped: trigger '{}' not met", step.id, step.trigger);
             continue;
         }
 
         // Fire popup
-        info!("Firing popup for step {}", step.id);
         tutorial.active = Some(TutorialPopup {
             id: step.id,
             title: step.popup.title.clone(),
@@ -190,15 +187,11 @@ fn evaluate_trigger(
         }),
         "ore_reserves_positive" => {
             if let Ok((st, _)) = station_query.get_single() {
-                let result = st.iron_reserves > 0.0
+                st.iron_reserves > 0.0
                     || st.tungsten_reserves > 0.0
                     || st.nickel_reserves > 0.0
-                    || st.aluminum_reserves > 0.0;
-                info!("ore_reserves_positive trigger: iron={}, tungsten={}, nickel={}, aluminum={}, result={}",
-                    st.iron_reserves, st.tungsten_reserves, st.nickel_reserves, st.aluminum_reserves, result);
-                result
+                    || st.aluminum_reserves > 0.0
             } else {
-                info!("ore_reserves_positive trigger: station query failed");
                 false
             }
         }

@@ -322,9 +322,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 );
 
                 // Drawer highlight after T-103 dismissed, until T-104 shown
-                let should_highlight = params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104);
-                info!("Drawer highlight check: shown={:?}, should_highlight={}", params.tutorial.shown, should_highlight);
-                if should_highlight {
+                if params.tutorial.shown.contains(&103) && !params.tutorial.shown.contains(&104) {
                     let t = ui.ctx().input(|i| i.time as f32);
                     let alpha = ((t * 2.0).sin() * 0.3 + 0.7) * 255.0;
                     ui.painter().rect_stroke(
