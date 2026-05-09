@@ -323,6 +323,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 );
 
                 // Part B: Drawer button highlight (pulsing amber border)
+                info!("drawer highlight flag: {}", params.tutorial.show_drawer_highlight);
                 if params.tutorial.show_drawer_highlight {
                     let amber = egui::Color32::from_rgb(180, 140, 50);
                     let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
