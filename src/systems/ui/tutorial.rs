@@ -178,7 +178,7 @@ fn evaluate_trigger(
     drawer_state: &Res<DrawerState>,
     active_tab: &Res<ActiveStationTab>,
     bottle_query: &Query<&Transform, (With<ActiveBottle>, Without<TutorialHighlight>)>,
-    tutorial_state: &TutorialState,
+    _tutorial_state: &TutorialState,
 ) -> bool {
     match trigger {
         "game_start" => true, // Always fires when opening Complete (guard at line 60)

@@ -329,6 +329,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         rect,
                         0.0,
                         egui::Stroke::new(2.5, egui::Color32::from_rgba_unmultiplied(180, 140, 50, alpha as u8)),
+                        egui::StrokeKind::Outside,
                     );
                 }
             });

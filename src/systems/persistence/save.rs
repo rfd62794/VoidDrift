@@ -333,13 +333,12 @@ pub fn collect_save_data(
         drone_count: drone_query.iter().count() as u8,
         drones: drone_query.iter().map(|(ship, transform, heading, target)| {
             DroneSaveData {
-                assignment_sector: "Unknown".to_string(), // Could be derived from pos if needed
+                assignment_sector: "Unknown".to_string(),
                 assignment_pos_x: target.map(|t| t.destination.x).unwrap_or(0.0),
                 assignment_pos_y: target.map(|t| t.destination.y).unwrap_or(0.0),
-                ore_type: format!("{:?}", ship.cargo_type),
-                state: format!("{:?}", ship.state),
-                cargo: ship.cargo,
-                is_echo_primary: false,
+                hull_forge: None,
+                core_fabricator: None,
+                drone_bay: None,
                 pos_x: transform.translation.x,
                 pos_y: transform.translation.y,
                 heading: heading.0,
