@@ -35,6 +35,11 @@ pub struct TelemetryOptInPrompt {
 }
 
 #[derive(Resource, Default)]
+pub struct TelemetrySessionCounter {
+    pub sessions: u32,
+}
+
+#[derive(Resource, Default)]
 pub struct LoopStallTimer {
     pub elapsed_seconds: f32,
     pub has_fired: bool,
@@ -82,6 +87,7 @@ impl Plugin for TelemetryPlugin {
         app.init_resource::<SessionId>()
             .init_resource::<TelemetryConsent>()
             .init_resource::<TelemetryOptInPrompt>()
+            .init_resource::<TelemetrySessionCounter>()
             .init_resource::<LoopStallTimer>()
             .init_resource::<LoopStallConfig>()
             .init_resource::<LogTabState>()
@@ -124,7 +130,10 @@ fn get_telemetry_url() -> &'static str {
     }
 }
 
-fn send_session_start(session_id: Res<SessionId>, consent: Res<TelemetryConsent>) {
+fn send_session_start(session_id: Res<SessionId>, consent: Res<TelemetryConsent>, mut session_counter: ResMut<TelemetrySessionCounter>) {
+    // Increment session counter on every session start
+    session_counter.sessions += 1;
+
     // Consent gate: only send if player has opted in
     if consent.opted_in != Some(true) {
         return;
@@ -407,13 +416,14 @@ fn reset_log_heartbeat_timer(
 fn check_telemetry_opt_in_trigger(
     mut opt_in_prompt: ResMut<TelemetryOptInPrompt>,
     consent: Res<TelemetryConsent>,
-    tutorial: Res<crate::components::resources::TutorialState>,
-    opening: Res<crate::components::resources::OpeningSequence>,
+    session_counter: Res<TelemetrySessionCounter>,
 ) {
-    // Show prompt if consent is None (not yet asked) AND tutorial is complete
-    if consent.opted_in.is_none() 
-        && opening.phase == crate::components::resources::OpeningPhase::Complete 
-        && !tutorial.shown.is_empty() {
+    // Show prompt if:
+    // 1. Consent is None (not yet asked) - first time prompt
+    // 2. Consent is false and sessions >= 5 - re-prompt after 5 sessions
+    if consent.opted_in.is_none() {
+        opt_in_prompt.active = true;
+    } else if consent.opted_in == Some(false) && session_counter.sessions >= 5 {
         opt_in_prompt.active = true;
     }
 }

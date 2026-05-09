@@ -6,7 +6,7 @@ use crate::components::*;
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
 
-pub const SAVE_VERSION: u32 = 5;
+pub const SAVE_VERSION: u32 = 6;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SaveData {
@@ -63,6 +63,10 @@ pub struct SaveData {
     // Telemetry consent (None = not yet asked, true = allowed, false = declined)
     #[serde(default)]
     pub telemetry_consent: Option<bool>,
+    
+    // Telemetry session counter (for re-prompt logic)
+    #[serde(default)]
+    pub telemetry_sessions: u32,
     
     // Requests state
     #[serde(default)]
@@ -189,6 +193,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
             data.telemetry_consent = None; // Explicitly set to None for new field
         }
 
+        // Migration: add telemetry_sessions for old saves
+        if data.save_version < 6 {
+            data.telemetry_sessions = 0;
+        }
+
         if data.save_version != SAVE_VERSION {
             return Ok(data);
         }
@@ -207,6 +216,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         // Migration: add telemetry_consent for old saves
         if data.save_version < 5 && data.telemetry_consent.is_none() {
             data.telemetry_consent = None; // Explicitly set to None for new field
+        }
+
+        // Migration: add telemetry_sessions for old saves
+        if data.save_version < 6 {
+            data.telemetry_sessions = 0;
         }
 
         if data.save_version != SAVE_VERSION {
@@ -337,6 +351,7 @@ pub fn collect_save_data(
         drawer_state: "default".to_string(),
         collected_requests: requests_tab.collected_requests.clone(),
         telemetry_consent: None, // Collected from GameState resource in a future task
+        telemetry_sessions: 0, // Collected from GameState resource in a future task
     }
 }
 

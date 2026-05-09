@@ -12,7 +12,7 @@ use crate::config::visual::{rgb, rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
 use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
-use crate::systems::telemetry::{TelemetryOptInPrompt, TelemetryConsent};
+use crate::systems::telemetry::{TelemetryOptInPrompt, TelemetryConsent, TelemetrySessionCounter};
 use crate::systems::persistence::save::SaveRequestEvent;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
@@ -136,6 +136,7 @@ pub struct HudParams<'w, 's> {
     pub view_state: ResMut<'w, ViewState>,
     pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
     pub telemetry_consent: ResMut<'w, TelemetryConsent>,
+    pub telemetry_session_counter: ResMut<'w, TelemetrySessionCounter>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -915,6 +916,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 if allow_response.clicked() {
                     params.telemetry_opt_in.active = false;
                     params.telemetry_consent.opted_in = Some(true);
+                    params.telemetry_session_counter.sessions = 0; // Reset counter on choice
                     // Trigger autosave
                     params.save_events.send(SaveRequestEvent {
                         name: "autosave".to_string(),
@@ -946,6 +948,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 if decline_response.clicked() {
                     params.telemetry_opt_in.active = false;
                     params.telemetry_consent.opted_in = Some(false);
+                    params.telemetry_session_counter.sessions = 0; // Reset counter on choice
                     // Trigger autosave
                     params.save_events.send(SaveRequestEvent {
                         name: "autosave".to_string(),
