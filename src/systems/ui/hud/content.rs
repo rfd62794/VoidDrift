@@ -316,7 +316,7 @@ pub fn render_tab_content(
             // Fixed pixel position layout - 5 columns, 4 rows
             const SYMBOL_SIZE: f32 = 28.0;
             const DRONE_SIZE: f32 = 32.0;
-            const CONTENT_TOP: f32 = 4.0;
+            const CONTENT_TOP: f32 = 1.0;
             const ROW_HEIGHT: f32 = 80.0;
             
             // Fixed x positions
