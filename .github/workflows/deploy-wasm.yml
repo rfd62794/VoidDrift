@@ -1,0 +1,45 @@
+name: Deploy WASM to itch.io
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        run: |
+          cd src
+          wasm-pack build --target web --out-dir ../pkg
+          cd ..
+
+      - name: Install Butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/latest/archive/default
+          unzip butler.zip
+          chmod +x butler
+          sudo mv butler /usr/local/bin/
+
+      - name: Setup Butler credentials
+        run: |
+          mkdir -p ~/.config/itch
+          echo "${{ secrets.BUTLER_CREDENTIALS }}" > ~/.config/itch/butler_credentials.json
+
+      - name: Push to itch.io
+        run: |
+          butler push pkg rdug627/voidrift:html5 --userversion ${GITHUB_REF#refs/tags/}

@@ -196,3 +196,31 @@ fin_height_ratio    = 0.15
 porthole_radius     = 4.5
 porthole_offset_y   = -0.1
 exhaust_radius      = 5.4
+
+[ship.drone]
+width               = 14.0
+height              = 28.0
+color_body          = [60, 180, 100]
+color_nose          = [80, 210, 120]
+color_fins          = [40, 140, 75]
+color_exhaust       = [30, 100, 55]
+nose_height_ratio   = 0.28
+fin_width_ratio     = 0.25
+fin_height_ratio    = 0.20
+exhaust_radius      = 2.5
+porthole_radius     = 2.0
+porthole_offset_y   = -0.15
+
+[ship.opening]
+width               = 18.0
+height              = 36.0
+color_body          = [210, 95, 30]
+color_nose          = [230, 115, 45]
+color_fins          = [160, 70, 20]
+color_exhaust       = [120, 50, 15]
+nose_height_ratio   = 0.28
+fin_width_ratio     = 0.25
+fin_height_ratio    = 0.20
+exhaust_radius      = 3.0
+porthole_radius     = 2.5
+porthole_offset_y   = -0.15

@@ -12,6 +12,8 @@ use crate::config::visual::{rgb, rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
 use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
+use crate::systems::telemetry::{TelemetryOptInPrompt, TelemetryConsent, TelemetrySessionCounter};
+use crate::systems::persistence::save::SaveRequestEvent;
 
 // ── Non-egui systems (kept here for module cohesion) ──────────────────────────
 
@@ -127,10 +129,14 @@ pub struct HudParams<'w, 's> {
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
     pub fulfill_events: EventWriter<'w, FulfillRequestEvent>,
+    pub save_events: EventWriter<'w, SaveRequestEvent>,
     pub balance_cfg: Res<'w, BalanceConfig>,
     pub visual_cfg: Res<'w, VisualConfig>,
     pub request_cfg: Res<'w, crate::config::RequestConfig>,
     pub view_state: ResMut<'w, ViewState>,
+    pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
+    pub telemetry_consent: ResMut<'w, TelemetryConsent>,
+    pub telemetry_session_counter: ResMut<'w, TelemetrySessionCounter>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -841,6 +847,116 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         params.tutorial.active = None;
                     }
                 }
+                return;
+            }
+
+            // Telemetry opt-in prompt as painted overlay (ECHO system interrupt style)
+            if params.telemetry_opt_in.active && !params.view_state.show_production_tree {
+                let painter = ctx.layer_painter(egui::LayerId::new(
+                    egui::Order::Foreground,
+                    egui::Id::new("telemetry_opt_in_overlay")
+                ));
+                
+                // Center on viewport
+                let viewport_center = egui::pos2(
+                    params.world_view_rect.x + params.world_view_rect.w / 2.0,
+                    params.world_view_rect.y + params.world_view_rect.h / 2.0
+                );
+                
+                // Background rect — amber border, dark background
+                let w = 420.0;
+                let h = 180.0;
+                let bg_rect = egui::Rect::from_center_size(
+                    viewport_center,
+                    egui::vec2(w, h)
+                );
+                
+                // Draw background
+                painter.rect_filled(bg_rect, 6.0, egui::Color32::from_rgba_unmultiplied(5, 5, 10, 240));
+                painter.rect_stroke(bg_rect, 6.0, egui::Stroke::new(1.5, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
+                
+                // Text content — ECHO voice, lowercase, fixed-width, left-aligned
+                let text_lines = [
+                    "echo: anonymous usage data helps improve the signal.",
+                    "no personal data collected. no identifiers stored.",
+                    "no account required. choice can be changed in settings.",
+                ];
+                let mut y_offset = 30.0;
+                for line in &text_lines {
+                    painter.text(
+                        bg_rect.min + egui::vec2(20.0, y_offset),
+                        egui::Align2::LEFT_TOP,
+                        line,
+                        egui::FontId::monospace(13.0),
+                        egui::Color32::WHITE
+                    );
+                    y_offset += 18.0;
+                }
+                
+                // Allow signal button
+                let allow_btn_rect = egui::Rect::from_center_size(
+                    bg_rect.center_bottom() - egui::vec2(60.0, 25.0),
+                    egui::vec2(110.0, 32.0)
+                );
+                painter.rect_filled(allow_btn_rect, 4.0, egui::Color32::from_rgb(40, 80, 50));
+                painter.rect_stroke(allow_btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
+                painter.text(
+                    allow_btn_rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "allow signal",
+                    egui::FontId::monospace(13.0),
+                    egui::Color32::from_rgb(80, 210, 120)
+                );
+                
+                let allow_response = ui.interact(
+                    allow_btn_rect,
+                    egui::Id::new("telemetry_allow_btn"),
+                    egui::Sense::click()
+                );
+                if allow_response.clicked() {
+                    params.telemetry_opt_in.active = false;
+                    params.telemetry_consent.opted_in = Some(true);
+                    params.telemetry_session_counter.sessions = 0; // Reset counter on choice
+                    // Trigger autosave
+                    params.save_events.send(SaveRequestEvent {
+                        name: "autosave".to_string(),
+                        category: crate::systems::persistence::save::SaveCategory::Auto,
+                        description: "Telemetry consent saved".to_string(),
+                    });
+                }
+                
+                // Decline button
+                let decline_btn_rect = egui::Rect::from_center_size(
+                    bg_rect.center_bottom() - egui::vec2(-60.0, 25.0),
+                    egui::vec2(110.0, 32.0)
+                );
+                painter.rect_filled(decline_btn_rect, 4.0, egui::Color32::from_rgb(40, 30, 30));
+                painter.rect_stroke(decline_btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
+                painter.text(
+                    decline_btn_rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "decline",
+                    egui::FontId::monospace(13.0),
+                    egui::Color32::from_rgb(180, 100, 80)
+                );
+                
+                let decline_response = ui.interact(
+                    decline_btn_rect,
+                    egui::Id::new("telemetry_decline_btn"),
+                    egui::Sense::click()
+                );
+                if decline_response.clicked() {
+                    params.telemetry_opt_in.active = false;
+                    params.telemetry_consent.opted_in = Some(false);
+                    params.telemetry_session_counter.sessions = 0; // Reset counter on choice
+                    // Trigger autosave
+                    params.save_events.send(SaveRequestEvent {
+                        name: "autosave".to_string(),
+                        category: crate::systems::persistence::save::SaveCategory::Auto,
+                        description: "Telemetry consent saved".to_string(),
+                    });
+                }
+                
                 return;
             }
 

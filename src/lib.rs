@@ -58,6 +58,7 @@ pub use crate::components::*;
 
 pub mod systems;
 pub mod scenes;
+use systems::telemetry::TelemetryPlugin;
 use scenes::main_menu::MainMenuState;
 use systems::setup::cleanup_world_entities;
 
@@ -81,6 +82,7 @@ fn main() {
             ..default()
         }))
         .add_plugins(EguiPlugin)
+        .add_plugins(TelemetryPlugin)
         .init_state::<GameState>()
         .init_state::<AppState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
@@ -245,6 +247,7 @@ pub fn start() {
             })
         )
         .add_plugins(EguiPlugin)
+        .add_plugins(TelemetryPlugin)
         .init_state::<GameState>()
         .init_state::<AppState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))

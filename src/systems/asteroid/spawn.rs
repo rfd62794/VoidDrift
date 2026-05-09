@@ -5,6 +5,16 @@ use crate::components::*;
 use crate::constants::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
+use crate::systems::visuals::{build_mesh_from_polygon_with_colors, generate_ore_polygon_points};
+
+fn ore_config_key(ore_type: &OreDeposit) -> &'static str {
+    match ore_type {
+        OreDeposit::Iron => "metal",
+        OreDeposit::Tungsten => "h3_gas",
+        OreDeposit::Nickel => "void_essence",
+        OreDeposit::Aluminum => "metal",
+    }
+}
 
 pub fn spawn_initial_asteroids(
     mut commands: Commands,
@@ -92,8 +102,43 @@ pub fn spawn_asteroid(
     // Vary the ore amount slightly
     let ore_amount = cfg.asteroid.base_ore * rng.gen_range(0.8..1.2);
 
+    // Procedural mesh generation
+    let ore_key = ore_config_key(&ore_type);
+    let ore_config = match ore_key {
+        "metal" => &vcfg.ore.metal,
+        "h3_gas" => &vcfg.ore.h3_gas,
+        "void_essence" => &vcfg.ore.void_essence,
+        _ => &vcfg.ore.metal,
+    };
+
+    // Body polygon with vertex colors for banding
+    let body_points = generate_ore_polygon_points(
+        radius,
+        12, // vertex_count
+        0.25, // jaggedness
+        rng.gen(),
+    );
+
+    let body_color = Color::srgb_u8(ore_config.color_body[0], ore_config.color_body[1], ore_config.color_body[2]);
+    let vein_color = Color::srgb_u8(ore_config.color_vein[0], ore_config.color_vein[1], ore_config.color_vein[2]);
+
+    // Generate vertex colors - alternate between body and vein to create banding
+    let vertex_colors: Vec<Color> = body_points
+        .iter()
+        .enumerate()
+        .map(|(i, _)| {
+            if i % 2 == 0 {
+                body_color
+            } else {
+                vein_color
+            }
+        })
+        .collect();
+
+    let body_mesh = build_mesh_from_polygon_with_colors(&body_points, &vertex_colors);
+
     let asteroid_entity = commands.spawn((
-        MapMarker, // Add MapMarker so it can be targeted in MapView
+        MapMarker,
         ActiveAsteroid {
             ore_type,
             ore_remaining: ore_amount,
@@ -102,8 +147,9 @@ pub fn spawn_asteroid(
         Transform::from_xyz(position.x, position.y, Z_ENVIRONMENT),
         GlobalTransform::default(),
         Visibility::default(),
-        Mesh2d(meshes.add(crate::systems::setup::generate_ore_mesh(&ore_type, rng.gen(), cfg))),
-        MeshMaterial2d(materials.add(color)),
+        AsteroidBody,
+        Mesh2d(meshes.add(body_mesh)),
+        MeshMaterial2d(materials.add(ColorMaterial::from(Color::WHITE))), // White to let vertex colors show
     )).id();
 
     let sector_id = match ore_type {

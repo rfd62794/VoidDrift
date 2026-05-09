@@ -6,7 +6,7 @@ use crate::components::*;
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
 
-pub const SAVE_VERSION: u32 = 4;
+pub const SAVE_VERSION: u32 = 6;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SaveData {
@@ -59,6 +59,14 @@ pub struct SaveData {
     // UI state
     pub active_tab: String,
     pub drawer_state: String,
+    
+    // Telemetry consent (None = not yet asked, true = allowed, false = declined)
+    #[serde(default)]
+    pub telemetry_consent: Option<bool>,
+    
+    // Telemetry session counter (for re-prompt logic)
+    #[serde(default)]
+    pub telemetry_sessions: u32,
     
     // Requests state
     #[serde(default)]
@@ -177,8 +185,18 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         let json: String = LocalStorage::get(key)
             .map_err(|e| format!("LocalStorage read failed: {e}"))?;
 
-        let data: SaveData = serde_json::from_str(&json)
+        let mut data: SaveData = serde_json::from_str(&json)
             .map_err(|e| format!("Deserialization failed: {e}"))?;
+
+        // Migration: add telemetry_consent for old saves
+        if data.save_version < 5 && data.telemetry_consent.is_none() {
+            data.telemetry_consent = None; // Explicitly set to None for new field
+        }
+
+        // Migration: add telemetry_sessions for old saves
+        if data.save_version < 6 {
+            data.telemetry_sessions = 0;
+        }
 
         if data.save_version != SAVE_VERSION {
             return Ok(data);
@@ -192,8 +210,18 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         let json = std::fs::read_to_string(path)
             .map_err(|e| format!("Read failed: {e}"))?;
 
-        let data: SaveData = serde_json::from_str(&json)
+        let mut data: SaveData = serde_json::from_str(&json)
             .map_err(|e| format!("Deserialization failed: {e}"))?;
+
+        // Migration: add telemetry_consent for old saves
+        if data.save_version < 5 && data.telemetry_consent.is_none() {
+            data.telemetry_consent = None; // Explicitly set to None for new field
+        }
+
+        // Migration: add telemetry_sessions for old saves
+        if data.save_version < 6 {
+            data.telemetry_sessions = 0;
+        }
 
         if data.save_version != SAVE_VERSION {
             // Return data anyway but caller can show version warning
@@ -322,6 +350,8 @@ pub fn collect_save_data(
         active_tab: format!("{:?}", active_tab),
         drawer_state: "default".to_string(),
         collected_requests: requests_tab.collected_requests.clone(),
+        telemetry_consent: None, // Collected from GameState resource in a future task
+        telemetry_sessions: 0, // Collected from GameState resource in a future task
     }
 }
 
