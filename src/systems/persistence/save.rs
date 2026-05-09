@@ -8,7 +8,7 @@ use gloo_storage::{LocalStorage, Storage};
 
 pub const SAVE_VERSION: u32 = 7;
 
-#[derive(Serialize, Deserialize, Clone, Debug, bevy::prelude::Resource)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, bevy::prelude::Resource)]
 pub struct SaveData {
     // Meta
     pub save_version: u32,
@@ -77,8 +77,9 @@ pub struct SaveData {
     pub unlocked_logs: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub enum SaveCategory {
+    #[default]
     Play,   // player-facing saves
     Stage,  // developer test snapshots
     Auto,   // autosave
