@@ -36,11 +36,8 @@ jobs:
           find . -name "butler" -type f -exec chmod +x {} \;
           find . -name "butler" -type f -exec sudo mv {} /usr/local/bin/ \;
 
-      - name: Setup Butler credentials
-        run: |
-          mkdir -p ~/.config/itch
-          echo "${{ secrets.BUTLER_CREDENTIALS }}" > ~/.config/itch/butler_credentials.json
-
       - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_CREDENTIALS }}
         run: |
           butler push pkg rdug627/voidrift:html5 --userversion ${GITHUB_REF#refs/tags/}
