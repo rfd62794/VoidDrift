@@ -320,6 +320,17 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     egui::FontId::monospace(10.0),
                     egui::Color32::from_gray(60),
                 );
+
+                // Part B: Drawer button highlight (pulsing amber border)
+                if params.tutorial.show_drawer_highlight {
+                    let amber = egui::Color32::from_rgb(180, 140, 50);
+                    let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
+                    let stroke = egui::Stroke {
+                        width: 1.5,
+                        color: egui::Color32::from_rgba_unmultiplied(amber.r(), amber.g(), amber.b(), (pulse * 255.0) as u8),
+                    };
+                    ui.painter().rect_stroke(rect.expand(2.0), 0.0, stroke);
+                }
             });
     }
 
@@ -786,16 +797,16 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     );
                     
                     // Draw background
-                    painter.rect_filled(bg_rect, 6.0, egui::Color32::from_rgba_premultiplied(5, 5, 10, 240));
-                    painter.rect_stroke(bg_rect, 6.0, egui::Stroke::new(2.0, egui::Color32::CYAN), egui::StrokeKind::Outside);
+                    painter.rect_filled(bg_rect, 6.0, egui::Color32::from_rgba_unmultiplied(5, 5, 10, 240));
+                    painter.rect_stroke(bg_rect, 6.0, egui::Stroke::new(1.5, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
                     
-                    // Title — ECHO in cyan
+                    // Title — ECHO in amber
                     painter.text(
                         bg_rect.center_top() + egui::vec2(0.0, 16.0),
                         egui::Align2::CENTER_TOP,
                         &popup.title,
-                        egui::FontId::proportional(18.0),
-                        egui::Color32::CYAN,
+                        egui::FontId::proportional(13.0),
+                        egui::Color32::from_rgb(180, 140, 50),
                     );
                     
                     // Body text — break on punctuation and render multiple lines
@@ -814,8 +825,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                             egui::pos2(bg_rect.center().x, y),
                             egui::Align2::CENTER_TOP,
                             line,
-                            egui::FontId::proportional(13.0),
-                            egui::Color32::WHITE,
+                            egui::FontId::proportional(12.0),
+                            egui::Color32::from_rgb(220, 215, 210),
                         );
                     }
                     
@@ -826,14 +837,14 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     );
                     
                     // Draw button
-                    painter.rect_filled(btn_rect, 4.0, egui::Color32::from_rgb(20, 40, 40));
-                    painter.rect_stroke(btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::CYAN), egui::StrokeKind::Outside);
+                    painter.rect_filled(btn_rect, 4.0, egui::Color32::from_rgb(40, 35, 15));
+                    painter.rect_stroke(btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
                     painter.text(
                         btn_rect.center(),
                         egui::Align2::CENTER_CENTER,
                         &popup.button_label,
                         egui::FontId::proportional(13.0),
-                        egui::Color32::CYAN,
+                        egui::Color32::from_rgb(180, 140, 50),
                     );
                     
                     // Click detection — same pattern as Production Tree arrows
@@ -845,6 +856,11 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     if response.clicked() {
                         params.tutorial.shown.insert(popup.id);
                         params.tutorial.active = None;
+
+                        // Part C: Set pipeline_nudge_shown flag when T-107 is dismissed
+                        if popup.id == 107 {
+                            params.save_events.send(crate::systems::persistence::SaveRequestEvent::ManualSave);
+                        }
                     }
                 }
                 return;
@@ -898,14 +914,14 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     bg_rect.center_bottom() - egui::vec2(60.0, 25.0),
                     egui::vec2(110.0, 32.0)
                 );
-                painter.rect_filled(allow_btn_rect, 4.0, egui::Color32::from_rgb(40, 80, 50));
+                painter.rect_filled(allow_btn_rect, 4.0, egui::Color32::from_rgb(40, 35, 15));
                 painter.rect_stroke(allow_btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
                 painter.text(
                     allow_btn_rect.center(),
                     egui::Align2::CENTER_CENTER,
                     "allow signal",
                     egui::FontId::monospace(13.0),
-                    egui::Color32::from_rgb(80, 210, 120)
+                    egui::Color32::from_rgb(180, 140, 50)
                 );
                 
                 let allow_response = ui.interact(
@@ -930,14 +946,14 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     bg_rect.center_bottom() - egui::vec2(-60.0, 25.0),
                     egui::vec2(110.0, 32.0)
                 );
-                painter.rect_filled(decline_btn_rect, 4.0, egui::Color32::from_rgb(40, 30, 30));
+                painter.rect_filled(decline_btn_rect, 4.0, egui::Color32::from_rgb(40, 35, 15));
                 painter.rect_stroke(decline_btn_rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_rgb(180, 140, 50)), egui::StrokeKind::Outside);
                 painter.text(
                     decline_btn_rect.center(),
                     egui::Align2::CENTER_CENTER,
                     "decline",
                     egui::FontId::monospace(13.0),
-                    egui::Color32::from_rgb(180, 100, 80)
+                    egui::Color32::from_rgb(180, 140, 50)
                 );
                 
                 let decline_response = ui.interact(
@@ -971,8 +987,20 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 // Push buttons to right edge using right_to_left layout
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     // PIPELINE renders first but appears leftmost due to right_to_left
-                    if ui.add(egui::Button::new("PIPELINE").min_size(egui::vec2(80.0, 44.0))).clicked() {
+                    let pipeline_response = ui.add(egui::Button::new("PIPELINE").min_size(egui::vec2(80.0, 44.0)));
+                    if pipeline_response.clicked() {
                         params.view_state.show_production_tree = true;
+                    }
+
+                    // Part C: Pipeline button highlight (pulsing amber border)
+                    if params.tutorial.show_pipeline_highlight {
+                        let amber = egui::Color32::from_rgb(180, 140, 50);
+                        let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
+                        let stroke = egui::Stroke {
+                            width: 1.5,
+                            color: egui::Color32::from_rgba_unmultiplied(amber.r(), amber.g(), amber.b(), (pulse * 255.0) as u8),
+                        };
+                        ui.painter().rect_stroke(pipeline_response.rect.expand(2.0), 0.0, stroke);
                     }
                     // SAVE renders second but appears rightmost due to right_to_left
                     if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {

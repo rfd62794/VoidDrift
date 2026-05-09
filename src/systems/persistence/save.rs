@@ -6,7 +6,7 @@ use crate::components::*;
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
 
-pub const SAVE_VERSION: u32 = 6;
+pub const SAVE_VERSION: u32 = 7;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SaveData {
@@ -67,7 +67,11 @@ pub struct SaveData {
     // Telemetry session counter (for re-prompt logic)
     #[serde(default)]
     pub telemetry_sessions: u32,
-    
+
+    // Part C: Pipeline nudge shown flag (never shows again after dismissal)
+    #[serde(default)]
+    pub pipeline_nudge_shown: bool,
+
     // Requests state
     #[serde(default)]
     pub collected_requests: Vec<CollectedRequest>,
@@ -198,6 +202,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
             data.telemetry_sessions = 0;
         }
 
+        // Part C: Migration: add pipeline_nudge_shown for old saves
+        if data.save_version < 7 {
+            data.pipeline_nudge_shown = false;
+        }
+
         if data.save_version != SAVE_VERSION {
             return Ok(data);
         }
@@ -221,6 +230,11 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         // Migration: add telemetry_sessions for old saves
         if data.save_version < 6 {
             data.telemetry_sessions = 0;
+        }
+
+        // Part C: Migration: add pipeline_nudge_shown for old saves
+        if data.save_version < 7 {
+            data.pipeline_nudge_shown = false;
         }
 
         if data.save_version != SAVE_VERSION {
@@ -352,6 +366,7 @@ pub fn collect_save_data(
         collected_requests: requests_tab.collected_requests.clone(),
         telemetry_consent: None, // Collected from GameState resource in a future task
         telemetry_sessions: 0, // Collected from GameState resource in a future task
+        pipeline_nudge_shown: false, // Part C: Initialize pipeline nudge flag
     }
 }
 

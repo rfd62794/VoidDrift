@@ -2,10 +2,22 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::config::TutorialConfig;
 
+// ── PART A: TUTORIAL BEAT AUDIT ─────────────────────────────────────────────────────────────
+// T-101 (game_start, highlight: asteroid_nearest): ✓ Highlight renders via show_for_asteroid logic
+// T-102 (drone_navigating_or_mining, highlight: asteroid_nearest): ✓ Highlight renders via show_for_asteroid logic
+// T-103 (ore_reserves_positive, highlight: none): ✗ BROKEN - Drawer button highlight missing (body mentions "Tap the grey bar")
+// T-104 (drawer_expanded, highlight: none): ✗ BROKEN - Drawer button highlight missing (should highlight drawer button)
+// T-105 (forge_tab_active, highlight: none): No highlight expected (UI tab, no spatial element)
+// T-106 (bottle_exists, highlight: bottle): ✓ Highlight renders via show_for_bottle logic
+// UNDERSTOOD button dismissal: ✓ Works correctly (tutorial.active cleared on click, id added to shown set)
+// Sequence advancement: ✓ Works correctly (requires array checked, triggers evaluated in order)
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
 pub fn tutorial_system(
     mut tutorial: ResMut<TutorialState>,
     tutorial_cfg: Res<TutorialConfig>,
     opening: Res<OpeningSequence>,
+    save_data: Option<Res<SaveData>>,
     // T-001 to T-006: require opening ship (despawned at Complete — legacy, preserved)
     opening_ship_query: Query<
         (&Ship, &Transform),
@@ -32,6 +44,9 @@ pub fn tutorial_system(
             && !tutorial.shown.contains(&102);
         let show_for_bottle = tutorial.shown.contains(&105)
             && !tutorial.shown.contains(&106);
+        // Part B: Drawer button highlight for T-103 and T-104
+        let show_for_drawer = (tutorial.shown.contains(&102) && !tutorial.shown.contains(&103))
+            || (tutorial.shown.contains(&103) && !tutorial.shown.contains(&104));
 
         if show_for_asteroid {
             if let Some((_, ast_t)) = ast_query.iter().min_by(|(_, a), (_, b)| {
@@ -54,8 +69,18 @@ pub fn tutorial_system(
                 *h_vis = Visibility::Hidden;
             }
         } else {
+            // Hide world-space highlight when showing drawer button highlight (rendered in HUD)
             *h_vis = Visibility::Hidden;
         }
+
+        // Set drawer highlight flag for HUD rendering
+        tutorial.show_drawer_highlight = show_for_drawer;
+
+        // Part C: Set pipeline highlight flag for HUD rendering
+        let pipeline_nudge_shown = save_data.as_ref().map(|s| s.pipeline_nudge_shown).unwrap_or(false);
+        tutorial.show_pipeline_highlight = tutorial.shown.contains(&105)
+            && !tutorial.shown.contains(&107)
+            && !pipeline_nudge_shown;
     }
 
     // Skip popup triggers while opening is incomplete or a popup is already visible
@@ -185,6 +210,19 @@ fn evaluate_trigger(
         "drawer_expanded" => **drawer_state == DrawerState::Expanded,
         "forge_tab_active" => **active_tab == ActiveStationTab::Production,
         "bottle_exists" => bottle_query.iter().next().is_some(),
+        // Part C: Pipeline discovery nudge trigger
+        "drone_built_and_pipeline_never_opened" => {
+            // Check if at least one drone has been built
+            if let Ok((st, queues)) = station_query.get_single() {
+                let drone_built = queues.hull_forge.is_some()
+                    || queues.core_fabricator.is_some();
+                // Check if pipeline nudge has never been shown
+                let nudge_not_shown = !tutorial.shown.contains(&107);
+                drone_built && nudge_not_shown
+            } else {
+                false
+            }
+        }
         _ => false,
     }
 }

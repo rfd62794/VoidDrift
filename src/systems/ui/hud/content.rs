@@ -1,8 +1,40 @@
-use bevy::prelude::EventWriter;
+use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::constants::*;
 use crate::config::{BalanceConfig, RequestConfig};
+
+// Part D: Symbol bar drawing function
+fn draw_symbol_bar(ui: &mut egui::Ui, name: &str, has_any: bool, count: f32, size: f32) {
+    ui.vertical(|ui| {
+        let rect = egui::Rect::from_min_size(ui.cursor(), egui::vec2(size, size));
+
+        // Determine symbol state
+        let (alpha, fill_color) = if count > 0.0 {
+            (1.0, egui::Color32::from_rgb(0, 200, 200)) // Full color
+        } else if has_any {
+            (0.5, egui::Color32::from_rgb(0, 200, 200)) // Dim color
+        } else {
+            (0.2, egui::Color32::from_gray(100)) // Ghost outline
+        };
+
+        // Draw symbol (simple rectangle for now - replace with component icons later)
+        let fill = egui::Color32::from_rgba_unmultiplied(fill_color.r(), fill_color.g(), fill_color.b(), (alpha * 255.0) as u8);
+        ui.painter().rect_filled(rect, 0.0, fill);
+
+        // Draw count below symbol
+        let count_color = if count > 0.0 {
+            egui::Color32::WHITE
+        } else {
+            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 102) // 40% opacity
+        };
+        ui.label(egui::RichText::new(format!("{:.0}", count))
+            .color(count_color)
+            .size(10.0));
+
+        ui.advance_cursor_after_rect(rect);
+    });
+}
 
 fn render_ore_pipeline(
     ui: &mut egui::Ui,
@@ -62,7 +94,37 @@ pub fn render_tab_content(
             ui.vertical(|ui| {
                 ui.heading("CARGO BAY");
                 ui.add_space(8.0);
-                ui.label(egui::RichText::new("ORE / INGOTS").color(egui::Color32::from_gray(140)).size(11.0));
+
+                // Part D: Drawer Symbol Status Bar
+                ui.label(egui::RichText::new("PRODUCTION STATUS").color(egui::Color32::from_gray(140)).size(11.0));
+                ui.add_space(4.0);
+
+                // Symbol bar: 9 symbols, 24×24px each, 4px gap
+                ui.horizontal_centered(|ui| {
+                    const SYMBOL_SIZE: f32 = 24.0;
+                    const GAP: f32 = 4.0;
+                    const ROW_WIDTH: f32 = (SYMBOL_SIZE + GAP) * 9.0 - GAP;
+
+                    // Ingots
+                    draw_symbol_bar(ui, "Iron Ingot", station.iron_ingots > 0.0, station.iron_ingots, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Tungsten Ingot", station.tungsten_ingots > 0.0, station.tungsten_ingots, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Nickel Ingot", station.nickel_ingots > 0.0, station.nickel_ingots, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Aluminum Ingot", station.aluminum_ingots > 0.0, station.aluminum_ingots, SYMBOL_SIZE);
+
+                    // Components
+                    draw_symbol_bar(ui, "Hull Plate", station.hull_plate_reserves > 0.0, station.hull_plate_reserves, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Thruster", station.thruster_reserves > 0.0, station.thruster_reserves, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "AI Core", station.ai_cores > 0.0, station.ai_cores, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Canister", station.aluminum_canisters > 0.0, station.aluminum_canisters, SYMBOL_SIZE);
+
+                    // Drone Bay
+                    draw_symbol_bar(ui, "Drone Bay", station.drone_count > 0, station.drone_count as f32, SYMBOL_SIZE);
+                });
+
+                ui.add_space(8.0);
+
+                // Legacy text display (keep for now, can be removed later)
+                ui.label(egui::RichText::new("DETAILED INVENTORY").color(egui::Color32::from_gray(140)).size(11.0));
                 egui::Grid::new("ore_grid").spacing([20.0, 8.0]).show(ui, |ui| {
                     ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.iron_reserves, station.iron_ingots)).color(egui::Color32::WHITE)); ui.end_row();
                     ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.tungsten_reserves, station.tungsten_ingots)).color(egui::Color32::WHITE)); ui.end_row();

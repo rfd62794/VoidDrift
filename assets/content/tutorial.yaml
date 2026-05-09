@@ -52,3 +52,13 @@ steps:
       title: "ECHO"
       body: "Signal detected. Dispatch a drone to retrieve it. Check the QUESTS tab in the drawer after collection."
       button: "Understood"
+
+  # Part C: Pipeline discovery nudge beat
+  - id: 107
+    trigger: drone_built_and_pipeline_never_opened
+    highlight: pipeline_button
+    requires: [105]
+    popup:
+      title: "ECHO"
+      body: "echo: pipeline status nominal. internal view available."
+      button: "Understood"
