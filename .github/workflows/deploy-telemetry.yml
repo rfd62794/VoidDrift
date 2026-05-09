@@ -27,7 +27,12 @@ jobs:
 
       - name: Restart service
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo systemctl restart rfd-telemetry"
+          echo "${{ secrets.SUDO_PASS }}" | ssh \
+            -i ~/.ssh/deploy_key \
+            -p ${{ secrets.SSH_PORT }} \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "sudo -S systemctl restart rfd-telemetry"
 
       - name: Verify health
         run: |
