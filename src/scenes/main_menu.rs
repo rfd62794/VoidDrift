@@ -465,25 +465,16 @@ fn spawn_saved_drones(
     use crate::config::visual::{rgb, rgba};
 
     for d in save_data.drones.iter() {
-        let state = match d.state.as_str() {
-            "Idle"       => ShipState::Idle,
-            "Navigating" => ShipState::Navigating,
-            "Mining"     => ShipState::Mining,
-            "Docked"     => ShipState::Docked,
-            _            => ShipState::Navigating,
-        };
-        let ore_type = match d.ore_type.as_str() {
-            "Iron"     => OreDeposit::Iron,
-            "Tungsten" => OreDeposit::Tungsten,
-            "Nickel"   => OreDeposit::Nickel,
-            _          => OreDeposit::Iron,
-        };
+        // DroneSaveData no longer stores state, ore_type, cargo - use defaults
+        let state = ShipState::Idle;
+        let ore_type = OreDeposit::Iron;
+        let cargo = 0.0;
 
         let ship_ent = commands.spawn((
             Ship {
                 state,
                 speed: cfg.mining.ship_speed,
-                cargo: d.cargo,
+                cargo,
                 cargo_type: ore_type,
                 cargo_capacity: cfg.mining.cargo_capacity,
                 laser_tier: LaserTier::Basic,
