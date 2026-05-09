@@ -174,6 +174,7 @@ pub fn spawn_station(
             ai_cores: 0.0,
             max_dispatch: station_max_dispatch,
             drone_build_progress: 0.0,
+            drone_count: 0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
             rotation_speed: STATION_ROTATION_SPEED,

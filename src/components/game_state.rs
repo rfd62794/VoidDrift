@@ -59,6 +59,7 @@ pub struct Station {
     pub thruster_reserves: f32,
     pub ai_cores: f32,
     pub drone_build_progress: f32,  // Fractional accumulator [0.0, 1.0)
+    pub drone_count: u32,           // Total drones built (cumulative)
     pub log: VecDeque<String>,
     pub rotation: f32,
     pub rotation_speed: f32,

@@ -133,6 +133,7 @@ pub fn auto_build_drones_system(
                 station.hull_plate_reserves -= actual as f32 * cfg.drone.cost_hulls;
                 station.thruster_reserves   -= actual as f32 * cfg.drone.cost_thrusters;
                 station.ai_cores            -= actual as f32 * cfg.drone.cost_cores;
+                station.drone_count += actual;
                 queue.available_count += actual;
                 info!("[Voidrift] Drone assembly complete: {} built. Queue: {}", actual, queue.available_count);
             }

@@ -5,33 +5,44 @@ use crate::constants::*;
 use crate::config::{BalanceConfig, RequestConfig, LogsConfig};
 use crate::systems::persistence::save::SaveData;
 
+#[derive(PartialEq, Clone, Copy)]
+enum SymbolState {
+    Locked,           // not yet reachable — ghost outline, alpha 0.2
+    ActiveEmpty,      // unlocked, count == 0 — dim color, alpha 0.5
+    ActivePopulated,  // unlocked, count > 0 — full color, alpha 1.0
+}
+
 // Part D: Symbol bar drawing function
-fn draw_symbol_bar(ui: &mut egui::Ui, _name: &str, has_any: bool, count: f32, size: f32) {
+fn draw_symbol_bar(ui: &mut egui::Ui, _name: &str, state: SymbolState, count: f32, size: f32) {
     ui.vertical(|ui| {
         let rect = egui::Rect::from_min_size(ui.cursor().min, egui::vec2(size, size));
 
-        // Determine symbol state
-        let (alpha, fill_color) = if count > 0.0 {
-            (1.0, egui::Color32::from_rgb(0, 200, 200)) // Full color
-        } else if has_any {
-            (0.5, egui::Color32::from_rgb(0, 200, 200)) // Dim color
-        } else {
-            (0.2, egui::Color32::from_gray(100)) // Ghost outline
-        };
-
-        // Draw symbol (simple rectangle for now - replace with component icons later)
-        let fill = egui::Color32::from_rgba_unmultiplied(fill_color.r(), fill_color.g(), fill_color.b(), (alpha * 255.0) as u8);
-        ui.painter().rect_filled(rect, 0.0, fill);
-
-        // Draw count below symbol
-        let count_color = if count > 0.0 {
-            egui::Color32::WHITE
-        } else {
-            egui::Color32::from_rgba_unmultiplied(255, 255, 255, 102) // 40% opacity
-        };
-        ui.label(egui::RichText::new(format!("{:.0}", count))
-            .color(count_color)
-            .size(10.0));
+        match state {
+            SymbolState::Locked => {
+                // Draw symbol shape at alpha 51 (0.2 * 255) — outline only
+                let fill = egui::Color32::from_rgba_unmultiplied(100, 100, 100, 51);
+                ui.painter().rect_filled(rect, 0.0, fill);
+                // Do NOT show count label
+            }
+            SymbolState::ActiveEmpty => {
+                // Draw symbol at alpha 128 (0.5 * 255)
+                let fill = egui::Color32::from_rgba_unmultiplied(0, 200, 200, 128);
+                ui.painter().rect_filled(rect, 0.0, fill);
+                // Show count "0" at 40% opacity
+                ui.label(egui::RichText::new("0")
+                    .color(egui::Color32::from_rgba_unmultiplied(255, 255, 255, 102))
+                    .size(10.0));
+            }
+            SymbolState::ActivePopulated => {
+                // Draw symbol at full alpha 255
+                let fill = egui::Color32::from_rgba_unmultiplied(0, 200, 200, 255);
+                ui.painter().rect_filled(rect, 0.0, fill);
+                // Show count at full opacity
+                ui.label(egui::RichText::new(format!("{:.0}", count))
+                    .color(egui::Color32::WHITE)
+                    .size(10.0));
+            }
+        }
 
         ui.advance_cursor_after_rect(rect);
     });
@@ -108,20 +119,92 @@ pub fn render_tab_content(
                     const GAP: f32 = 4.0;
                     const ROW_WIDTH: f32 = (SYMBOL_SIZE + GAP) * 9.0 - GAP;
 
-                    // Ingots
-                    draw_symbol_bar(ui, "Iron Ingot", station.iron_ingots > 0.0, station.iron_ingots, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "Tungsten Ingot", station.tungsten_ingots > 0.0, station.tungsten_ingots, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "Nickel Ingot", station.nickel_ingots > 0.0, station.nickel_ingots, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "Aluminum Ingot", station.aluminum_ingots > 0.0, station.aluminum_ingots, SYMBOL_SIZE);
+                    // Ingots - locked until first ore of that type mined
+                    let iron_ingot_state = if station.iron_reserves == 0.0 && station.iron_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.iron_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Iron Ingot", iron_ingot_state, station.iron_ingots, SYMBOL_SIZE);
 
-                    // Components
-                    draw_symbol_bar(ui, "Hull Plate", station.hull_plate_reserves > 0.0, station.hull_plate_reserves, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "Thruster", station.thruster_reserves > 0.0, station.thruster_reserves, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "AI Core", station.ai_cores > 0.0, station.ai_cores, SYMBOL_SIZE);
-                    draw_symbol_bar(ui, "Canister", station.aluminum_canisters > 0.0, station.aluminum_canisters, SYMBOL_SIZE);
+                    let tungsten_ingot_state = if station.tungsten_reserves == 0.0 && station.tungsten_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.tungsten_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Tungsten Ingot", tungsten_ingot_state, station.tungsten_ingots, SYMBOL_SIZE);
 
-                    // Drone Bay
-                    draw_symbol_bar(ui, "Drone Bay", false, 0.0, SYMBOL_SIZE);
+                    let nickel_ingot_state = if station.nickel_reserves == 0.0 && station.nickel_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.nickel_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Nickel Ingot", nickel_ingot_state, station.nickel_ingots, SYMBOL_SIZE);
+
+                    let aluminum_ingot_state = if station.aluminum_reserves == 0.0 && station.aluminum_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.aluminum_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Aluminum Ingot", aluminum_ingot_state, station.aluminum_ingots, SYMBOL_SIZE);
+
+                    // Components - locked until their ingot exists
+                    let hull_plate_state = if station.iron_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.hull_plate_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Hull Plate", hull_plate_state, station.hull_plate_reserves, SYMBOL_SIZE);
+
+                    let thruster_state = if station.tungsten_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.thruster_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Thruster", thruster_state, station.thruster_reserves, SYMBOL_SIZE);
+
+                    let ai_core_state = if station.nickel_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.ai_cores > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "AI Core", ai_core_state, station.ai_cores, SYMBOL_SIZE);
+
+                    let canister_state = if station.aluminum_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.aluminum_canisters > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Canister", canister_state, station.aluminum_canisters, SYMBOL_SIZE);
+
+                    // Drone Bay - locked until first component exists
+                    let drone_bay_state = if station.hull_plate_reserves == 0.0
+                        && station.thruster_reserves == 0.0
+                        && station.ai_cores == 0.0
+                        && station.aluminum_canisters == 0.0 {
+                        SymbolState::Locked
+                    } else if station.drone_count > 0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_symbol_bar(ui, "Drone Bay", drone_bay_state, station.drone_count as f32, SYMBOL_SIZE);
                 });
 
                 ui.add_space(8.0);
