@@ -70,7 +70,9 @@ pub fn tutorial_system(
         }
 
         // Set drawer highlight flag for HUD rendering (show during T-103 popup)
-        tutorial.show_drawer_highlight = tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
+        let should_show = tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
+        info!("T-103 check: active={:?}, should_show={}", tutorial.active, should_show);
+        tutorial.show_drawer_highlight = should_show;
 
         // Part C: Set pipeline highlight flag for HUD rendering (show during T-107 popup)
         tutorial.show_pipeline_highlight = tutorial.active.as_ref().map(|p| p.id == 107).unwrap_or(false);

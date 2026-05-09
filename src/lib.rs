@@ -243,6 +243,7 @@ pub fn start() {
             })
             .set(AssetPlugin {
                 meta_check: bevy::asset::AssetMetaCheck::Never,
+                file_path: "assets".to_string(),
                 ..default()
             })
         )

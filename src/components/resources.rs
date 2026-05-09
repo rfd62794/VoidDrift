@@ -186,7 +186,7 @@ pub struct TutorialState {
     pub show_pipeline_highlight: bool, // Part C: Show pipeline button highlight for T-107
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TutorialPopup {
     pub id: u32,
     pub title: String,
