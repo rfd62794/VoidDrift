@@ -5,9 +5,9 @@ use crate::constants::*;
 use crate::config::{BalanceConfig, RequestConfig};
 
 // Part D: Symbol bar drawing function
-fn draw_symbol_bar(ui: &mut egui::Ui, name: &str, has_any: bool, count: f32, size: f32) {
+fn draw_symbol_bar(ui: &mut egui::Ui, _name: &str, has_any: bool, count: f32, size: f32) {
     ui.vertical(|ui| {
-        let rect = egui::Rect::from_min_size(ui.cursor(), egui::vec2(size, size));
+        let rect = egui::Rect::from_min_size(ui.cursor().min, egui::vec2(size, size));
 
         // Determine symbol state
         let (alpha, fill_color) = if count > 0.0 {
@@ -118,7 +118,7 @@ pub fn render_tab_content(
                     draw_symbol_bar(ui, "Canister", station.aluminum_canisters > 0.0, station.aluminum_canisters, SYMBOL_SIZE);
 
                     // Drone Bay
-                    draw_symbol_bar(ui, "Drone Bay", station.drone_count > 0, station.drone_count as f32, SYMBOL_SIZE);
+                    draw_symbol_bar(ui, "Drone Bay", false, 0.0, SYMBOL_SIZE);
                 });
 
                 ui.add_space(8.0);

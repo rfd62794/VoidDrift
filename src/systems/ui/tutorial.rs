@@ -17,7 +17,6 @@ pub fn tutorial_system(
     mut tutorial: ResMut<TutorialState>,
     tutorial_cfg: Res<TutorialConfig>,
     opening: Res<OpeningSequence>,
-    save_data: Option<Res<SaveData>>,
     // T-001 to T-006: require opening ship (despawned at Complete — legacy, preserved)
     opening_ship_query: Query<
         (&Ship, &Transform),
@@ -76,11 +75,9 @@ pub fn tutorial_system(
         // Set drawer highlight flag for HUD rendering
         tutorial.show_drawer_highlight = show_for_drawer;
 
-        // Part C: Set pipeline highlight flag for HUD rendering
-        let pipeline_nudge_shown = save_data.as_ref().map(|s| s.pipeline_nudge_shown).unwrap_or(false);
+        // Part C: Set pipeline highlight flag for HUD rendering (simplified - no save data check needed)
         tutorial.show_pipeline_highlight = tutorial.shown.contains(&105)
-            && !tutorial.shown.contains(&107)
-            && !pipeline_nudge_shown;
+            && !tutorial.shown.contains(&107);
     }
 
     // Skip popup triggers while opening is incomplete or a popup is already visible
@@ -169,7 +166,7 @@ pub fn tutorial_system(
         }
 
         // Evaluate trigger condition
-        if !evaluate_trigger(&step.trigger, &auto_ship_query, &station_query, &drawer_state, &active_tab, &bottle_query) {
+        if !evaluate_trigger(&step.trigger, &auto_ship_query, &station_query, &drawer_state, &active_tab, &bottle_query, &tutorial) {
             continue;
         }
 
@@ -191,6 +188,7 @@ fn evaluate_trigger(
     drawer_state: &Res<DrawerState>,
     active_tab: &Res<ActiveStationTab>,
     bottle_query: &Query<&Transform, (With<ActiveBottle>, Without<TutorialHighlight>)>,
+    tutorial_state: &TutorialState,
 ) -> bool {
     match trigger {
         "game_start" => true, // Always fires when opening Complete (guard at line 60)
@@ -217,7 +215,7 @@ fn evaluate_trigger(
                 let drone_built = queues.hull_forge.is_some()
                     || queues.core_fabricator.is_some();
                 // Check if pipeline nudge has never been shown
-                let nudge_not_shown = !tutorial.shown.contains(&107);
+                let nudge_not_shown = !tutorial_state.shown.contains(&107);
                 drone_built && nudge_not_shown
             } else {
                 false
