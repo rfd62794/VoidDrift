@@ -6,7 +6,7 @@ use crate::components::*;
 #[cfg(target_arch = "wasm32")]
 use gloo_storage::{LocalStorage, Storage};
 
-pub const SAVE_VERSION: u32 = 7;
+pub const SAVE_VERSION: u32 = 6;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SaveData {
@@ -68,10 +68,6 @@ pub struct SaveData {
     #[serde(default)]
     pub telemetry_sessions: u32,
 
-    // Part C: Pipeline nudge shown flag (never shows again after dismissal)
-    #[serde(default)]
-    pub pipeline_nudge_shown: bool,
-
     // Requests state
     #[serde(default)]
     pub collected_requests: Vec<CollectedRequest>,
@@ -89,10 +85,9 @@ pub struct DroneSaveData {
     pub assignment_sector: String,
     pub assignment_pos_x: f32,
     pub assignment_pos_y: f32,
-    pub ore_type: String,
-    pub state: String,
-    pub cargo: f32,
-    pub is_echo_primary: bool,
+    pub hull_forge: Option<f32>,
+    pub core_fabricator: Option<f32>,
+    pub drone_bay: Option<f32>,
     pub pos_x: f32,
     pub pos_y: f32,
     pub heading: f32,
@@ -202,11 +197,6 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
             data.telemetry_sessions = 0;
         }
 
-        // Part C: Migration: add pipeline_nudge_shown for old saves
-        if data.save_version < 7 {
-            data.pipeline_nudge_shown = false;
-        }
-
         if data.save_version != SAVE_VERSION {
             return Ok(data);
         }
@@ -230,11 +220,6 @@ pub fn load_game(path: &PathBuf) -> Result<SaveData, String> {
         // Migration: add telemetry_sessions for old saves
         if data.save_version < 6 {
             data.telemetry_sessions = 0;
-        }
-
-        // Part C: Migration: add pipeline_nudge_shown for old saves
-        if data.save_version < 7 {
-            data.pipeline_nudge_shown = false;
         }
 
         if data.save_version != SAVE_VERSION {

@@ -75,10 +75,6 @@ pub fn tutorial_system(
         return;
     }
 
-    // No popup active - clear highlights
-    tutorial.show_drawer_highlight = false;
-    tutorial.show_pipeline_highlight = false;
-
     // ── T-001 to T-006: legacy triggers (opening ship despawned at Complete — never fires) ──
     if let Ok((ship, ship_transform)) = opening_ship_query.get_single() {
         if !tutorial.shown.contains(&1) && ship.cargo >= 80.0 {
@@ -171,10 +167,6 @@ pub fn tutorial_system(
             body: step.popup.body.clone(),
             button_label: step.popup.button.clone(),
         });
-        // Set highlight flags immediately after activating popup
-        tutorial.show_drawer_highlight = step.id == 103;
-        tutorial.show_pipeline_highlight = step.id == 107;
-        info!("Popup {} activated, drawer_highlight={}, pipeline_highlight={}", step.id, tutorial.show_drawer_highlight, tutorial.show_pipeline_highlight);
         return;
     }
 }
@@ -194,33 +186,18 @@ fn evaluate_trigger(
             s.state == ShipState::Navigating || s.state == ShipState::Mining
         }),
         "ore_reserves_positive" => {
-            let result = if let Ok((st, _)) = station_query.get_single() {
+            if let Ok((st, _)) = station_query.get_single() {
                 st.iron_reserves > 0.0
                     || st.tungsten_reserves > 0.0
                     || st.nickel_reserves > 0.0
                     || st.aluminum_reserves > 0.0
             } else {
                 false
-            };
-            info!("ore_reserves_positive trigger: {}", result);
-            result
+            }
         }
         "drawer_expanded" => **drawer_state == DrawerState::Expanded,
         "forge_tab_active" => **active_tab == ActiveStationTab::Production,
         "bottle_exists" => bottle_query.iter().next().is_some(),
-        // Part C: Pipeline discovery nudge trigger
-        "drone_built_and_pipeline_never_opened" => {
-            // Check if at least one drone has been built
-            if let Ok((st, queues)) = station_query.get_single() {
-                let drone_built = queues.hull_forge.is_some()
-                    || queues.core_fabricator.is_some();
-                // Check if pipeline nudge has never been shown
-                let nudge_not_shown = !tutorial_state.shown.contains(&107);
-                drone_built && nudge_not_shown
-            } else {
-                false
-            }
-        }
         _ => false,
     }
 }

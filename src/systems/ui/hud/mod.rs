@@ -137,7 +137,6 @@ pub struct HudParams<'w, 's> {
     pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
     pub telemetry_consent: ResMut<'w, TelemetryConsent>,
     pub telemetry_session_counter: ResMut<'w, TelemetrySessionCounter>,
-    pub time: Res<'w, Time>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -857,15 +856,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     if response.clicked() {
                         params.tutorial.shown.insert(popup.id);
                         params.tutorial.active = None;
-
-                        // Part C: Set pipeline_nudge_shown flag when T-107 is dismissed
-                        if popup.id == 107 {
-                            params.save_events.send(crate::systems::persistence::save::SaveRequestEvent {
-                                name: "autosave".to_string(),
-                                category: crate::systems::persistence::save::SaveCategory::Auto,
-                                description: "Pipeline nudge shown".to_string(),
-                            });
-                        }
                     }
                 }
                 return;
@@ -997,16 +987,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         params.view_state.show_production_tree = true;
                     }
 
-                    // Part C: Pipeline button highlight (pulsing amber border)
-                    if params.tutorial.show_pipeline_highlight {
-                        let amber = egui::Color32::from_rgb(180, 140, 50);
-                        let pulse = (params.time.elapsed_secs() * 5.24).sin() * 0.3 + 0.7; // 1.2s period, alpha 0.4-1.0
-                        let stroke = egui::Stroke {
-                            width: 1.5,
-                            color: egui::Color32::from_rgba_unmultiplied(amber.r(), amber.g(), amber.b(), (pulse * 255.0) as u8),
-                        };
-                        ui.painter().rect_stroke(pipeline_response.rect.expand(2.0), 0.0, stroke, egui::StrokeKind::Outside);
-                    }
                     // SAVE renders second but appears rightmost due to right_to_left
                     if ui.add(egui::Button::new("SAVE").min_size(egui::vec2(80.0, 44.0))).clicked() {
                         params.menu_state.show_save_overlay = true;
