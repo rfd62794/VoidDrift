@@ -4,6 +4,7 @@ use crate::components::*;
 use crate::constants::*;
 use crate::config::{BalanceConfig, RequestConfig, LogsConfig, VisualConfig};
 use crate::config::visual::{rgb_u8_to_egui};
+use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
 use crate::systems::persistence::save::SaveData;
 
@@ -16,6 +17,10 @@ enum SymbolState {
 
 #[derive(PartialEq, Clone, Copy)]
 enum SymbolType {
+    IronOre,
+    TungstenOre,
+    NickelOre,
+    AluminumOre,
     IronIngot,
     TungstenIngot,
     NickelIngot,
@@ -27,19 +32,16 @@ enum SymbolType {
     DroneBay,
 }
 
-// Part D: Symbol bar drawing function
-fn draw_symbol_bar(
+fn draw_chain_column(
     ui: &mut egui::Ui,
     symbol_type: SymbolType,
-    state: SymbolState,
+    name: &str,
     count: f32,
+    state: SymbolState,
     size: f32,
     vcfg: &VisualConfig,
 ) {
-    ui.vertical(|ui| {
-        let rect = egui::Rect::from_min_size(ui.cursor().min, egui::vec2(size, size));
-        let painter = ui.painter();
-
+    ui.vertical_centered(|ui| {
         // Determine alpha based on state
         let alpha = match state {
             SymbolState::Locked => 51,
@@ -47,8 +49,85 @@ fn draw_symbol_bar(
             SymbolState::ActivePopulated => 255,
         };
 
-        // Draw procedural visual based on symbol type
+        // Draw symbol
+        let desired_size = egui::vec2(size, size);
+        let (rect, _response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
+        let painter = ui.painter_at(rect);
+
+        // Draw procedural visual
         match symbol_type {
+            SymbolType::IronOre => {
+                let ore_cfg = &vcfg.production_tree.ore_node;
+                let mut ore_config = OrePolygonConfig {
+                    radius: size * 0.4,
+                    vertex_count: ore_cfg.vertex_count,
+                    jaggedness: ore_cfg.jaggedness,
+                    color_body: rgb_u8_to_egui(vcfg.ore.metal.color_body),
+                    color_vein: rgb_u8_to_egui(vcfg.ore.metal.color_vein),
+                    band_count: 5,
+                    band_width_min: 0.02,
+                    band_width_max: 0.05,
+                    grain_angle_deg: 45.0,
+                    seed: 1u64,
+                };
+                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
+                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
+                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config);
+            }
+            SymbolType::TungstenOre => {
+                let ore_cfg = &vcfg.production_tree.ore_node;
+                let mut ore_config = OrePolygonConfig {
+                    radius: size * 0.4,
+                    vertex_count: ore_cfg.vertex_count,
+                    jaggedness: ore_cfg.jaggedness,
+                    color_body: rgb_u8_to_egui(vcfg.ore.h3_gas.color_body),
+                    color_vein: rgb_u8_to_egui(vcfg.ore.h3_gas.color_vein),
+                    band_count: 5,
+                    band_width_min: 0.02,
+                    band_width_max: 0.05,
+                    grain_angle_deg: 45.0,
+                    seed: 2u64,
+                };
+                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
+                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
+                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config);
+            }
+            SymbolType::NickelOre => {
+                let ore_cfg = &vcfg.production_tree.ore_node;
+                let mut ore_config = OrePolygonConfig {
+                    radius: size * 0.4,
+                    vertex_count: ore_cfg.vertex_count,
+                    jaggedness: ore_cfg.jaggedness,
+                    color_body: rgb_u8_to_egui(vcfg.ore.void_essence.color_body),
+                    color_vein: rgb_u8_to_egui(vcfg.ore.void_essence.color_vein),
+                    band_count: 5,
+                    band_width_min: 0.02,
+                    band_width_max: 0.05,
+                    grain_angle_deg: 45.0,
+                    seed: 3u64,
+                };
+                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
+                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
+                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config);
+            }
+            SymbolType::AluminumOre => {
+                let ore_cfg = &vcfg.production_tree.ore_node;
+                let mut ore_config = OrePolygonConfig {
+                    radius: size * 0.4,
+                    vertex_count: ore_cfg.vertex_count,
+                    jaggedness: ore_cfg.jaggedness,
+                    color_body: rgb_u8_to_egui(vcfg.ore.metal.color_body),
+                    color_vein: rgb_u8_to_egui(vcfg.ore.metal.color_vein),
+                    band_count: 5,
+                    band_width_min: 0.02,
+                    band_width_max: 0.05,
+                    grain_angle_deg: 45.0,
+                    seed: 4u64,
+                };
+                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
+                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
+                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config);
+            }
             SymbolType::IronIngot | SymbolType::TungstenIngot | SymbolType::NickelIngot | SymbolType::AluminumIngot => {
                 let base_color = match symbol_type {
                     SymbolType::IronIngot => rgb_u8_to_egui(vcfg.ore.metal.color_vein),
@@ -58,7 +137,6 @@ fn draw_symbol_bar(
                     _ => egui::Color32::WHITE,
                 };
                 let base_color = egui::Color32::from_rgba_unmultiplied(base_color.r(), base_color.g(), base_color.b(), alpha);
-                // For now, use simple rectangle for ingots - the ingot_node drawing is complex and needs color support
                 painter.rect_filled(rect, 2.0, base_color);
             }
             SymbolType::HullPlate => {
@@ -72,7 +150,7 @@ fn draw_symbol_bar(
                 };
                 hull_config.color_frame = egui::Color32::from_rgba_unmultiplied(hull_config.color_frame.r(), hull_config.color_frame.g(), hull_config.color_frame.b(), alpha);
                 hull_config.color_outline = egui::Color32::from_rgba_unmultiplied(hull_config.color_outline.r(), hull_config.color_outline.g(), hull_config.color_outline.b(), alpha);
-                component_nodes::draw_hull(painter, rect.center(), &hull_config);
+                component_nodes::draw_hull(&painter, rect.center(), &hull_config);
             }
             SymbolType::Thruster => {
                 let thruster_cfg = &vcfg.component.thruster;
@@ -88,7 +166,7 @@ fn draw_symbol_bar(
                 thruster_config.color_nozzle = egui::Color32::from_rgba_unmultiplied(thruster_config.color_nozzle.r(), thruster_config.color_nozzle.g(), thruster_config.color_nozzle.b(), alpha);
                 thruster_config.color_body = egui::Color32::from_rgba_unmultiplied(thruster_config.color_body.r(), thruster_config.color_body.g(), thruster_config.color_body.b(), alpha);
                 thruster_config.color_wire = egui::Color32::from_rgba_unmultiplied(thruster_config.color_wire.r(), thruster_config.color_wire.g(), thruster_config.color_wire.b(), alpha);
-                component_nodes::draw_thruster(painter, rect.center(), &thruster_config);
+                component_nodes::draw_thruster(&painter, rect.center(), &thruster_config);
             }
             SymbolType::AICore => {
                 let ai_core_cfg = &vcfg.component.ai_core;
@@ -106,7 +184,7 @@ fn draw_symbol_bar(
                 ai_core_config.color_body = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_body.r(), ai_core_config.color_body.g(), ai_core_config.color_body.b(), alpha);
                 ai_core_config.color_fins = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_fins.r(), ai_core_config.color_fins.g(), ai_core_config.color_fins.b(), alpha);
                 ai_core_config.color_fan_housing = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_fan_housing.r(), ai_core_config.color_fan_housing.g(), ai_core_config.color_fan_housing.b(), alpha);
-                component_nodes::draw_ai_core(painter, rect.center(), &ai_core_config);
+                component_nodes::draw_ai_core(&painter, rect.center(), &ai_core_config);
             }
             SymbolType::Canister => {
                 let canister_cfg = &vcfg.component.canister;
@@ -123,7 +201,7 @@ fn draw_symbol_bar(
                 canister_config.color_lid = egui::Color32::from_rgba_unmultiplied(canister_config.color_lid.r(), canister_config.color_lid.g(), canister_config.color_lid.b(), alpha);
                 canister_config.color_highlight = egui::Color32::from_rgba_unmultiplied(canister_config.color_highlight.r(), canister_config.color_highlight.g(), canister_config.color_highlight.b(), alpha);
                 canister_config.color_handle = egui::Color32::from_rgba_unmultiplied(canister_config.color_handle.r(), canister_config.color_handle.g(), canister_config.color_handle.b(), alpha);
-                component_nodes::draw_canister(painter, rect.center(), &canister_config);
+                component_nodes::draw_canister(&painter, rect.center(), &canister_config);
             }
             SymbolType::DroneBay => {
                 let drone_bay_cfg = &vcfg.component.drone_bay;
@@ -144,12 +222,19 @@ fn draw_symbol_bar(
                 let color = egui::Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), alpha);
                 drone_bay_config.color_ready = color;
                 drone_bay_config.color_empty = color;
-                component_nodes::draw_drone_bay(painter, rect.center(), &drone_bay_config, is_ready);
+                component_nodes::draw_drone_bay(&painter, rect.center(), &drone_bay_config, is_ready);
             }
         }
 
-        // Draw count label below symbol (not for locked state)
-        let count_y = rect.center().y + 8.0;
+        // Draw full name below symbol
+        let name_color = match state {
+            SymbolState::Locked => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 51),
+            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 128),
+            SymbolState::ActivePopulated => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 255),
+        };
+        ui.label(egui::RichText::new(name).color(name_color).size(11.0));
+
+        // Draw count below name
         let count_text = match state {
             SymbolState::Locked => String::new(),
             SymbolState::ActiveEmpty => "0".to_string(),
@@ -161,42 +246,8 @@ fn draw_symbol_bar(
             SymbolState::ActivePopulated => egui::Color32::from_rgb(0, 204, 102),
         };
         if !count_text.is_empty() {
-            painter.text(
-                egui::pos2(rect.center().x, count_y),
-                egui::Align2::CENTER_CENTER,
-                &count_text,
-                egui::FontId::proportional(10.0),
-                count_color,
-            );
+            ui.label(egui::RichText::new(count_text).color(count_color).size(12.0).strong());
         }
-
-        // Draw short label below count
-        let label_y = count_y + 12.0;
-        let label_text = match symbol_type {
-            SymbolType::IronIngot => "FE",
-            SymbolType::TungstenIngot => "W",
-            SymbolType::NickelIngot => "NI",
-            SymbolType::AluminumIngot => "AL",
-            SymbolType::HullPlate => "HULL",
-            SymbolType::Thruster => "THRU",
-            SymbolType::AICore => "A.I.",
-            SymbolType::Canister => "CANS",
-            SymbolType::DroneBay => "BAY",
-        };
-        let label_color = match state {
-            SymbolState::Locked => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 51),
-            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 128),
-            SymbolState::ActivePopulated => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 255),
-        };
-        painter.text(
-            egui::pos2(rect.center().x, label_y),
-            egui::Align2::CENTER_CENTER,
-            label_text,
-            egui::FontId::proportional(9.0),
-            label_color,
-        );
-
-        ui.advance_cursor_after_rect(rect);
     });
 }
 
@@ -262,15 +313,24 @@ pub fn render_tab_content(
                 ui.heading("CARGO BAY");
                 ui.add_space(8.0);
 
-                // Part D: Drawer Symbol Status Bar
-                ui.label(egui::RichText::new("PRODUCTION STATUS").color(egui::Color32::from_gray(140)).size(11.0));
-                ui.add_space(4.0);
+                // Chain row layout
+                const SYMBOL_SIZE: f32 = 32.0;
 
-                // Symbol bar: 9 symbols, 32×32px each, 4px gap
-                ui.horizontal_centered(|ui| {
-                    const SYMBOL_SIZE: f32 = 32.0;
+                // Row 1: Iron / Iron Ingot / Hull Plate
+                ui.horizontal(|ui| {
+                    let col_width = ui.available_width() / 3.0;
 
-                    // Ingots - locked until first ore of that type mined
+                    // Iron Ore
+                    ui.set_width(col_width);
+                    let iron_state = if station.iron_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::IronOre, "Iron Ore", station.iron_reserves, iron_state, SYMBOL_SIZE, vcfg);
+
+                    // Iron Ingot
+                    ui.set_width(col_width);
                     let iron_ingot_state = if station.iron_reserves == 0.0 && station.iron_ingots == 0.0 {
                         SymbolState::Locked
                     } else if station.iron_ingots > 0.0 {
@@ -278,36 +338,10 @@ pub fn render_tab_content(
                     } else {
                         SymbolState::ActiveEmpty
                     };
-                    draw_symbol_bar(ui, SymbolType::IronIngot, iron_ingot_state, station.iron_ingots, SYMBOL_SIZE, vcfg);
+                    draw_chain_column(ui, SymbolType::IronIngot, "Iron Ingot", station.iron_ingots, iron_ingot_state, SYMBOL_SIZE, vcfg);
 
-                    let tungsten_ingot_state = if station.tungsten_reserves == 0.0 && station.tungsten_ingots == 0.0 {
-                        SymbolState::Locked
-                    } else if station.tungsten_ingots > 0.0 {
-                        SymbolState::ActivePopulated
-                    } else {
-                        SymbolState::ActiveEmpty
-                    };
-                    draw_symbol_bar(ui, SymbolType::TungstenIngot, tungsten_ingot_state, station.tungsten_ingots, SYMBOL_SIZE, vcfg);
-
-                    let nickel_ingot_state = if station.nickel_reserves == 0.0 && station.nickel_ingots == 0.0 {
-                        SymbolState::Locked
-                    } else if station.nickel_ingots > 0.0 {
-                        SymbolState::ActivePopulated
-                    } else {
-                        SymbolState::ActiveEmpty
-                    };
-                    draw_symbol_bar(ui, SymbolType::NickelIngot, nickel_ingot_state, station.nickel_ingots, SYMBOL_SIZE, vcfg);
-
-                    let aluminum_ingot_state = if station.aluminum_reserves == 0.0 && station.aluminum_ingots == 0.0 {
-                        SymbolState::Locked
-                    } else if station.aluminum_ingots > 0.0 {
-                        SymbolState::ActivePopulated
-                    } else {
-                        SymbolState::ActiveEmpty
-                    };
-                    draw_symbol_bar(ui, SymbolType::AluminumIngot, aluminum_ingot_state, station.aluminum_ingots, SYMBOL_SIZE, vcfg);
-
-                    // Components - locked until their ingot exists
+                    // Hull Plate
+                    ui.set_width(col_width);
                     let hull_plate_state = if station.iron_ingots == 0.0 {
                         SymbolState::Locked
                     } else if station.hull_plate_reserves > 0.0 {
@@ -315,8 +349,37 @@ pub fn render_tab_content(
                     } else {
                         SymbolState::ActiveEmpty
                     };
-                    draw_symbol_bar(ui, SymbolType::HullPlate, hull_plate_state, station.hull_plate_reserves, SYMBOL_SIZE, vcfg);
+                    draw_chain_column(ui, SymbolType::HullPlate, "Hull Plate", station.hull_plate_reserves, hull_plate_state, SYMBOL_SIZE, vcfg);
+                });
 
+                ui.add_space(6.0);
+
+                // Row 2: Tungsten / Tungsten Ingot / Thruster
+                ui.horizontal(|ui| {
+                    let col_width = ui.available_width() / 3.0;
+
+                    // Tungsten Ore
+                    ui.set_width(col_width);
+                    let tungsten_state = if station.tungsten_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::TungstenOre, "Tungsten Ore", station.tungsten_reserves, tungsten_state, SYMBOL_SIZE, vcfg);
+
+                    // Tungsten Ingot
+                    ui.set_width(col_width);
+                    let tungsten_ingot_state = if station.tungsten_reserves == 0.0 && station.tungsten_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.tungsten_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::TungstenIngot, "Tungsten Ingot", station.tungsten_ingots, tungsten_ingot_state, SYMBOL_SIZE, vcfg);
+
+                    // Thruster
+                    ui.set_width(col_width);
                     let thruster_state = if station.tungsten_ingots == 0.0 {
                         SymbolState::Locked
                     } else if station.thruster_reserves > 0.0 {
@@ -324,8 +387,37 @@ pub fn render_tab_content(
                     } else {
                         SymbolState::ActiveEmpty
                     };
-                    draw_symbol_bar(ui, SymbolType::Thruster, thruster_state, station.thruster_reserves, SYMBOL_SIZE, vcfg);
+                    draw_chain_column(ui, SymbolType::Thruster, "Thruster", station.thruster_reserves, thruster_state, SYMBOL_SIZE, vcfg);
+                });
 
+                ui.add_space(6.0);
+
+                // Row 3: Nickel / Nickel Ingot / AI Core
+                ui.horizontal(|ui| {
+                    let col_width = ui.available_width() / 3.0;
+
+                    // Nickel Ore
+                    ui.set_width(col_width);
+                    let nickel_state = if station.nickel_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::NickelOre, "Nickel Ore", station.nickel_reserves, nickel_state, SYMBOL_SIZE, vcfg);
+
+                    // Nickel Ingot
+                    ui.set_width(col_width);
+                    let nickel_ingot_state = if station.nickel_reserves == 0.0 && station.nickel_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.nickel_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::NickelIngot, "Nickel Ingot", station.nickel_ingots, nickel_ingot_state, SYMBOL_SIZE, vcfg);
+
+                    // AI Core
+                    ui.set_width(col_width);
                     let ai_core_state = if station.nickel_ingots == 0.0 {
                         SymbolState::Locked
                     } else if station.ai_cores > 0.0 {
@@ -333,8 +425,37 @@ pub fn render_tab_content(
                     } else {
                         SymbolState::ActiveEmpty
                     };
-                    draw_symbol_bar(ui, SymbolType::AICore, ai_core_state, station.ai_cores, SYMBOL_SIZE, vcfg);
+                    draw_chain_column(ui, SymbolType::AICore, "AI Core", station.ai_cores, ai_core_state, SYMBOL_SIZE, vcfg);
+                });
 
+                ui.add_space(6.0);
+
+                // Row 4: Aluminum / Aluminum Ingot / Canister
+                ui.horizontal(|ui| {
+                    let col_width = ui.available_width() / 3.0;
+
+                    // Aluminum Ore
+                    ui.set_width(col_width);
+                    let aluminum_state = if station.aluminum_reserves > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::AluminumOre, "Aluminum Ore", station.aluminum_reserves, aluminum_state, SYMBOL_SIZE, vcfg);
+
+                    // Aluminum Ingot
+                    ui.set_width(col_width);
+                    let aluminum_ingot_state = if station.aluminum_reserves == 0.0 && station.aluminum_ingots == 0.0 {
+                        SymbolState::Locked
+                    } else if station.aluminum_ingots > 0.0 {
+                        SymbolState::ActivePopulated
+                    } else {
+                        SymbolState::ActiveEmpty
+                    };
+                    draw_chain_column(ui, SymbolType::AluminumIngot, "Aluminum Ingot", station.aluminum_ingots, aluminum_ingot_state, SYMBOL_SIZE, vcfg);
+
+                    // Canister
+                    ui.set_width(col_width);
                     let canister_state = if station.aluminum_ingots == 0.0 {
                         SymbolState::Locked
                     } else if station.aluminum_canisters > 0.0 {
@@ -342,75 +463,32 @@ pub fn render_tab_content(
                     } else {
                         SymbolState::ActiveEmpty
                     };
-                    draw_symbol_bar(ui, SymbolType::Canister, canister_state, station.aluminum_canisters, SYMBOL_SIZE, vcfg);
-
-                    // Drone Bay - locked until first component exists
-                    let drone_bay_state = if station.hull_plate_reserves == 0.0
-                        && station.thruster_reserves == 0.0
-                        && station.ai_cores == 0.0
-                        && station.aluminum_canisters == 0.0 {
-                        SymbolState::Locked
-                    } else if station.drone_count > 0 {
-                        SymbolState::ActivePopulated
-                    } else {
-                        SymbolState::ActiveEmpty
-                    };
-                    draw_symbol_bar(ui, SymbolType::DroneBay, drone_bay_state, station.drone_count as f32, SYMBOL_SIZE, vcfg);
+                    draw_chain_column(ui, SymbolType::Canister, "Canister", station.aluminum_canisters, canister_state, SYMBOL_SIZE, vcfg);
                 });
 
-                // Legacy text display (keep for now, can be removed later)
-                ui.label(egui::RichText::new("DETAILED INVENTORY").color(egui::Color32::from_gray(140)).size(11.0));
-                egui::Grid::new("ore_grid").spacing([20.0, 8.0]).show(ui, |ui| {
-                    ui.label("IRON:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.iron_reserves, station.iron_ingots)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("TUNGSTEN:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.tungsten_reserves, station.tungsten_ingots)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("NICKEL:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.nickel_reserves, station.nickel_ingots)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("ALUMINUM:"); ui.label(egui::RichText::new(format!("{:.1} / {:.1}", station.aluminum_reserves, station.aluminum_ingots)).color(egui::Color32::WHITE)); ui.end_row();
-                });
+                ui.add_space(6.0);
 
-                ui.add_space(4.0);
-                ui.label(egui::RichText::new("PARTS").color(egui::Color32::from_gray(140)).size(11.0));
-                egui::Grid::new("parts_grid").spacing([20.0, 8.0]).show(ui, |ui| {
-                    ui.label("HULL PLATES:"); ui.label(egui::RichText::new(format!("{:.1}", station.hull_plate_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("THRUSTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.thruster_reserves)).color(egui::Color32::WHITE)); ui.end_row();
-                    ui.label("AI CORES:"); ui.label(egui::RichText::new(format!("{:.1}", station.ai_cores)).color(egui::Color32::CYAN)); ui.end_row();
-                    ui.label("CANISTERS:"); ui.label(egui::RichText::new(format!("{:.1}", station.aluminum_canisters)).color(egui::Color32::WHITE)); ui.end_row();
-                });
-
-                ui.add_space(8.0);
-                
-                // DRONE BUILD PROGRESS BAR
-                let progress = station.drone_build_progress;
-                let can_build = station.hull_plate_reserves >= cfg.drone.cost_hulls
-                    && station.thruster_reserves >= cfg.drone.cost_thrusters
-                    && station.ai_cores >= cfg.drone.cost_cores;
-
-                let bar_color = if can_build {
-                    egui::Color32::from_rgb(0, 180, 100)
-                } else {
-                    egui::Color32::from_rgb(180, 60, 0)
-                };
-
-                let stall_label = if station.hull_plate_reserves < cfg.drone.cost_hulls {
-                    "Needs Hull Plates"
-                } else if station.thruster_reserves < cfg.drone.cost_thrusters {
-                    "Needs Thrusters"
-                } else {
-                    "Needs AI Core"
-                };
-
+                // Fleet row at bottom - right aligned
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("NEXT DRONE:").color(egui::Color32::from_gray(160)).size(12.0));
-                    let progress_bar = egui::ProgressBar::new(progress)
-                        .fill(bar_color)
-                        .text(if can_build { format!("{:.0}%", progress * 100.0) } else { stall_label.to_string() });
-                    ui.add(progress_bar);
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(egui::RichText::new(format!("Fleet Total: {}", station.drone_count))
+                            .color(egui::Color32::from_rgb(0, 204, 102))
+                            .size(14.0)
+                            .strong());
+                        let drone_bay_state = if station.hull_plate_reserves == 0.0
+                            && station.thruster_reserves == 0.0
+                            && station.ai_cores == 0.0
+                            && station.aluminum_canisters == 0.0 {
+                            SymbolState::Locked
+                        } else if station.drone_count > 0 {
+                            SymbolState::ActivePopulated
+                        } else {
+                            SymbolState::ActiveEmpty
+                        };
+                        draw_chain_column(ui, SymbolType::DroneBay, "Drone Bay", station.drone_count as f32, drone_bay_state, SYMBOL_SIZE, vcfg);
+                    });
                 });
             });
-            if !station.online {
-                if ui.button("REPAIR STATION").clicked() {
-                    repair_events.send(RepairStationEvent);
-                }
-            }
         }
         ActiveStationTab::Production => {
             ui.heading("FORGE");
