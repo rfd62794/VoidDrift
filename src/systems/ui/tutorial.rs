@@ -78,8 +78,16 @@ pub fn tutorial_system(
 
     // Skip popup triggers while opening is incomplete or a popup is already visible
     if opening.phase != OpeningPhase::Complete || tutorial.active.is_some() {
+        // Set drawer highlight flag for HUD rendering (show during T-103 popup)
+        tutorial.show_drawer_highlight = tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
+        // Part C: Set pipeline highlight flag for HUD rendering (show during T-107 popup)
+        tutorial.show_pipeline_highlight = tutorial.active.as_ref().map(|p| p.id == 107).unwrap_or(false);
         return;
     }
+
+    // No popup active - clear highlights
+    tutorial.show_drawer_highlight = false;
+    tutorial.show_pipeline_highlight = false;
 
     // ── T-001 to T-006: legacy triggers (opening ship despawned at Complete — never fires) ──
     if let Ok((ship, ship_transform)) = opening_ship_query.get_single() {
