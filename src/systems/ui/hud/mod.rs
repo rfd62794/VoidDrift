@@ -324,13 +324,15 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                 // Drawer highlight during T-103 popup (when player reads "Tap the grey bar")
                 let should_highlight = params.tutorial.active.as_ref().map(|p| p.id == 103).unwrap_or(false);
                 if should_highlight {
-                    info!("Drawing drawer highlight stroke");
                     let t = ui.ctx().input(|i| i.time as f32);
                     let alpha = ((t * 2.0).sin() * 0.3 + 0.7) * 255.0;
-                    ui.painter().rect_stroke(
-                        rect,
+                    let center_rect = egui::Rect::from_center_size(rect.center(), egui::vec2(200.0, rect.height()));
+                    let layer_id = egui::LayerId::new(egui::Order::Foreground, egui::Id::new("drawer_highlight"));
+                    let painter = ui.ctx().layer_painter(layer_id);
+                    painter.rect_stroke(
+                        center_rect,
                         0.0,
-                        egui::Stroke::new(2.5, egui::Color32::from_rgba_unmultiplied(180, 140, 50, alpha as u8)),
+                        egui::Stroke::new(8.0, egui::Color32::from_rgba_unmultiplied(255, 200, 50, alpha as u8)),
                         egui::StrokeKind::Outside,
                     );
                 }
