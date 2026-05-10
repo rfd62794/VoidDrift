@@ -211,10 +211,16 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         // Get station data — available only when docked
         let station_result = params.station_query.get_single_mut();
 
+        // Calculate dynamic content height based on window height
+        let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
+        let total_fixed_height = signal_height + layout.secondary_tab_height + layout.handle_height + 32.0; // + margins
+        let content_height = (screen.height() - total_fixed_height).max(layout.content_height);
+
         egui::TopBottomPanel::bottom("content_area")
             .frame(egui::Frame::NONE
                 .fill(egui::Color32::from_rgb(8, 10, 16))
                 .inner_margin(egui::Margin::symmetric(8, 8)))
+            .exact_height(content_height)
             .show(ctx, |ui| {
                 ui.set_width(ui.available_width());
                 if let Ok((_ent, mut station, _queues)) = station_result {
