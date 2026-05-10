@@ -340,7 +340,7 @@ pub fn render_tab_content(
                 content_top_y + (0.2 * row_height),
                 content_top_y + (1.2 * row_height),
                 content_top_y + (2.2 * row_height),
-                content_top_y + (3.2 * row_height),
+                content_top_y + (3.0 * row_height),
             ];
             
             // Drone vertical center (middle of all 4 rows)
