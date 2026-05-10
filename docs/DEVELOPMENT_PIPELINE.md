@@ -79,6 +79,40 @@ Open scripts/local_itch_preview.html in browser
 
 **Note:** The preview page loads from `http://localhost:8080/index.html` by default. Ensure the WASM server is running before opening the preview.
 
+### Local Itch.io Emulation
+
+Full itch.io browser page emulation without publishing:
+
+**Step 1: Build WASM**
+```powershell
+.\build_wasm.ps1
+```
+
+**Step 2: Serve pkg/ directory**
+```powershell
+cd pkg
+python -m http.server 8080
+```
+
+**Step 3: Open itch.io preview**
+```
+Open scripts/local_itch_preview.html in browser
+```
+
+**Step 4: Select preset size matching your test target**
+- **Landscape 1280×640** — current itch.io embed setting
+- **Portrait 720×640** — portrait embed
+- **Full Portrait 720×1280** — tall portrait
+- **Fullscreen Sim** — approximates browser fullscreen
+
+This replicates the exact iframe constraints itch.io applies. Canvas CSS rules, EGUI_SCALE, and available_height values will match production exactly. Use this before every publish.
+
+**Known values at Landscape 1280×640:**
+- `ui.available_height()` in cargo tab = 162.1875px
+- Canvas constrained by `max-width: 720px, max-height: 100vh`
+
+See `docs/WASM_ITCH_SIZING.md` for complete sizing reference.
+
 ---
 
 ## Commit and Tag Loop
