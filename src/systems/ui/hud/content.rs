@@ -321,11 +321,11 @@ pub fn render_tab_content(
             const X_ARROW_START: f32 = 428.0;
             const X_ARROW_END: f32 = 648.0;
             const X_DRONE: f32 = 660.0;
-            const CONTENT_TOP: f32 = -22.0;
+            const CONTENT_TOP: f32 = 12.0;
 
             // Calculate dynamic sizing based on available height
             let available_height = ui.available_height() - 40.0; // leave margin
-            let row_height = available_height / 6.5; // 4 rows + fleet row
+            let row_height = available_height / 8.0; // 4 rows + fleet row
             let symbol_size = (row_height * 0.55).clamp(24.0, 34.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
