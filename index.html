@@ -20,10 +20,41 @@
             margin: 0 auto;
             touch-action: none;
         }
+
+        /* Fullscreen state — CSS pseudo-class works inside iframes */
+        canvas:fullscreen,
+        canvas:-webkit-full-screen,
+        canvas:-moz-full-screen {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+            aspect-ratio: auto;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
     <canvas id="bevy-canvas"></canvas>
+    <script>
+        // Set canvas dimensions to match window size
+        function resizeCanvas() {
+            const canvas = document.getElementById('bevy-canvas');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        }
+        
+        // Set initial size and listen for resize events
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Also try fullscreenchange for browsers that support it
+        document.addEventListener('fullscreenchange', resizeCanvas);
+        document.addEventListener('webkitfullscreenchange', resizeCanvas);
+        document.addEventListener('mozfullscreenchange', resizeCanvas);
+    </script>
     <script type="module">
         import init from './pkg/voidrift.js';
         init().then(() => {

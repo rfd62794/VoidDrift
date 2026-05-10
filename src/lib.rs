@@ -238,7 +238,7 @@ pub fn start() {
                     resolution: bevy::window::WindowResolution::new(720.0, 1280.0),
                     present_mode: bevy::window::PresentMode::Fifo,
                     title: "Voidrift".to_string(),
-                    fit_canvas_to_parent: true,
+                    fit_canvas_to_parent: false,
                     prevent_default_event_handling: true,
                     ..default()
                 }),
