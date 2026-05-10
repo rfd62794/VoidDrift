@@ -214,7 +214,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         // Calculate dynamic content height based on window height
         let signal_height = if params.expanded.0 { layout.signal_height * 3.0 } else { layout.signal_height };
         let total_fixed_height = signal_height + layout.secondary_tab_height + layout.handle_height + 32.0; // + margins
-        let content_height = (screen.height() - total_fixed_height).max(layout.content_height);
+        let content_height = (screen.height() - total_fixed_height - 40.0).max(layout.content_height);
 
         egui::TopBottomPanel::bottom("content_area")
             .frame(egui::Frame::NONE
