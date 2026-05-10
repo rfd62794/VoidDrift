@@ -325,7 +325,7 @@ pub fn render_tab_content(
 
             // Calculate dynamic sizing based on available height
             let available_height = ui.available_height() - 40.0; // leave margin
-            let row_height = available_height / 8.0; // 4 rows + fleet row
+            let row_height = available_height / 4.5; // 4 rows + fleet row
             let symbol_size = (row_height * 0.55).clamp(24.0, 34.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
@@ -337,14 +337,14 @@ pub fn render_tab_content(
 
             // Row y positions - spread evenly across available height
             let row_centers = [
-                content_top_y + 20.0 + (0.0 * row_height),
-                content_top_y + 20.0 + (1.0 * row_height),
-                content_top_y + 20.0 + (2.0 * row_height),
-                content_top_y + 20.0 + (3.0 * row_height),
+                content_top_y + (0.5 * row_height),
+                content_top_y + (1.5 * row_height),
+                content_top_y + (2.5 * row_height),
+                content_top_y + (3.5 * row_height),
             ];
             
             // Drone vertical center (middle of all 4 rows)
-            let drone_y = content_top_y + 20.0 + (2.0 * row_height);
+            let drone_y = content_top_y + (2.0 * row_height);
 
             // Row states
             let iron_state = if station.iron_reserves > 0.0 { SymbolState::ActivePopulated } else { SymbolState::ActiveEmpty };
