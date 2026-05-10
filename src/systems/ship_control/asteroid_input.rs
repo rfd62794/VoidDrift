@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::EguiContexts;
 use crate::components::*;
-use crate::constants::*;
-use crate::config::VisualConfig;
+use crate::config::{BalanceConfig, VisualConfig};
 use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
 
 #[derive(SystemParam)]
@@ -24,6 +23,7 @@ pub struct AsteroidInputParams<'w, 's> {
     pub dispatch_events: EventWriter<'w, DroneDispatched>,
     pub windows: Query<'w, 's, &'static Window>,
     pub mouse_button: Res<'w, ButtonInput<MouseButton>>,
+    pub bcfg: Res<'w, BalanceConfig>,
     pub vcfg: Res<'w, VisualConfig>,
     pub view_state: Res<'w, ViewState>,
     pub tutorial: Res<'w, TutorialState>,
@@ -71,14 +71,14 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
             }
             for (marker_gtransform, asteroid_ent, active_asteroid) in p.marker_query.iter() {
                 let mp = marker_gtransform.translation().truncate();
-                if mp.distance(STATION_POS) < 10.0 { continue; }
+                if mp.distance(crate::constants::STATION_POS) < 10.0 { continue; }
                 if world_pos.distance(mp) < 80.0 {
                     dispatch_pos_opt = Some(mp);
                     let spawn_pos = p.station_query.get_single()
-                        .map(|(_, t)| t.translation.truncate()).unwrap_or(STATION_POS);
+                        .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
                     spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
                         spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
-                        active_asteroid.ore_type, &p.vcfg);
+                        active_asteroid.ore_type, &p.bcfg, &p.vcfg);
                     dispatched = true;
                     break 'touch;
                 }
@@ -96,14 +96,14 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
                     }
                     for (marker_gtransform, asteroid_ent, active_asteroid) in p.marker_query.iter() {
                         let mp = marker_gtransform.translation().truncate();
-                        if mp.distance(STATION_POS) < 10.0 { continue; }
+                        if mp.distance(crate::constants::STATION_POS) < 10.0 { continue; }
                         if world_pos.distance(mp) < 80.0 {
                             dispatch_pos_opt = Some(mp);
                             let spawn_pos = p.station_query.get_single()
-                                .map(|(_, t)| t.translation.truncate()).unwrap_or(STATION_POS);
+                                .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
                             spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
                                 spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
-                                active_asteroid.ore_type, &p.vcfg);
+                                active_asteroid.ore_type, &p.bcfg, &p.vcfg);
                             dispatched = true;
                             break;
                         }

@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::EguiContexts;
 use crate::components::*;
-use crate::constants::*;
-use crate::config::VisualConfig;
+use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
 use crate::systems::ship_control::ship_spawn::spawn_bottle_drone;
 
@@ -16,7 +15,7 @@ pub struct BottleSpawnTimer {
 impl Default for BottleSpawnTimer {
     fn default() -> Self {
         Self {
-            timer: Timer::from_seconds(BOTTLE_SPAWN_DELAY, TimerMode::Once),
+            timer: Timer::from_seconds(45.0, TimerMode::Once), // Will be set in bottle_spawn_system
             spawned: false,
         }
     }
@@ -39,6 +38,7 @@ pub struct BottleInputParams<'w, 's> {
     pub dispatch_events: EventWriter<'w, DroneDispatched>,
     pub windows: Query<'w, 's, &'static Window>,
     pub mouse_button: Res<'w, ButtonInput<MouseButton>>,
+    pub bcfg: Res<'w, BalanceConfig>,
     pub vcfg: Res<'w, VisualConfig>,
     pub view_state: Res<'w, ViewState>,
 }
@@ -50,8 +50,14 @@ pub fn bottle_spawn_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     requests_tab: Res<RequestsTabState>,
+    bcfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
 ) {
+    // Initialize timer from config on first run
+    if bottle_timer.timer.duration().as_secs_f32() == 45.0 && bottle_timer.timer.elapsed_secs() == 0.0 {
+        bottle_timer.timer = Timer::from_seconds(bcfg.narrative.bottle_spawn_delay, TimerMode::Once);
+    }
+
     // On load: if FirstLight card already exists, bottle was already collected.
     // Set spawned=true so the timer never fires again.
     if requests_tab.collected_requests.iter().any(|r| r.id == RequestId::FirstLight) {
@@ -66,7 +72,7 @@ pub fn bottle_spawn_system(
 
     if bottle_timer.timer.finished() {
         bottle_timer.spawned = true;
-        
+
         let b = &vcfg.bottle;
         let spawn_pos = Vec2::new(b.spawn_x, b.spawn_y);
 
@@ -76,9 +82,9 @@ pub fn bottle_spawn_system(
             MapElement,
             Mesh2d(meshes.add(Rectangle::new(b.width, b.height))),
             MeshMaterial2d(materials.add(rgb(b.color))),
-            Transform::from_xyz(spawn_pos.x, spawn_pos.y, Z_ENVIRONMENT),
+            Transform::from_xyz(spawn_pos.x, spawn_pos.y, vcfg.z_layer.z_environment),
         ));
-        
+
         info!("[Voiddrift] Bottle spawned at {:?}", spawn_pos);
     }
 }
@@ -101,7 +107,7 @@ pub fn bottle_input_system(mut p: BottleInputParams) {
                 let spawn_pos = if let Ok((_, s_transform)) = p.station_query.get_single() {
                     s_transform.translation.truncate()
                 } else {
-                    STATION_POS
+                    crate::constants::STATION_POS
                 };
 
                 spawn_bottle_drone(
@@ -110,6 +116,7 @@ pub fn bottle_input_system(mut p: BottleInputParams) {
                     &mut p.materials,
                     spawn_pos,
                     AutopilotTarget { destination: bp, target_entity: Some(bottle_ent) },
+                    &p.bcfg,
                     &p.vcfg,
                 );
 

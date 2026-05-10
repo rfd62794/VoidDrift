@@ -132,6 +132,37 @@ pub struct StationVisualConfig {
     pub slowdown_rate_multiplier: f32,
     pub resume_delay: f32,
     pub resume_rate_multiplier: f32,
+    pub berth_1_arm_index: u8,
+    pub berth_2_arm_index: u8,
+    pub berth_3_arm_index: u8,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ZLayerConfig {
+    pub z_stars_far: f32,
+    pub z_stars_near: f32,
+    pub z_connectors: f32,
+    pub z_environment: f32,
+    pub z_map_markers: f32,
+    pub z_ship: f32,
+    pub z_beam: f32,
+    pub z_cargo_bar: f32,
+    pub z_hud: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct MapColorsConfig {
+    pub color_map_station: [f32; 3],
+    pub color_map_s1: [f32; 3],
+    pub color_map_s7: [f32; 3],
+    pub color_map_s3: [f32; 3],
+    pub color_map_line: [f32; 4],
+    pub color_map_highlight: [f32; 3],
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct EguiConfig {
+    pub egui_scale: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -274,6 +305,9 @@ pub struct VisualConfig {
     pub ingot: IngotsConfig,
     pub component: ComponentConfig,
     pub ship: ShipConfig,
+    pub z_layer: ZLayerConfig,
+    pub map_colors: MapColorsConfig,
+    pub egui: EguiConfig,
 }
 
 impl VisualConfig {

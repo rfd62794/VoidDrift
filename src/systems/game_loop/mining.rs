@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::config::{BalanceConfig, VisualConfig};
-use crate::config::visual::rgb;
 
 pub fn mining_system(
     time: Res<Time>,
@@ -152,6 +151,7 @@ pub fn mining_system(
                             s_transform.translation.truncate(),
                             station.rotation,
                             berth.arm_index,
+                            &vcfg,
                         );
                         commands.entity(ship_ent).insert(AutopilotTarget {
                             destination: berth_pos,

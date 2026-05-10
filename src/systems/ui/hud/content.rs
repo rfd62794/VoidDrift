@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
-use crate::constants::*;
 use crate::config::{BalanceConfig, RequestConfig, LogsConfig, VisualConfig};
 use crate::config::visual::{rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
@@ -634,16 +633,16 @@ pub fn render_tab_content(
             
             match prod_tab.selected_ore {
                 OreType::Iron => {
-                    render_ore_pipeline(ui, "IRON ORE", station.iron_reserves, "IRON INGOTS", station.iron_ingots, "HULLS", station.hull_plate_reserves, 1.0 / REFINERY_RATIO as f32, HULL_PLATE_COST_IRON as f32, &mut toggles.refine_iron, &mut toggles.forge_hull);
+                    render_ore_pipeline(ui, "IRON ORE", station.iron_reserves, "IRON INGOTS", station.iron_ingots, "HULLS", station.hull_plate_reserves, 1.0 / cfg.refinery.ratio as f32, cfg.forge.hull_plate_cost_iron as f32, &mut toggles.refine_iron, &mut toggles.forge_hull);
                 }
                 OreType::Tungsten => {
-                    render_ore_pipeline(ui, "TUNGSTEN ORE", station.tungsten_reserves, "TUNGSTEN INGOTS", station.tungsten_ingots, "THRUSTERS", station.thruster_reserves, 1.0 / REFINERY_RATIO as f32, THRUSTER_COST_TUNGSTEN as f32, &mut toggles.refine_tungsten, &mut toggles.forge_thruster);
+                    render_ore_pipeline(ui, "TUNGSTEN ORE", station.tungsten_reserves, "TUNGSTEN INGOTS", station.tungsten_ingots, "THRUSTERS", station.thruster_reserves, 1.0 / cfg.refinery.ratio as f32, cfg.forge.thruster_cost_tungsten as f32, &mut toggles.refine_tungsten, &mut toggles.forge_thruster);
                 }
                 OreType::Nickel => {
-                    render_ore_pipeline(ui, "NICKEL ORE", station.nickel_reserves, "NICKEL INGOTS", station.nickel_ingots, "AI CORES", station.ai_cores, 1.0 / REFINERY_RATIO as f32, AI_CORE_COST_NICKEL as f32, &mut toggles.refine_nickel, &mut toggles.forge_core);
+                    render_ore_pipeline(ui, "NICKEL ORE", station.nickel_reserves, "NICKEL INGOTS", station.nickel_ingots, "AI CORES", station.ai_cores, 1.0 / cfg.refinery.ratio as f32, cfg.forge.ai_core_cost_nickel as f32, &mut toggles.refine_nickel, &mut toggles.forge_core);
                 }
                 OreType::Aluminum => {
-                    render_ore_pipeline(ui, "ALUMINUM ORE", station.aluminum_reserves, "ALUMINUM INGOTS", station.aluminum_ingots, "CANISTERS", station.aluminum_canisters, 1.0 / REFINERY_RATIO as f32, ALUMINUM_CANISTER_COST_ALUMINUM as f32, &mut toggles.refine_aluminum, &mut toggles.forge_aluminum_canister);
+                    render_ore_pipeline(ui, "ALUMINUM ORE", station.aluminum_reserves, "ALUMINUM INGOTS", station.aluminum_ingots, "CANISTERS", station.aluminum_canisters, 1.0 / cfg.refinery.ratio as f32, cfg.forge.aluminum_canister_cost_aluminum as f32, &mut toggles.refine_aluminum, &mut toggles.forge_aluminum_canister);
                 }
             }
         }

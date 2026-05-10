@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
-use crate::config::VisualConfig;
+use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
 
 pub fn thruster_glow_system(
@@ -90,6 +89,8 @@ pub fn starfield_scroll_system(
 
 pub fn station_rotation_system(
     time: Res<Time>,
+    bcfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
     mut station_query: Query<(&mut Station, &Transform), VisualsStationFilter>,
     mut visual_query: Query<&mut Transform, VisualsContainerFilter>,
     ship_query: Query<(&Ship, &Transform), VisualsShipFilter>,
@@ -100,17 +101,23 @@ pub fn station_rotation_system(
         
         // [PHASE B] Approach detection
         // Include both mission ships and the cinematic opening drone
+        let dock_distance = vcfg.station.dock_slowdown_distance;
         let ship_approaching = ship_query.iter().any(|(ship, ship_transform)| {
             (ship.state == ShipState::Navigating || ship.state == ShipState::Docked) &&
-                ship_transform.translation.truncate().distance(station_pos) < STATION_DOCK_SLOWDOWN_DISTANCE
+                ship_transform.translation.truncate().distance(station_pos) < dock_distance
         });
         
         let drone_approaching = autonomous_query.iter().any(|(drone, drone_transform)| {
             drone.state == AutonomousShipState::Returning &&
-                drone_transform.translation.truncate().distance(station_pos) < STATION_DOCK_SLOWDOWN_DISTANCE
+                drone_transform.translation.truncate().distance(station_pos) < dock_distance
         });
         
         let incoming = ship_approaching || drone_approaching;
+
+        // Calculate rotation speed from config
+        let rotation_speed = std::f32::consts::TAU / bcfg.station.rotation_speed_divisor;
+        let slowdown_rate = rotation_speed * vcfg.station.slowdown_rate_multiplier;
+        let resume_rate = rotation_speed * vcfg.station.resume_rate_multiplier;
         
         match station.dock_state {
             StationDockState::Rotating => {
@@ -122,9 +129,9 @@ pub fn station_rotation_system(
             StationDockState::Slowing => {
                 if !incoming {
                     station.dock_state = StationDockState::Rotating;
-                    station.rotation_speed = STATION_ROTATION_SPEED;
+                    station.rotation_speed = rotation_speed;
                 } else {
-                    station.rotation_speed = (station.rotation_speed - STATION_SLOWDOWN_RATE * time.delta_secs())
+                    station.rotation_speed = (station.rotation_speed - slowdown_rate * time.delta_secs())
                         .max(0.0);
                     if station.rotation_speed == 0.0 {
                         station.dock_state = StationDockState::Paused;
@@ -139,9 +146,9 @@ pub fn station_rotation_system(
                 if station.resume_timer > 0.0 {
                     station.resume_timer -= time.delta_secs();
                 } else {
-                    station.rotation_speed = (station.rotation_speed + STATION_RESUME_RATE * time.delta_secs())
-                        .min(STATION_ROTATION_SPEED);
-                    if station.rotation_speed >= STATION_ROTATION_SPEED {
+                    station.rotation_speed = (station.rotation_speed + resume_rate * time.delta_secs())
+                        .min(rotation_speed);
+                    if station.rotation_speed >= rotation_speed {
                         station.dock_state = StationDockState::Rotating;
                     }
                 }
@@ -181,7 +188,7 @@ pub fn berth_occupancy_system(
     // Check drones
     for (drone, _assignment) in drone_query.iter() {
         if drone.state == AutonomousShipState::Unloading || drone.state == AutonomousShipState::Holding {
-            occupancy[BERTH_2_ARM_INDEX as usize] = BerthType::Drone;
+            occupancy[vcfg.station.berth_2_arm_index as usize] = BerthType::Drone;
         }
     }
 

@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::components::utilities::berth_world_pos;
 
 pub fn autonomous_ship_system(
     time: Res<Time>,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
     mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     station_query: Query<(&Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     berth_query: Query<(Entity, &Berth)>,
@@ -20,31 +23,33 @@ pub fn autonomous_ship_system(
                 AutonomousShipState::Outbound => {
                     let direction = assignment.target_pos - transform.translation.truncate();
                     let distance = direction.length();
-                    if distance < ARRIVAL_THRESHOLD_MINING {
+                    if distance < cfg.mining.arrival_threshold_mining {
                         ship.state = AutonomousShipState::Mining;
                     } else {
-                        let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                        let movement = direction.normalize() * cfg.mining.ship_speed * time.delta_secs();
                         transform.translation += movement.extend(0.0);
                     }
                 }
                 AutonomousShipState::Mining => {
-                    ship.cargo = (ship.cargo + MINING_RATE * time.delta_secs()).min(CARGO_CAPACITY as f32);
-                    if ship.cargo >= CARGO_CAPACITY as f32 {
+                    ship.cargo = (ship.cargo + cfg.mining.mining_rate * time.delta_secs()).min(cfg.mining.cargo_capacity as f32);
+                    if ship.cargo >= cfg.mining.cargo_capacity as f32 {
                         ship.state = AutonomousShipState::Returning;
                     }
                 }
                 AutonomousShipState::Returning => {
                     // [PHASE B] Dynamic destination tracking for Berth 2
+                    let berth_index = vcfg.station.berth_2_arm_index;
                     let berth_pos = berth_world_pos(
                         s_transform.translation.truncate(),
                         station.rotation,
-                        BERTH_2_ARM_INDEX,
+                        berth_index,
+                        &vcfg,
                     );
                     assignment.target_pos = berth_pos;
-                    
+
                     let direction = berth_pos - transform.translation.truncate();
                     let distance = direction.length();
-                    if distance < ARRIVAL_THRESHOLD {
+                    if distance < cfg.mining.arrival_threshold {
                         ship.state = AutonomousShipState::Unloading;
                         
                         // Find Drone Berth entity to dock
@@ -52,7 +57,7 @@ pub fn autonomous_ship_system(
                             commands.entity(ship_entity).insert(DockedAt(b_ent));
                         }
                     } else {
-                        let movement = direction.normalize() * SHIP_SPEED * time.delta_secs();
+                        let movement = direction.normalize() * cfg.mining.ship_speed * time.delta_secs();
                         transform.translation += movement.extend(0.0);
                     }
                 }
@@ -94,6 +99,7 @@ pub fn autonomous_beam_system(
 
 /// [PHASE B] Locks autonomous ships to berth position throughout rotation
 pub fn docked_autonomous_ship_system(
+    vcfg: Res<VisualConfig>,
     mut ship_query: Query<(&AutonomousShip, &mut Transform, &DockedAt), (With<AutonomousShip>, Without<Ship>, Without<Station>, Without<Berth>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     berth_query: Query<&Berth>,
     station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
@@ -107,8 +113,9 @@ pub fn docked_autonomous_ship_system(
                         s_transform.translation.truncate(),
                         station.rotation,
                         berth.arm_index,
+                        &vcfg,
                     );
-                    transform.translation = pos.extend(Z_SHIP);
+                    transform.translation = pos.extend(vcfg.z_layer.z_ship);
                     
                     // Rotate drone to match arm direction
                     let arm_angle = station.rotation + (berth.arm_index as f32 * std::f32::consts::TAU / 6.0);

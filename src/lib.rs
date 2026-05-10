@@ -125,6 +125,7 @@ fn main() {
             update_ui_layout_from_window,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
+            configure_egui_scale.before(scenes::main_menu::setup_main_menu),
             scenes::main_menu::setup_main_menu,
         ))
         .add_systems(OnExit(AppState::MainMenu), (
@@ -295,6 +296,7 @@ pub fn start() {
             update_ui_layout_from_window,
         ))
         .add_systems(OnEnter(AppState::MainMenu), (
+            configure_egui_scale.before(scenes::main_menu::setup_main_menu),
             scenes::main_menu::setup_main_menu,
         ))
         .add_systems(OnExit(AppState::MainMenu), (

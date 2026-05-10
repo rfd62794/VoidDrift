@@ -47,6 +47,33 @@ slowdown_rate_multiplier = 3.0
 resume_delay = 1.5
 resume_rate_multiplier = 2.0
 
+# Berth indices
+berth_1_arm_index = 0  # Player berth
+berth_2_arm_index = 1  # Drone/NPC berth
+berth_3_arm_index = 2  # Open berth
+
+[z_layer]
+z_stars_far = -100.0
+z_stars_near = -50.0
+z_connectors = -5.0
+z_environment = 0.5  # Asteroids, station
+z_map_markers = 0.6  # Opaque border/marker overlay
+z_ship = 1.0
+z_beam = 0.8
+z_cargo_bar = 1.1
+z_hud = 2.0
+
+[map_colors]
+color_map_station = [1.0, 1.0, 0.0]  # Yellow
+color_map_s1 = [0.0, 1.0, 1.0]  # Cyan (Magnetite)
+color_map_s7 = [0.3, 0.8, 0.3]  # Green (Carbon)
+color_map_s3 = [0.2, 0.2, 0.2]  # Dark Grey
+color_map_line = [1.0, 1.0, 1.0, 0.2]  # Dim White
+color_map_highlight = [1.0, 1.0, 1.0]  # White
+
+[egui]
+egui_scale = 3.0
+
 [drone.opening]
 # Echo's vessel — cyan throughout, cinematic
 hull_w = 20.0

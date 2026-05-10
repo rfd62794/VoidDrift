@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
-use crate::config::VisualConfig;
+use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::{rgb, rgba};
 use crate::systems::visuals::{build_mesh_from_polygon, generate_rocket_points};
 use crate::systems::visuals::component_nodes::RocketConfig;
@@ -55,6 +54,7 @@ pub fn spawn_drone_ship(
     start_pos: Vec2,
     target: AutopilotTarget,
     ore_type: OreDeposit,
+    bcfg: &BalanceConfig,
     vcfg: &VisualConfig,
 ) -> Entity {
     let rocket_config = ship_config_to_rocket_config(&vcfg.ship.drone);
@@ -63,17 +63,17 @@ pub fn spawn_drone_ship(
     let ship_ent = commands.spawn((
         Ship {
             state: ShipState::Navigating,
-            speed: SHIP_SPEED,
+            speed: bcfg.mining.ship_speed,
             cargo: 0.0,
             cargo_type: ore_type,
-            cargo_capacity: CARGO_CAPACITY,
+            cargo_capacity: bcfg.mining.cargo_capacity,
             laser_tier: LaserTier::Basic,
             current_mining_target: None,
         },
         AutonomousShipTag,
         LastHeading(0.0),
         target,
-        Transform::from_xyz(start_pos.x, start_pos.y, Z_SHIP),
+        Transform::from_xyz(start_pos.x, start_pos.y, vcfg.z_layer.z_ship),
     )).id();
 
     // Spawn rocket parts as children
@@ -84,6 +84,9 @@ pub fn spawn_drone_ship(
     spawn_rocket_part(commands, meshes, materials, ship_ent, &rocket_parts.fin_center, rocket_config.color_fins, 0.5);
 
     let md = &vcfg.drone.mission;
+    let z_ship = vcfg.z_layer.z_ship;
+    let z_beam = vcfg.z_layer.z_beam;
+    let z_cargo_bar = vcfg.z_layer.z_cargo_bar;
     commands.entity(ship_ent).with_children(|parent| {
         parent.spawn((
             ThrusterGlow,
@@ -96,19 +99,19 @@ pub fn spawn_drone_ship(
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
             MeshMaterial2d(materials.add(rgba(md.color_beam, md.beam_alpha))),
-            Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
+            Transform::from_xyz(0.0, 0.0, z_beam - z_ship),
             Visibility::Hidden,
         ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
             MeshMaterial2d(materials.add(rgb(md.color_cargo_bg))),
-            Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
+            Transform::from_xyz(0.0, 24.0, z_cargo_bar - z_ship),
         ));
         parent.spawn((
             ShipCargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
             MeshMaterial2d(materials.add(rgb(md.color_cargo_fill))),
-            Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
+            Transform::from_xyz(0.0, 24.0, (z_cargo_bar - z_ship) + 0.05),
         ));
     });
 
@@ -122,6 +125,7 @@ pub fn spawn_bottle_drone(
     materials: &mut ResMut<Assets<ColorMaterial>>,
     start_pos: Vec2,
     target: AutopilotTarget,
+    bcfg: &BalanceConfig,
     vcfg: &VisualConfig,
 ) -> Entity {
     let rocket_config = ship_config_to_rocket_config(&vcfg.ship.drone);
@@ -131,17 +135,17 @@ pub fn spawn_bottle_drone(
     let ship_ent = commands.spawn((
         Ship {
             state: ShipState::Navigating,
-            speed: SHIP_SPEED,
+            speed: bcfg.mining.ship_speed,
             cargo: 0.0,
             cargo_type: OreDeposit::Iron, // dummy — bottle carrier has no ore
-            cargo_capacity: CARGO_CAPACITY,
+            cargo_capacity: bcfg.mining.cargo_capacity,
             laser_tier: LaserTier::Basic,
             current_mining_target: None,
         },
         AutonomousShipTag,
         LastHeading(0.0),
         target,
-        Transform::from_xyz(start_pos.x, start_pos.y, Z_SHIP),
+        Transform::from_xyz(start_pos.x, start_pos.y, vcfg.z_layer.z_ship),
     )).id();
 
     // Spawn rocket parts as children

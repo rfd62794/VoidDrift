@@ -51,3 +51,17 @@ bottle_spawn_delay = 45.0
 signal_pause_s2 = 2.0
 signal_pause_dock_report = 1.0
 signal_pause_complete = 1.5
+
+[ui]
+log_max_lines = 10
+
+[map]
+overview_scale = 1.5
+strategic_scale = 8.0
+pan_speed = 1.5
+zoom_min = 0.3
+zoom_max = 8.0
+zoom_speed = 0.01
+
+[asteroid_spawning]
+max_per_field = 1

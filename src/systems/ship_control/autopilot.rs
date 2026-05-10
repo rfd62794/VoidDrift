@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::{BalanceConfig, VisualConfig};
 
 /// Moves ships with AutopilotTarget toward their destination.
 /// On arrival:
@@ -9,6 +9,8 @@ use crate::constants::*;
 ///   - Station   → opening sequence hub dock (fallback only)
 pub fn autopilot_system(
     time: Res<Time>,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
     mut query: Query<(&mut Ship, &mut Transform, &mut AutopilotTarget, Entity), BaseShipFilter>,
     berth_query: Query<(Entity, &Berth)>,
     asteroid_query: Query<&ActiveAsteroid>,
@@ -29,6 +31,7 @@ pub fn autopilot_system(
                             s_transform.translation.truncate(),
                             station.rotation,
                             berth.arm_index,
+                            &vcfg,
                         );
                     }
                 }
@@ -38,8 +41,8 @@ pub fn autopilot_system(
             let direction = target.destination - current_pos;
             let distance = direction.length();
             let threshold = if let Some(target_ent) = target.target_entity {
-                if asteroid_query.get(target_ent).is_ok() { ARRIVAL_THRESHOLD_MINING } else { ARRIVAL_THRESHOLD }
-            } else { ARRIVAL_THRESHOLD };
+                if asteroid_query.get(target_ent).is_ok() { cfg.mining.arrival_threshold_mining } else { cfg.mining.arrival_threshold }
+            } else { cfg.mining.arrival_threshold };
 
             if distance < threshold {
                 if let Some(target_ent) = target.target_entity {
@@ -86,6 +89,7 @@ pub fn autopilot_system(
                                     s_transform.translation.truncate(),
                                     station.rotation,
                                     berth.arm_index,
+                                    &vcfg,
                                 );
                                 commands.entity(entity).insert(AutopilotTarget {
                                     destination: berth_pos,
@@ -130,13 +134,14 @@ pub fn autopilot_system(
 /// Locks the opening-sequence drone to the hub while Docked.
 /// Only used during the intro cinematic — regular mission ships despawn on arrival.
 pub fn docked_ship_system(
+    vcfg: Res<VisualConfig>,
     mut ship_query: Query<(&Ship, &mut Transform, &DockedAt), (With<Ship>, With<InOpeningSequence>, Without<Station>, Without<Berth>, Without<AutonomousShip>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>)>,
     station_query: Query<(&Station, &Transform), (With<Station>, Without<Ship>)>,
 ) {
     for (ship, mut transform, docked_at) in ship_query.iter_mut() {
         if ship.state == ShipState::Docked {
             if let Ok((_, s_transform)) = station_query.get(docked_at.0) {
-                transform.translation = s_transform.translation.truncate().extend(Z_SHIP);
+                transform.translation = s_transform.translation.truncate().extend(vcfg.z_layer.z_ship);
             }
         }
     }

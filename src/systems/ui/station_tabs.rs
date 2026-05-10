@@ -1,11 +1,11 @@
 use bevy_egui::egui;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::BalanceConfig;
 
-pub fn add_log_entry(station: &mut Station, entry: String) {
+pub fn add_log_entry(station: &mut Station, entry: String, cfg: &BalanceConfig) {
     if station.log.back() == Some(&entry) { return; }
     station.log.push_back(entry);
-    if station.log.len() > LOG_MAX_LINES {
+    if station.log.len() > cfg.ui.log_max_lines {
         station.log.pop_front();
     }
 }
@@ -17,6 +17,7 @@ pub fn render_queue_card(
     op: ProcessingOperation,
     resource_cost: f32,
     batch_time: f32,
+    cfg: &BalanceConfig,
 ) {
     let (input_name, output_name) = match op {
         ProcessingOperation::IronRefinery => ("IRON", "MATERIALS"),
@@ -83,7 +84,7 @@ pub fn render_queue_card(
             if let Some(job) = queue {
                 if ui.add(egui::Button::new("CLEAR QUEUE").min_size(egui::vec2(160.0, 30.0))).clicked() {
                     job.batches = 1; job.clearing = true;
-                    add_log_entry(station, format!("> {} QUEUE CLEARED.", input_name));
+                    add_log_entry(station, format!("> {} QUEUE CLEARED.", input_name), cfg);
                 }
             } else {
                 ui.add_space(34.0);

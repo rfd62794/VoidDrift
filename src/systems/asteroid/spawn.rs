@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
 use rand::Rng;
 use crate::components::*;
-use crate::constants::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
 use crate::systems::visuals::{build_mesh_from_polygon_with_colors, generate_ore_polygon_points};
@@ -144,7 +143,7 @@ pub fn spawn_asteroid(
             ore_remaining: ore_amount,
             lifespan_timer: cfg.asteroid.max_lifespan_secs,
         },
-        Transform::from_xyz(position.x, position.y, Z_ENVIRONMENT),
+        Transform::from_xyz(position.x, position.y, vcfg.z_layer.z_environment),
         GlobalTransform::default(),
         Visibility::default(),
         AsteroidBody,
@@ -169,7 +168,7 @@ pub fn spawn_asteroid(
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),
-            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
+            Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_map_markers - vcfg.z_layer.z_environment).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         ));
 
@@ -179,7 +178,7 @@ pub fn spawn_asteroid(
             Text2d::new(sector_id),
             TextFont { font_size: 20.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -36.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
+            Transform::from_xyz(0.0, -36.0, vcfg.z_layer.z_map_markers - vcfg.z_layer.z_environment + 0.1),
             Visibility::Hidden,
         ));
 
@@ -193,7 +192,7 @@ pub fn spawn_asteroid(
                 ..default()
             },
             TextColor(Color::srgba(0.8, 0.8, 0.8, 0.6)),
-            Transform::from_xyz(0.0, -(radius + 12.0), Z_HUD - Z_ENVIRONMENT),
+            Transform::from_xyz(0.0, -(radius + 12.0), vcfg.z_layer.z_hud - vcfg.z_layer.z_environment),
         ));
 
         // 4. LASER REQUIREMENT LABEL (If gated)
@@ -211,7 +210,7 @@ pub fn spawn_asteroid(
                     ..default()
                 },
                 TextColor(Color::srgba(1.0, 0.3, 0.3, 0.8)),
-                Transform::from_xyz(0.0, -(radius + 24.0), Z_HUD - Z_ENVIRONMENT),
+                Transform::from_xyz(0.0, -(radius + 24.0), vcfg.z_layer.z_hud - vcfg.z_layer.z_environment),
             ));
         }
     });

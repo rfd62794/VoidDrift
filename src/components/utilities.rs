@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::components::{OreDeposit, LaserTier};
+use crate::config::VisualConfig;
 
 pub fn ore_name(ore: &OreDeposit) -> &'static str {
     match ore {
@@ -23,10 +24,11 @@ pub fn berth_world_pos(
     station_pos: Vec2,
     station_rotation: f32,
     arm_index: u8,
+    vcfg: &VisualConfig,
 ) -> Vec2 {
     let arm_angle = station_rotation + (arm_index as f32 * std::f32::consts::TAU / 6.0);
     station_pos + Vec2::new(
-        arm_angle.cos() * crate::constants::STATION_ARM_LENGTH,
-        arm_angle.sin() * crate::constants::STATION_ARM_LENGTH,
+        arm_angle.cos() * vcfg.station.arm_length,
+        arm_angle.sin() * vcfg.station.arm_length,
     )
 }

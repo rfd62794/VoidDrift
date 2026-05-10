@@ -4,7 +4,7 @@ use bevy::sprite::AlphaMode2d;
 use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::components::resources::{ShipQueue, MaxDispatch};
-use crate::constants::*;
+use crate::config::VisualConfig;
 use crate::systems::persistence::save::{list_saves, load_game, autosave_path, SaveCategory, SaveData, SAVE_VERSION};
 
 #[derive(Resource, Default)]
@@ -26,9 +26,10 @@ pub fn setup_main_menu(
     mut menu_state: ResMut<MainMenuState>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    vcfg: Res<VisualConfig>,
 ) {
     spawn_menu_camera(&mut commands);
-    spawn_menu_starfield(&mut commands, &mut meshes, &mut materials);
+    spawn_menu_starfield(&mut commands, &mut meshes, &mut materials, &vcfg);
     
     // Load save lists on menu entry
     menu_state.play_saves = list_saves(&SaveCategory::Play);
@@ -242,6 +243,7 @@ fn spawn_menu_starfield(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    vcfg: &VisualConfig,
 ) {
     let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
     let far_mat = materials.add(ColorMaterial {
@@ -267,7 +269,7 @@ fn spawn_menu_starfield(
             MenuStar,
             Mesh2d(star_sm.clone()),
             MeshMaterial2d(far_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_FAR),
+            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_far),
         ));
     }
     for _ in 0..600 {
@@ -279,7 +281,7 @@ fn spawn_menu_starfield(
             MenuStar,
             Mesh2d(star_lg.clone()),
             MeshMaterial2d(near_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_NEAR),
+            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_near),
         ));
     }
 }
@@ -469,7 +471,6 @@ fn spawn_saved_drones(
     vcfg: &crate::config::VisualConfig,
 ) {
     use crate::components::{OreDeposit, Ship, ShipState, LaserTier, AutonomousShipTag, LastHeading, AutopilotTarget, ThrusterGlow, MiningBeam, ShipCargoBarFill};
-    use crate::constants::*;
     use crate::config::visual::{rgb, rgba};
 
     for d in save_data.drones.iter() {
@@ -490,7 +491,7 @@ fn spawn_saved_drones(
             },
             AutonomousShipTag,
             LastHeading(d.heading),
-            Transform::from_xyz(d.pos_x, d.pos_y, Z_SHIP),
+            Transform::from_xyz(d.pos_x, d.pos_y, vcfg.z_layer.z_ship),
             Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(vcfg.drone.mission.hull_w, vcfg.drone.mission.hull_h))),
             MeshMaterial2d(materials.add(rgb(vcfg.drone.mission.color_hull))),
         )).id();
@@ -515,19 +516,19 @@ fn spawn_saved_drones(
                 MiningBeam,
                 Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
                 MeshMaterial2d(materials.add(rgba(md.color_beam, md.beam_alpha))),
-                Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
+                Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_beam - vcfg.z_layer.z_ship),
                 Visibility::Hidden,
             ));
             parent.spawn((
                 Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
                 MeshMaterial2d(materials.add(rgb(md.color_cargo_bg))),
-                Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
+                Transform::from_xyz(0.0, 24.0, vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship),
             ));
             parent.spawn((
                 ShipCargoBarFill,
                 Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
                 MeshMaterial2d(materials.add(rgb(md.color_cargo_fill))),
-                Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
+                Transform::from_xyz(0.0, 24.0, (vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship) + 0.05),
             ));
         });
     }

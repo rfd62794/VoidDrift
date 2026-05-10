@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::BalanceConfig;
 
 pub fn camera_follow_system(
     state: Res<State<GameState>>,
@@ -17,7 +17,7 @@ pub fn camera_follow_system(
     
     // Determine the target position
     let target_pos = if *state.get() == GameState::MapView {
-        STATION_POS + pan_state.cumulative_offset
+        crate::constants::STATION_POS + pan_state.cumulative_offset
     } else {
         // SpaceView
         let ship_pos = ship.get_single().map(|t| t.translation.truncate()).ok();
@@ -27,7 +27,7 @@ pub fn camera_follow_system(
                 pos
             } else {
                 // Default to Station if focus is active but no ship exists
-                STATION_POS
+                crate::constants::STATION_POS
             }
         } else {
             pan_state.cumulative_offset
@@ -83,6 +83,7 @@ pub fn pinch_zoom_system(
     touches: Res<Touches>,
     windows: Query<&Window>,
     device_type: Res<DeviceType>,
+    cfg: Res<BalanceConfig>,
     mut query: Query<&mut OrthographicProjection, (With<MainCamera>, Without<Ship>, Without<Station>, Without<AutonomousShip>, Without<ActiveAsteroid>, Without<Berth>, Without<DestinationHighlight>, Without<StarLayer>)>,
     mut last_dist: Local<Option<f32>>,
     mut scroll_events: EventReader<bevy::input::mouse::MouseWheel>,
@@ -105,7 +106,7 @@ pub fn pinch_zoom_system(
             let delta = prev - dist; // Positive if pinching (getting closer), negative if pulling (getting further)
             
             // Apply scale delta
-            let new_scale = (projection.scale + delta * zoom_speed).clamp(ZOOM_MIN, ZOOM_MAX);
+            let new_scale = (projection.scale + delta * zoom_speed).clamp(cfg.map.zoom_min, cfg.map.zoom_max);
             projection.scale = new_scale;
         }
         *last_dist = Some(dist);
@@ -128,7 +129,7 @@ pub fn pinch_zoom_system(
         };
         // Apply same zoom logic as pinch — adjust OrthographicProjection.scale
         // Clamp to same min/max zoom bounds as pinch zoom
-        projection.scale = (projection.scale - zoom_delta).clamp(ZOOM_MIN, ZOOM_MAX);
+        projection.scale = (projection.scale - zoom_delta).clamp(cfg.map.zoom_min, cfg.map.zoom_max);
     }
 }
 
@@ -142,6 +143,7 @@ pub fn map_pan_system(
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut cursor_moved: EventReader<CursorMoved>,
     mut last_cursor_pos: Local<Option<Vec2>>,
+    cfg: Res<BalanceConfig>,
 ) {
     // Guard against panning during cinematic opening
     if opening.phase != OpeningPhase::Complete {
@@ -166,13 +168,13 @@ pub fn map_pan_system(
                     pan_state.cumulative_offset = st.translation.truncate();
                 } else {
                     // Default offset to station if focus is broken while no ship exists
-                    pan_state.cumulative_offset = STATION_POS;
+                    pan_state.cumulative_offset = crate::constants::STATION_POS;
                 }
             }
 
             // Adjust pan speed by current zoom level so it feels consistent
-            pan_state.cumulative_offset.x -= delta.x * MAP_PAN_SPEED * projection.scale;
-            pan_state.cumulative_offset.y += delta.y * MAP_PAN_SPEED * projection.scale;
+            pan_state.cumulative_offset.x -= delta.x * cfg.map.pan_speed * projection.scale;
+            pan_state.cumulative_offset.y += delta.y * cfg.map.pan_speed * projection.scale;
         }
         pan_state.last_position = Some(touch.position());
     } else {
@@ -193,14 +195,14 @@ pub fn map_pan_system(
                         pan_state.cumulative_offset = st.translation.truncate();
                     } else {
                         // Default offset to station if focus is broken while no ship exists
-                        pan_state.cumulative_offset = STATION_POS;
+                        pan_state.cumulative_offset = crate::constants::STATION_POS;
                     }
                 }
 
                 // Apply same pan logic as touch drag
                 // Invert delta direction to match touch drag feel
-                pan_state.cumulative_offset.x -= delta.x * MAP_PAN_SPEED * projection.scale;
-                pan_state.cumulative_offset.y += delta.y * MAP_PAN_SPEED * projection.scale;
+                pan_state.cumulative_offset.x -= delta.x * cfg.map.pan_speed * projection.scale;
+                pan_state.cumulative_offset.y += delta.y * cfg.map.pan_speed * projection.scale;
             }
             *last_cursor_pos = Some(event.position);
         }

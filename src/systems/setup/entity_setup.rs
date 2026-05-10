@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
 use rand::{Rng, SeedableRng};
 use crate::components::*;
-use crate::components::resources::MaxDispatch;
-use crate::constants::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
 use crate::systems::visuals::{build_mesh_from_polygon, generate_rocket_points};
@@ -72,7 +70,7 @@ pub fn spawn_opening_drone(
             current_mining_target: None,
         },
         AutonomousShipTag,
-        Transform::from_xyz(-1000.0, -800.0, Z_SHIP),
+        Transform::from_xyz(-1000.0, -800.0, vcfg.z_layer.z_ship),
     )).id();
 
     // Spawn rocket parts as children
@@ -95,19 +93,19 @@ pub fn spawn_opening_drone(
             MiningBeam,
             Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
             MeshMaterial2d(materials.add(crate::config::visual::rgba(od.color_beam, od.beam_alpha))),
-            Transform::from_xyz(0.0, 0.0, Z_BEAM - Z_SHIP),
+            Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_beam - vcfg.z_layer.z_ship),
             Visibility::Hidden,
         ));
         parent.spawn((
             Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
             MeshMaterial2d(materials.add(rgb(od.color_cargo_bg))),
-            Transform::from_xyz(0.0, 24.0, Z_CARGO_BAR - Z_SHIP),
+            Transform::from_xyz(0.0, 24.0, vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship),
         ));
         parent.spawn((
             ShipCargoBarFill,
             Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
             MeshMaterial2d(materials.add(rgb(od.color_cargo_fill))),
-            Transform::from_xyz(0.0, 24.0, (Z_CARGO_BAR - Z_SHIP) + 0.05),
+            Transform::from_xyz(0.0, 24.0, (vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship) + 0.05),
         ));
         parent.spawn((
             MapElement,
@@ -117,7 +115,7 @@ pub fn spawn_opening_drone(
                 alpha_mode: AlphaMode2d::Opaque,
                 ..default()
             })),
-            Transform::from_xyz(0.0, 0.0, Z_HUD - Z_SHIP).with_scale(Vec3::splat(2.0)),
+            Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_hud - vcfg.z_layer.z_ship).with_scale(Vec3::splat(2.0)),
             Visibility::Hidden,
         ));
         parent.spawn((
@@ -129,7 +127,7 @@ pub fn spawn_opening_drone(
                 ..default()
             },
             TextColor(crate::config::visual::rgba(od.color_beam, 0.8)),
-            Transform::from_xyz(0.0, 36.0, Z_HUD - Z_SHIP),
+            Transform::from_xyz(0.0, 36.0, vcfg.z_layer.z_hud - vcfg.z_layer.z_ship),
         ));
         parent.spawn((
             CargoCountLabel,
@@ -140,7 +138,7 @@ pub fn spawn_opening_drone(
                 ..default()
             },
             TextColor(Color::srgba(1.0, 1.0, 1.0, 0.8)),
-            Transform::from_xyz(0.0, 12.0, Z_HUD - Z_SHIP),
+            Transform::from_xyz(0.0, 12.0, vcfg.z_layer.z_hud - vcfg.z_layer.z_ship),
         ));
     });
 }
@@ -150,10 +148,14 @@ pub fn spawn_station(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     mut max_dispatch: ResMut<MaxDispatch>,
+    bcfg: &BalanceConfig,
     vcfg: &VisualConfig,
 ) {
     let station_max_dispatch = 5;
     max_dispatch.0 = station_max_dispatch;
+
+    // Calculate rotation speed from config
+    let rotation_speed = std::f32::consts::TAU / bcfg.station.rotation_speed_divisor;
 
     commands.spawn((
         MapMarker,
@@ -177,7 +179,7 @@ pub fn spawn_station(
             drone_count: 0,
             log: std::collections::VecDeque::new(),
             rotation: 0.0,
-            rotation_speed: STATION_ROTATION_SPEED,
+            rotation_speed: rotation_speed,
             dock_state: StationDockState::Rotating,
             resume_timer: 0.0,
             cargo_capacity_multiplier: 1.0,
@@ -186,7 +188,7 @@ pub fn spawn_station(
             max_active_asteroids: 3,
         },
         StationQueues::default(),
-        Transform::from_xyz(STATION_POS.x, STATION_POS.y, Z_ENVIRONMENT),
+        Transform::from_xyz(crate::constants::STATION_POS.x, crate::constants::STATION_POS.y, vcfg.z_layer.z_environment),
         Visibility::Visible,
     ))
     .with_children(|parent| {
@@ -228,8 +230,8 @@ pub fn spawn_station(
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(Circle::new(12.0))),
-            MeshMaterial2d(materials.add(ColorMaterial { color: COLOR_MAP_STATION, alpha_mode: AlphaMode2d::Opaque, ..default() })),
-            Transform::from_xyz(0.0, 0.0, Z_MAP_MARKERS - Z_ENVIRONMENT).with_scale(Vec3::splat(1.5)),
+            MeshMaterial2d(materials.add(ColorMaterial { color: Color::srgba(vcfg.map_colors.color_map_station[0], vcfg.map_colors.color_map_station[1], vcfg.map_colors.color_map_station[2], 1.0), alpha_mode: AlphaMode2d::Opaque, ..default() })),
+            Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_map_markers - vcfg.z_layer.z_environment).with_scale(Vec3::splat(1.5)),
             Visibility::Hidden,
         )).with_children(|map_icon| {
             for i in 0..3 {
@@ -237,7 +239,7 @@ pub fn spawn_station(
                 map_icon.spawn((
                     MapElement,
                     Mesh2d(meshes.add(Rectangle::new(4.0, 20.0))),
-                    MeshMaterial2d(materials.add(ColorMaterial { color: COLOR_MAP_STATION, ..default() })),
+                    MeshMaterial2d(materials.add(ColorMaterial { color: Color::srgba(vcfg.map_colors.color_map_station[0], vcfg.map_colors.color_map_station[1], vcfg.map_colors.color_map_station[2], 1.0), ..default() })),
                     Transform::from_rotation(Quat::from_rotation_z(angle)).with_translation(Vec3::new(angle.cos() * 10.0, angle.sin() * 10.0, -0.1)),
                     Visibility::Inherited,
                 ));
@@ -248,16 +250,16 @@ pub fn spawn_station(
             Text2d::new("BASE"),
             TextFont { font_size: 24.0, ..default() },
             TextColor(Color::WHITE),
-            Transform::from_xyz(0.0, -40.0, Z_MAP_MARKERS - Z_ENVIRONMENT + 0.1),
+            Transform::from_xyz(0.0, -40.0, vcfg.z_layer.z_map_markers - vcfg.z_layer.z_environment + 0.1),
             Visibility::Hidden,
         ));
     });
 }
 
-pub fn spawn_berths(commands: &mut Commands) {
-    commands.spawn((Berth { arm_index: BERTH_1_ARM_INDEX, occupied_by: None, berth_type: BerthType::Player }, Name::new("Berth1")));
-    commands.spawn((Berth { arm_index: BERTH_2_ARM_INDEX, occupied_by: None, berth_type: BerthType::Drone }, Name::new("Berth2")));
-    commands.spawn((Berth { arm_index: BERTH_3_ARM_INDEX, occupied_by: None, berth_type: BerthType::Open }, Name::new("Berth3")));
+pub fn spawn_berths(commands: &mut Commands, vcfg: &VisualConfig) {
+    commands.spawn((Berth { arm_index: vcfg.station.berth_1_arm_index, occupied_by: None, berth_type: BerthType::Player }, Name::new("Berth1")));
+    commands.spawn((Berth { arm_index: vcfg.station.berth_2_arm_index, occupied_by: None, berth_type: BerthType::Drone }, Name::new("Berth2")));
+    commands.spawn((Berth { arm_index: vcfg.station.berth_3_arm_index, occupied_by: None, berth_type: BerthType::Open }, Name::new("Berth3")));
 }
 
 
@@ -266,6 +268,7 @@ pub fn spawn_destination_highlight(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    vcfg: &VisualConfig,
 ) {
     commands.spawn((
         MapElement,
@@ -276,7 +279,7 @@ pub fn spawn_destination_highlight(
             alpha_mode: AlphaMode2d::Opaque,
             ..default()
         })),
-        Transform::from_xyz(0.0, 0.0, Z_HUD - 0.1), // Slightly behind markers
+        Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_hud - 0.1), // Slightly behind markers
         Visibility::Hidden,
     ));
 }
@@ -285,6 +288,7 @@ pub fn spawn_tutorial_highlight(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    vcfg: &VisualConfig,
 ) {
     commands.spawn((
         MapElement,
@@ -295,7 +299,7 @@ pub fn spawn_tutorial_highlight(
             alpha_mode: AlphaMode2d::Opaque,
             ..default()
         })),
-        Transform::from_xyz(0.0, 0.0, Z_HUD - 0.05),
+        Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_hud - 0.05),
         Visibility::Hidden,
     ));
 }

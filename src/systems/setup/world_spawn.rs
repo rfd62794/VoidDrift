@@ -3,7 +3,6 @@ use bevy::sprite::AlphaMode2d;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::components::*;
-use crate::constants::*;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
 use crate::config::{BalanceConfig, VisualConfig, QuestConfig};
@@ -62,12 +61,12 @@ pub fn setup_world(
 
     init_quest_log(&mut commands, &quest_cfg);
     spawn_starfield(&mut commands, &mut meshes, &mut materials, &vcfg);
-    spawn_camera(&mut commands);
+    spawn_camera(&mut commands, &vcfg);
     spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server, &cfg, &vcfg);
-    spawn_station(&mut commands, &mut meshes, &mut materials, max_dispatch, &vcfg);
-    spawn_berths(&mut commands);
-    spawn_destination_highlight(&mut commands, &mut meshes, &mut materials);
-    spawn_tutorial_highlight(&mut commands, &mut meshes, &mut materials);
+    spawn_station(&mut commands, &mut meshes, &mut materials, max_dispatch, &cfg, &vcfg);
+    spawn_berths(&mut commands, &vcfg);
+    spawn_destination_highlight(&mut commands, &mut meshes, &mut materials, &vcfg);
+    spawn_tutorial_highlight(&mut commands, &mut meshes, &mut materials, &vcfg);
 }
 
 fn spawn_starfield(
@@ -102,7 +101,7 @@ fn spawn_starfield(
             StarLayer { layer: sf.far_parallax, orig_pos: Vec2::new(x, y) },
             Mesh2d(star_sm.clone()),
             MeshMaterial2d(far_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_FAR),
+            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_far),
         ));
     }
     for _ in 0..sf.near_count {
@@ -114,12 +113,12 @@ fn spawn_starfield(
             StarLayer { layer: sf.near_parallax, orig_pos: Vec2::new(x, y) },
             Mesh2d(star_lg.clone()),
             MeshMaterial2d(near_mat.clone()),
-            Transform::from_xyz(x, y, Z_STARS_NEAR),
+            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_near),
         ));
     }
 }
 
-fn spawn_camera(commands: &mut Commands) {
+fn spawn_camera(commands: &mut Commands, vcfg: &VisualConfig) {
     commands.spawn((
         Camera2d::default(),
         OrthographicProjection {
@@ -129,7 +128,7 @@ fn spawn_camera(commands: &mut Commands) {
         MainCamera,
         Transform::from_xyz(0.0, 0.0, 1000.0),
         EguiContextSettings {
-            scale_factor: EGUI_SCALE,
+            scale_factor: vcfg.egui.egui_scale,
             ..default()
         },
     ));

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
+use crate::config::BalanceConfig;
 
 pub fn signal_system(
     time: Res<Time>,
@@ -9,6 +10,7 @@ pub fn signal_system(
     queue: Res<ShipQueue>,
     ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     mut signal_fired_events: EventWriter<SignalFired>,
+    cfg: Res<BalanceConfig>,
 ) {
     let now = time.elapsed_secs();
     let station_res = station_query.get_single();
@@ -17,7 +19,7 @@ pub fn signal_system(
     emit(&mut signal, &mut signal_fired_events, 1, "> SIGNAL RECEIVED.");
 
     // ID 2: 2s after start
-    if opening.timer >= crate::constants::SIGNAL_PAUSE_S2 && opening.phase == OpeningPhase::SignalIdentified {
+    if opening.timer >= cfg.narrative.signal_pause_s2 && opening.phase == OpeningPhase::SignalIdentified {
         emit(&mut signal, &mut signal_fired_events, 2, "> SOURCE IDENTIFIED. BEARING 047.");
     }
 
@@ -37,7 +39,7 @@ pub fn signal_system(
     }
 
     // ID 6: 1s after dock
-    if opening.phase == OpeningPhase::Docked && opening.timer >= crate::constants::SIGNAL_PAUSE_DOCK_REPORT {
+    if opening.phase == OpeningPhase::Docked && opening.timer >= cfg.narrative.signal_pause_dock_report {
         emit(&mut signal, &mut signal_fired_events, 6, "> POWER OFFLINE. STRUCTURAL INTEGRITY: 73%.");
     }
 
@@ -108,7 +110,7 @@ pub fn signal_system(
             // ID 12: 2s after ID 11 (Online)
             if st.online && signal.fired.contains(&11) {
                 if let Some(t11) = signal.last_fired_at.get(&11) {
-                    if now - *t11 >= 2.0 {
+                    if now - *t11 >= cfg.narrative.signal_pause_complete {
                         emit(&mut signal, &mut signal_fired_events, 12, "> AI CORE FABRICATION NOW AVAILABLE.");
                     }
                 }

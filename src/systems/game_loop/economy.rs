@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::VisualConfig;
 use crate::systems::persistence::save::AutosaveEvent;
 
 pub fn ship_docked_economy_system(
@@ -14,6 +14,7 @@ pub fn ship_docked_economy_system(
     mut queue: ResMut<ShipQueue>,
     mut autosave_events: EventWriter<AutosaveEvent>,
     mut commands: Commands,
+    vcfg: Res<VisualConfig>,
 ) {
     for event in cargo_events.read() {
         if let Ok(mut station) = station_query.get_single_mut() {
@@ -24,7 +25,7 @@ pub fn ship_docked_economy_system(
                 OreDeposit::Aluminum => station.aluminum_reserves += event.amount,
             }
             station.dock_state = StationDockState::Resuming;
-            station.resume_timer = STATION_RESUME_DELAY;
+            station.resume_timer = vcfg.station.resume_delay;
         }
         if event.despawn {
             queue.available_count += 1;

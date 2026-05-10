@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::constants::*;
+use crate::config::VisualConfig;
 
 pub fn narrative_event_system(
     mut bottle_events: EventReader<ShipDockedWithBottle>,
@@ -10,6 +10,7 @@ pub fn narrative_event_system(
     mut requests_tab: ResMut<RequestsTabState>,
     mut queue: ResMut<ShipQueue>,
     mut station_query: Query<&mut Station>,
+    vcfg: Res<VisualConfig>,
 ) {
     for _event in laser_events.read() {
         signal_log.entries.push_front("> INSUFFICIENT LASER RATING. UPGRADE REQUIRED.".to_string());
@@ -40,7 +41,7 @@ pub fn narrative_event_system(
         queue.available_count += 1;
         if let Ok(mut station) = station_query.get_single_mut() {
             station.dock_state = StationDockState::Resuming;
-            station.resume_timer = STATION_RESUME_DELAY;
+            station.resume_timer = vcfg.station.resume_delay;
         }
         info!("[Voidrift] OpeningCompleteEvent received. Queue: {}", queue.available_count);
     }

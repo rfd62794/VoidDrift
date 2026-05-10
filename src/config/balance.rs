@@ -65,6 +65,26 @@ pub struct NarrativeConfig {
     pub signal_pause_complete: f32,
 }
 
+#[derive(Deserialize, Clone, Debug)]
+pub struct UiConfig {
+    pub log_max_lines: usize,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct MapConfig {
+    pub overview_scale: f32,
+    pub strategic_scale: f32,
+    pub pan_speed: f32,
+    pub zoom_min: f32,
+    pub zoom_max: f32,
+    pub zoom_speed: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct AsteroidSpawningConfig {
+    pub max_per_field: u32,
+}
+
 #[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]
 pub struct BalanceConfig {
     pub mining: MiningConfig,
@@ -74,6 +94,9 @@ pub struct BalanceConfig {
     pub asteroid: AsteroidConfig,
     pub station: StationConfig,
     pub narrative: NarrativeConfig,
+    pub ui: UiConfig,
+    pub map: MapConfig,
+    pub asteroid_spawning: AsteroidSpawningConfig,
 }
 
 impl BalanceConfig {
