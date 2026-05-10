@@ -172,7 +172,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
     // ── 1. SIGNAL STRIP ───────────────────────────────────────────────────────
     if !params.view_state.show_production_tree {
-        let signal_height = if params.expanded.0 { layout.signal_height * 1.5 } else { layout.signal_height };
+        let signal_height = if params.expanded.0 { layout.signal_height * 1.0 } else { layout.signal_height };
         egui::TopBottomPanel::bottom("signal_strip")
             .frame(egui::Frame::NONE
                 .fill(egui::Color32::from_rgb(5, 8, 12))
@@ -213,7 +213,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
         // Calculate dynamic content height based on window height
         // Use fixed 200px height for drawer content
-        let content_height = 180.0;
+        let content_height = 150.0;
 
         egui::TopBottomPanel::bottom("content_area")
             .frame(egui::Frame::NONE
