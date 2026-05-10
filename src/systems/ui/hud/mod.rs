@@ -213,7 +213,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
         // Calculate dynamic content height based on window height
         // Use fixed 200px height for drawer content
-        let content_height = 200.0;
+        let content_height = 250.0;
 
         egui::TopBottomPanel::bottom("content_area")
             .frame(egui::Frame::NONE
