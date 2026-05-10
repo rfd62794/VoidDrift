@@ -1,5 +1,7 @@
 # Voidrift — Architecture
-**Date:** April 2026
+**Date:** May 2026
+**Build:** v3.1.0-sprint5-visual-overhaul
+**Architecture:** Layer 1/2/3 (Engine/Game/Presentation)
 **Source:** Read from `src/` — Layer 1 document. Do not write design vision here.
 
 ---
@@ -24,40 +26,67 @@ Bevy is configured with `default-features = false`. Active features: `bevy_winit
 
 ## Module Structure
 
-*Reflects post-Phase 5 refactor. Each file has a single, documented responsibility.*
+*Reflects Layer 1/2/3 architecture. Each file has a single, documented responsibility.*
+
+### Layer 1: Engine (Infrastructure)
 
 | File | Lines | Responsibility |
 | :--- | :--- | :--- |
-| `src/lib.rs` | ~140 | App setup, plugin registration, resource init, system scheduling only. No logic. |
-| `src/constants.rs` | ~130 | All game constants — single source of truth for tuning. |
-| `src/components/` | — | Split across focused files (see below). No logic in any file. |
-| `src/components/game_state.rs` | — | `Station`, `Ship`, `AutonomousShip`, `Berth`, `StationQueues` structs. |
-| `src/components/markers.rs` | — | Marker components: `StarLayer`, `MapMarker`, `MapElement`, `AutopilotTarget`, etc. |
-| `src/components/resources.rs` | — | ECS Resources: `SignalLog`, `ShipQueue`, `CameraDelta`, `RequestsTabState`, etc. |
-| `src/components/ui_state.rs` | — | UI-only state structs: `ActiveStationTab`, `DrawerState`, `ProductionTabState`, `CollectedRequest`. |
-| `src/components/utilities.rs` | — | Helper functions: `ore_name`, `ore_laser_required`, `berth_world_pos`. |
-| `src/systems/setup/entity_setup.rs` | — | Station, berth, opening drone, destination highlight spawn functions. |
-| `src/systems/setup/world_spawn.rs` | — | `setup_world` entry point, starfield, camera spawn. |
-| `src/systems/setup/quest_init.rs` | — | Quest log initialization. |
-| `src/systems/asteroid/spawn.rs` | — | `spawn_initial_asteroids`, `asteroid_respawn_system`, `spawn_asteroid`. |
-| `src/systems/asteroid/lifecycle.rs` | — | `asteroid_lifecycle_system` — lifespan timer, despawn, drone-target pause. |
-| `src/systems/game_loop/mining.rs` | — | Ore extraction, laser tier gate, beam scaling, depletion coloring. `power_multiplier` applied here. |
-| `src/systems/game_loop/auto_process.rs` | — | Auto-refine, auto-forge, auto-build-drones. |
-| `src/systems/game_loop/autonomous.rs` | — | Autonomous drone FSM (Outbound / Mining / Returning / Unloading / Holding). |
-| `src/systems/ship_control/autopilot.rs` | — | Player ship navigation, arrival detection, docking, bottle collection (⚠️ Phase 3 target for extraction). |
-| `src/systems/ship_control/asteroid_input.rs` | — | Touch input for manual asteroid targeting. |
-| `src/systems/ui/hud/mod.rs` | — | egui HUD entry: signal strip, drawer, tab routing. |
-| `src/systems/ui/hud/content.rs` | — | PRODUCTION and REQUESTS tab content, fulfillment logic, upgrade writes. |
-| `src/systems/ui/station_tabs.rs` | — | Station drawer tab definitions. |
-| `src/systems/ui/tutorial.rs` | — | Tutorial popup system. |
-| `src/systems/narrative/opening_sequence.rs` | — | Opening cinematic FSM and drone movement. |
-| `src/systems/narrative/signal.rs` | — | Signal log fire conditions and quest advancement. |
-| `src/systems/narrative/bottle.rs` | — | Bottle spawn timer, tap input, collection output. |
-| `src/systems/narrative/quest.rs` | — | Quest log update system. |
-| `src/systems/persistence/save.rs` | — | `SaveData`, autosave system, save request handler. |
-| `src/systems/visuals/visuals.rs` | — | Starfield parallax (absolute positioning), station rotation FSM, ship heading, thruster glow, berth colors. |
-| `src/systems/visuals/map.rs` | — | Camera follow, map visibility, pinch zoom, map pan. |
-| `src/systems/visuals/viewport.rs` | — | `ui_layout_system`, `drawer_viewport_system`. |
+| `src/lib.rs` | ~400 | App setup, plugin registration, resource init, system scheduling. No logic. |
+| `src/constants.rs` | ~15 | Remaining constants (sector positions). Most moved to config. |
+| `src/config/` | — | Config structs and loaders (balance, visual, content). |
+| `src/components/game_state.rs` | ~118 | Game state components: Ship, Station, AutonomousShip, StationQueues. |
+| `src/components/markers.rs` | ~100 | Marker components for entity filtering. |
+| `src/components/resources.rs` | ~226 | ECS Resources: SignalLog, QuestLog, TutorialState, etc. |
+| `src/components/ui_state.rs` | ~95 | UI state: ActiveStationTab, DrawerState, ProductionTabState, etc. |
+| `src/components/queries.rs` | ~42 | Query type aliases for common filters. |
+| `src/components/utilities.rs` | ~35 | Helper functions: ore_name, ore_laser_required, berth_world_pos. |
+| `src/systems/persistence/save.rs` | ~468 | SaveData struct, save/load logic, file paths. |
+| `src/systems/setup/world_spawn.rs` | ~136 | setup_world entry, starfield/camera spawn, cleanup/reset. |
+| `src/systems/setup/entity_setup.rs` | ~411 | Station, berth, opening drone, highlight spawn functions. |
+| `src/systems/setup/quest_init.rs` | ~28 | Quest log initialization from config. |
+
+### Layer 2: Game (Mechanics)
+
+| File | Lines | Responsibility |
+| :--- | :--- | :--- |
+| `src/systems/game_loop/mining.rs` | ~188 | Ore extraction, laser tier gate, beam scaling, depletion. |
+| `src/systems/game_loop/auto_process.rs` | ~145 | Auto-refine, auto-forge, auto-build-drones. |
+| `src/systems/game_loop/autonomous.rs` | ~128 | Autonomous drone FSM (Outbound/Mining/Returning/Unloading/Holding). |
+| `src/systems/game_loop/economy.rs` | ~72 | Ship docked economy: cargo unload, request fulfillment, repair. |
+| `src/systems/ship_control/autopilot.rs` | ~149 | Ship navigation, arrival detection, docking, bottle collection. |
+| `src/systems/ship_control/asteroid_input.rs` | ~126 | Touch/click input for manual asteroid targeting. |
+| `src/systems/ship_control/ship_spawn.rs` | ~170 | Drone ship spawning, bottle drone spawning. |
+| `src/systems/asteroid/spawn.rs` | ~257 | Asteroid spawning, procedural mesh generation, respawn. |
+| `src/systems/asteroid/lifecycle.rs` | ~34 | Asteroid lifecycle: lifespan timer, despawn. |
+| `src/systems/narrative/signal.rs` | ~214 | Signal firing based on game state (30+ triggers). |
+| `src/systems/narrative/opening_sequence.rs` | ~139 | Opening cinematic FSM (6 phases). |
+| `src/systems/narrative/bottle.rs` | ~155 | Bottle spawn timer, input, collection. |
+| `src/systems/narrative/quest.rs` | ~86 | Quest objective state and progress updates. |
+| `src/systems/narrative/narrative_events.rs` | ~49 | Narrative event handling (bottle, opening, laser). |
+| `src/systems/narrative/content_router.rs` | ~152 | Echo content routing (event and ambient). |
+| `src/systems/narrative/logs.rs` | ~51 | Log entry unlock checking. |
+
+### Layer 3: Presentation (UI + Visuals)
+
+| File | Lines | Responsibility |
+| :--- | :--- | :--- |
+| `src/systems/ui/hud/mod.rs` | ~1040 | egui HUD: signal strip, drawer, tabs, production tree, tutorial. |
+| `src/systems/ui/hud/content.rs` | ~745 | Production/Requests tab content, procedural symbol rendering. |
+| `src/systems/ui/hud/state_machine.rs` | ~20 | Drawer state machine from game state transitions. |
+| `src/systems/ui/station_tabs.rs` | ~97 | Station tab rendering and queue cards. |
+| `src/systems/ui/tutorial.rs` | ~204 | Tutorial popup system and highlight positioning. |
+| `src/systems/visuals/visuals.rs` | ~207 | Thruster glow, ship rotation, starfield scroll, station rotation. |
+| `src/systems/visuals/map.rs` | ~214 | Camera follow, map visibility, pinch zoom, map pan. |
+| `src/systems/visuals/viewport.rs` | ~54 | Viewport system for egui CentralPanel mirroring. |
+| `src/systems/visuals/ore_polygon.rs` | ~64 | Procedural ore polygon rendering (egui painter). |
+| `src/systems/visuals/ingot_node.rs` | ~68 | Procedural ingot node rendering (egui painter). |
+| `src/systems/visuals/component_nodes.rs` | ~466 | Procedural component rendering (egui painter). |
+| `src/systems/visuals/mesh_builder.rs` | ~207 | Bevy mesh builders: polygons, ore bands, rocket parts. |
+| `src/systems/visuals/debug_log.rs` | ~43 | Debug logging system (global static mutex). |
+| `src/scenes/main_menu.rs` | ~639 | Main menu UI, save/load, starfield/camera spawn. |
+
+**Note:** Some files exceed single-responsibility guidelines and are flagged for refactoring in the issue board (TD-001, #23-#32).
 
 ---
 
@@ -207,14 +236,14 @@ AsteroidField (MapMarker, Transform: Z_ENVIRONMENT = 0.5)
 
 | Sector | Position | Ore | Laser Required |
 | :--- | :--- | :--- | :--- |
-| S1 | (320, 140) | Magnetite | Basic |
-| S2 | (-220, 340) | Iron | Basic |
-| S3 | (380, -280) | Carbon | Basic |
-| S4 | (-520, -380) | Tungsten | Tungsten |
-| S5 | (680, 320) | Titanite | Tungsten |
-| S6 | (-650, 520) | CrystalCore | Composite |
+| S1 | (320, 140) | Iron | Tier 1 |
+| S2 | (-220, 340) | Tungsten | Tier 2 |
+| S3 | (380, -280) | Nickel | Tier 3 |
+| Outer Ring | Variable | Aluminum | Tier 3 |
 
-All sectors connected to STATION_POS (0,0) via `MapConnector` line meshes.
+All sectors connected to STATION_POS (0,0) via `MapConnector` line meshes. Aluminum spawns in outer ring beyond S1-S3.
+
+**Note:** Sector positions are currently hardcoded in `constants.rs`. Planned migration to `balance.toml` (issue #17).
 
 ---
 
@@ -337,28 +366,41 @@ All touch input systems check `opening.phase != OpeningPhase::Complete` and retu
 
 ---
 
-## Known Architectural Strain (Phase 3 Target)
+## Known Architectural Strain
 
-The following patterns were identified during Phase 2 and are queued for Phase 3 refactor:
+The following patterns are identified for structural rework (see issues #23-#32):
 
-**1. God Systems**
-`autopilot.rs` handles navigation geometry, state machine transitions, docking sequences, AND narrative bottle collection. A bracket in the wrong place broke the narrative pipeline silently — the `CarryingBottle` branch was unreachable for the entire Phase 2 sprint. Systems with multiple unrelated responsibilities produce bugs that compile correctly and fail at runtime.
+**1. God Classes (High Priority)**
+- `hud/mod.rs` (1040 lines): mixes cargo display, station visuals, production tree, tabs, tutorial
+- `resources.rs` (226 lines): mixes states, resources, station component, narrative resources
+- `save.rs` (468 lines): mixes save data struct, save/load logic, file paths
+- `main_menu.rs` (639 lines): mixes menu UI, save/load logic, starfield/camera spawning
+- `component_nodes.rs` (466 lines): contains 6 different drawing functions
 
-**2. UI as Business Logic**
-`content.rs` directly mutates `station.power_multiplier += 0.25` on fulfillment. No central economy system enforces what that mutation means downstream. The multiplier was written by the UI and read by nothing for multiple sprints before it was manually wired to `mining.rs`.
+**2. Code Duplication (Medium Priority)**
+- Rocket spawning duplicated between `entity_setup.rs` and `ship_spawn.rs`
+- Ore mesh generation duplicated per ore type in `entity_setup.rs`
+- Auto_forge_system processes inline not via StationQueues (tech debt)
 
-**3. Hardcoded Fallbacks**
-Mining and autopilot systems implicitly rescue drones when things go wrong (e.g., defaulting to `ShipState::Mining` when an entity disappears). This creates silent error-recovery loops that look correct until they accumulate.
+**3. Hardcoded Values (Medium Priority)**
+- Signal triggers hardcoded in `signal.rs` (30+ triggers with inline conditions)
+- Laser tier validation hardcoded in `mining.rs`
+- Sector positions hardcoded in `constants.rs`
 
-**4. Initialization Scatter**
-Legacy `spawn_sectors` and new `spawn_initial_asteroids` ran simultaneously in the same schedule phase without coordination, causing 5–6 asteroids to spawn instead of 3. Fixed in Phase 2 by removing the legacy spawner.
+**4. Dead Code (Low Priority)**
+- `ui_layout_system` in `viewport.rs` is no-op function
+- Legacy tutorial beats T-001 to T-006 never fire (opening ship despawned at Complete)
 
-**Phase 3 Target Architecture:**
-```
-Event bus pattern:
-  autopilot.rs fires ArrivedAtTarget(Entity)
-  → narrative system checks if entity is Bottle → fires collection event
-  → upgrade system listens for fulfillment event → applies multipliers
-  UI writes intent only → economy system enforces meaning
-  Initialization: spawn_initial_asteroids is sole asteroid spawner
-```
+**Layer 1/2/3 Architecture (ADR-016):**
+The codebase is organized into three layers with strict dependency rules:
+- **Layer 1 (Engine):** Infrastructure — app setup, config, components, persistence, spawning
+- **Layer 2 (Game):** Mechanics — mining, refining, autonomous ships, narrative, quest progression
+- **Layer 3 (Presentation):** Rendering and interface — HUD, menus, visual effects, camera
+
+Dependency rule: Layer N can only depend on Layer < N. This eliminates circular dependencies and provides clear scope for refactoring.
+
+**Target Architecture (Issues #23-#32):**
+- Split god classes into focused modules by layer
+- Create shared infrastructure (rocket_spawner.rs, ore_mesh_builder.rs)
+- Move hardcoded values to config-driven systems
+- Remove dead code and legacy patterns
