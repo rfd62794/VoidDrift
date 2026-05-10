@@ -212,8 +212,8 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
         let station_result = params.station_query.get_single_mut();
 
         // Calculate dynamic content height based on window height
-        // Use 25% of screen height for drawer content
-        let content_height = (screen.height() * 0.25).max(layout.content_height);
+        // Use fixed 200px height for drawer content
+        let content_height = 200.0;
 
         egui::TopBottomPanel::bottom("content_area")
             .frame(egui::Frame::NONE
