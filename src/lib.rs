@@ -47,6 +47,38 @@ fn detect_device_type(mut device_type: ResMut<DeviceType>) {
     };
 }
 
+#[cfg(target_arch = "wasm32")]
+fn setup_fullscreen_resize_handler() {
+    use wasm_bindgen::prelude::*;
+    use web_sys::{window, EventTarget};
+    
+    let window = window().unwrap();
+    let closure = Closure::wrap(Box::new(move || {
+        let win = web_sys::window().unwrap();
+        let w = win.inner_width().unwrap().as_f64().unwrap() as u32;
+        let h = win.inner_height().unwrap().as_f64().unwrap() as u32;
+        
+        // Resize the bevy canvas to match browser window
+        if let Some(document) = win.document() {
+            if let Some(canvas) = document.get_element_by_id("bevy-canvas") {
+                let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into().unwrap();
+                canvas.set_width(w);
+                canvas.set_height(h);
+            }
+        }
+    }) as Box<dyn Fn()>);
+    
+    window
+        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())
+        .unwrap();
+    
+    window
+        .add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())
+        .unwrap();
+    
+    closure.forget();
+}
+
 mod constants;
 pub use constants::*;
 
@@ -289,6 +321,7 @@ pub fn start() {
         .add_systems(Startup, (
             configure_egui_scale,
             detect_device_type,
+            setup_fullscreen_resize_handler,
             systems::visuals::debug_log::setup_debug_log_system,
         ))
         .add_systems(Update, (

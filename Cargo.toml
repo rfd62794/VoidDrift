@@ -69,7 +69,13 @@ bevy = { version = "0.15.3", default-features = false, features = [
 gloo-storage = "0.4"
 getrandom = { version = "0.3", features = ["wasm_js"] }
 wasm-bindgen = "0.2"
-web-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "Window",
+    "Document",
+    "HtmlCanvasElement",
+    "Element",
+    "EventTarget",
+] }
 js-sys = "0.3"
 bevy = { version = "0.15.3", default-features = false, features = [
     "webgl2",
