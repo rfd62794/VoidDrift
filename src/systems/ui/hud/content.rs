@@ -326,7 +326,7 @@ pub fn render_tab_content(
             // Calculate dynamic sizing based on available height
             let available_height = ui.available_height() - 10.0; // leave margin
             let row_height = available_height / 3.7; // 4 rows
-            let symbol_size = (row_height * 0.5).clamp(16.0, 24.0);
+            let symbol_size = (row_height * 0.5).clamp(12.0, 20.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
             // Allocate full available height
