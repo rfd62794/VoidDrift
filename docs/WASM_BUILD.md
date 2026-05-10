@@ -119,10 +119,45 @@ Do not remove this setting. It was disabled due to build issues.
 Use Python's built-in HTTP server:
 
 ```powershell
-python -m http.server 8000 --directory pkg
+cd pkg
+python -m http.server 8000
 ```
 
 Then open `http://localhost:8000` in a browser.
+
+### Test at itch.io Dimensions
+
+To test the WASM build in the exact itch.io iframe environment before publishing:
+
+**Step 1: Build WASM**
+```powershell
+.\build_wasm.ps1
+```
+
+**Step 2: Serve WASM locally**
+```powershell
+cd pkg
+python -m http.server 8080
+```
+
+**Step 3: Open itch.io preview**
+```
+Open scripts/local_itch_preview.html in browser
+```
+
+The preview page creates an iframe at the exact dimensions itch.io uses (1280×640 landscape) and loads your WASM build from `http://localhost:8080`. This allows you to test:
+- Drawer layout at constrained height (~162px available)
+- Canvas CSS fullscreen behavior
+- Touch interactions
+- WASM-specific issues
+
+**Four preset sizes:**
+- Embed (1280×640) — itch.io default
+- Tablet (1024×768) — tablet viewport
+- Mobile Portrait (375×812) — iPhone X
+- Mobile Landscape (812×375) — iPhone X landscape
+
+See `docs/DEVELOPMENT_PIPELINE.md` for the full development workflow.
 
 ### Alternative: Use any local server
 

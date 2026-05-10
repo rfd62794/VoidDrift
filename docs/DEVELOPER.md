@@ -164,6 +164,13 @@ pub fn my_system(
 
 ## Build & Deploy Details
 
+### Full Development Pipeline
+For the complete end-to-end development workflow from local edit to live on itch.io, see **[DEVELOPMENT_PIPELINE.md](DEVELOPMENT_PIPELINE.md)**. This document covers:
+- Local development loop (desktop and WASM testing)
+- Commit and tag loop (branching, versioning, publishing)
+- CI/CD automation (GitHub Actions for itch.io and telemetry deployment)
+- Verification checklists at each stage
+
 ### Prerequisites
 - Rust 1.95+
 - Android SDK/NDK r26+
