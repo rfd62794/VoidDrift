@@ -37,23 +37,24 @@
 <body>
     <canvas id="bevy-canvas"></canvas>
     <script>
-        // Set canvas dimensions to match window size
-        function resizeCanvas() {
-            const canvas = document.getElementById('bevy-canvas');
-            if (canvas) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
+        // Use ResizeObserver to detect when canvas size changes (including iframe fullscreen)
+        const canvas = document.getElementById('bevy-canvas');
+        if (canvas) {
+            const resizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const width = entry.contentRect.width;
+                    const height = entry.contentRect.height;
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+            });
+            
+            // Observe the canvas element
+            resizeObserver.observe(canvas);
+            
+            // Also observe the body to catch iframe fullscreen
+            resizeObserver.observe(document.body);
         }
-        
-        // Set initial size and listen for resize events
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Also try fullscreenchange for browsers that support it
-        document.addEventListener('fullscreenchange', resizeCanvas);
-        document.addEventListener('webkitfullscreenchange', resizeCanvas);
-        document.addEventListener('mozfullscreenchange', resizeCanvas);
     </script>
     <script type="module">
         import init from './pkg/voidrift.js';
