@@ -326,7 +326,7 @@ pub fn render_tab_content(
             // Calculate dynamic sizing based on available height
             let available_height = ui.available_height() - 10.0; // leave margin
             let row_height = available_height / 3.8; // 4 rows
-            let symbol_size = (row_height * 0.45).clamp(16.0, 22.0);
+            let symbol_size = (row_height * 0.4).clamp(14.0, 19.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
             // Allocate full available height
@@ -587,8 +587,6 @@ pub fn render_tab_content(
             draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::AluminumIngot, aluminum_ingot_state, "Aluminum Ingot", station.aluminum_ingots, vcfg, symbol_size);
             painter.line_segment([egui::pos2(X_INGOT + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
             draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::Canister, canister_state, "Canister", station.aluminum_canisters, vcfg, symbol_size);
-            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, drone_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, drone_y), egui::pos2(X_ARROW_END - 6.0, drone_y - 3.0), egui::pos2(X_ARROW_END - 6.0, drone_y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
 
             // Single drone at x=660, dynamic y
             let drone_pos = egui::pos2(X_DRONE, drone_y);
