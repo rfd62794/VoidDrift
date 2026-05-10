@@ -72,7 +72,7 @@ try {
 # Bevy WASM resolves asset_server.load("fonts/x.ttf") as GET assets/fonts/x.ttf
 # relative to the page root. Without this copy, font loads return 404 silently.
 Write-Host "  Copying assets to pkg/assets/..." -ForegroundColor DarkGray
-Copy-Item -Path (Join-Path $RepoRoot "assets") -Destination (Join-Path $PkgDir "assets") -Recurse -Force
+robocopy (Join-Path $RepoRoot "assets") (Join-Path $PkgDir "assets") /E /NFL /NDL /NJH /NJS
 Write-Host "  Assets copied." -ForegroundColor DarkGray
 
 # Restore index.html if wasm-pack unexpectedly modified it

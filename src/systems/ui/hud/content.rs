@@ -313,12 +313,7 @@ pub fn render_tab_content(
             ui.heading("CARGO BAY");
             ui.add_space(8.0);
 
-            // Fixed pixel position layout - 5 columns, 4 rows
-            const SYMBOL_SIZE: f32 = 28.0;
-            const DRONE_SIZE: f32 = 32.0;
-            const CONTENT_TOP: f32 = -12.0;
-            const ROW_HEIGHT: f32 = 80.0;
-            
+            // Dynamic layout - calculate based on available height
             // Fixed x positions
             const X_ORE: f32 = 40.0;
             const X_INGOT: f32 = 220.0;
@@ -326,24 +321,30 @@ pub fn render_tab_content(
             const X_ARROW_START: f32 = 428.0;
             const X_ARROW_END: f32 = 648.0;
             const X_DRONE: f32 = 660.0;
-            
-            // Drone vertical center (middle of all 4 rows)
-            const DRONE_Y: f32 = 200.0;
+            const CONTENT_TOP: f32 = -12.0;
 
-            // Allocate space
-            let total_height = 380.0;
-            let (rect, _response) = ui.allocate_exact_size(egui::vec2(ui.available_width(), total_height), egui::Sense::hover());
+            // Calculate dynamic sizing based on available height
+            let available_height = ui.available_height() - 40.0; // leave margin
+            let row_height = available_height / 5.0; // 4 rows + fleet row
+            let symbol_size = (row_height * 0.5).clamp(28.0, 48.0);
+            let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
+
+            // Allocate full available height
+            let (rect, _response) = ui.allocate_exact_size(egui::vec2(ui.available_width(), available_height), egui::Sense::hover());
             let painter = ui.painter_at(rect);
 
             let content_top_y = rect.min.y + CONTENT_TOP;
 
-            // Row y positions
+            // Row y positions - spread evenly across available height
             let row_centers = [
-                content_top_y + ROW_HEIGHT * 0.5,
-                content_top_y + ROW_HEIGHT * 1.5,
-                content_top_y + ROW_HEIGHT * 2.5,
-                content_top_y + ROW_HEIGHT * 3.5,
+                content_top_y + 20.0 + (0.0 * row_height),
+                content_top_y + 20.0 + (1.0 * row_height),
+                content_top_y + 20.0 + (2.0 * row_height),
+                content_top_y + 20.0 + (3.0 * row_height),
             ];
+            
+            // Drone vertical center (middle of all 4 rows)
+            let drone_y = content_top_y + 20.0 + (2.0 * row_height);
 
             // Row states
             let iron_state = if station.iron_reserves > 0.0 { SymbolState::ActivePopulated } else { SymbolState::ActiveEmpty };
@@ -363,7 +364,7 @@ pub fn render_tab_content(
             let canister_state = if station.aluminum_ingots == 0.0 { SymbolState::Locked } else if station.aluminum_canisters > 0.0 { SymbolState::ActivePopulated } else { SymbolState::ActiveEmpty };
 
             // Helper to draw symbol with text
-            let draw_symbol_text = |painter: &egui::Painter, x: f32, y: f32, symbol_type: SymbolType, state: SymbolState, name: &str, count: f32, vcfg: &VisualConfig| {
+            let draw_symbol_text = |painter: &egui::Painter, x: f32, y: f32, symbol_type: SymbolType, state: SymbolState, name: &str, count: f32, vcfg: &VisualConfig, symbol_size: f32| {
                 let alpha = match state {
                     SymbolState::Locked => 51,
                     SymbolState::ActiveEmpty => 128,
@@ -371,14 +372,14 @@ pub fn render_tab_content(
                 };
 
                 let symbol_pos = egui::pos2(x, y);
-                let symbol_rect = egui::Rect::from_center_size(symbol_pos, egui::vec2(SYMBOL_SIZE, SYMBOL_SIZE));
+                let symbol_rect = egui::Rect::from_center_size(symbol_pos, egui::vec2(symbol_size, symbol_size));
                 let symbol_painter = painter.with_clip_rect(symbol_rect);
 
                 match symbol_type {
                     SymbolType::IronOre => {
                         let ore_cfg = &vcfg.production_tree.ore_node;
                         let ore_config = OrePolygonConfig {
-                            radius: SYMBOL_SIZE * 0.4,
+                            radius: symbol_size * 0.4,
                             vertex_count: ore_cfg.vertex_count,
                             jaggedness: ore_cfg.jaggedness,
                             color_body: egui::Color32::from_rgba_unmultiplied(100, 100, 100, alpha),
@@ -394,7 +395,7 @@ pub fn render_tab_content(
                     SymbolType::TungstenOre => {
                         let ore_cfg = &vcfg.production_tree.ore_node;
                         let ore_config = OrePolygonConfig {
-                            radius: SYMBOL_SIZE * 0.4,
+                            radius: symbol_size * 0.4,
                             vertex_count: ore_cfg.vertex_count,
                             jaggedness: ore_cfg.jaggedness,
                             color_body: egui::Color32::from_rgba_unmultiplied(100, 100, 100, alpha),
@@ -410,7 +411,7 @@ pub fn render_tab_content(
                     SymbolType::NickelOre => {
                         let ore_cfg = &vcfg.production_tree.ore_node;
                         let ore_config = OrePolygonConfig {
-                            radius: SYMBOL_SIZE * 0.4,
+                            radius: symbol_size * 0.4,
                             vertex_count: ore_cfg.vertex_count,
                             jaggedness: ore_cfg.jaggedness,
                             color_body: egui::Color32::from_rgba_unmultiplied(100, 100, 100, alpha),
@@ -426,7 +427,7 @@ pub fn render_tab_content(
                     SymbolType::AluminumOre => {
                         let ore_cfg = &vcfg.production_tree.ore_node;
                         let ore_config = OrePolygonConfig {
-                            radius: SYMBOL_SIZE * 0.4,
+                            radius: symbol_size * 0.4,
                             vertex_count: ore_cfg.vertex_count,
                             jaggedness: ore_cfg.jaggedness,
                             color_body: egui::Color32::from_rgba_unmultiplied(100, 100, 100, alpha),
@@ -441,10 +442,10 @@ pub fn render_tab_content(
                     },
                     SymbolType::IronIngot => {
                         let ingot_config = IngotNodeConfig {
-                            width: SYMBOL_SIZE * 0.7,
-                            height: SYMBOL_SIZE * 0.7,
-                            depth_offset_x: SYMBOL_SIZE * 0.15,
-                            depth_offset_y: SYMBOL_SIZE * 0.15,
+                            width: symbol_size * 0.7,
+                            height: symbol_size * 0.7,
+                            depth_offset_x: symbol_size * 0.15,
+                            depth_offset_y: symbol_size * 0.15,
                             color_face_light_factor: 1.0,
                             color_face_dark_factor: 0.7,
                         };
@@ -453,10 +454,10 @@ pub fn render_tab_content(
                     },
                     SymbolType::TungstenIngot => {
                         let ingot_config = IngotNodeConfig {
-                            width: SYMBOL_SIZE * 0.7,
-                            height: SYMBOL_SIZE * 0.7,
-                            depth_offset_x: SYMBOL_SIZE * 0.15,
-                            depth_offset_y: SYMBOL_SIZE * 0.15,
+                            width: symbol_size * 0.7,
+                            height: symbol_size * 0.7,
+                            depth_offset_x: symbol_size * 0.15,
+                            depth_offset_y: symbol_size * 0.15,
                             color_face_light_factor: 1.0,
                             color_face_dark_factor: 0.7,
                         };
@@ -465,10 +466,10 @@ pub fn render_tab_content(
                     },
                     SymbolType::NickelIngot => {
                         let ingot_config = IngotNodeConfig {
-                            width: SYMBOL_SIZE * 0.7,
-                            height: SYMBOL_SIZE * 0.7,
-                            depth_offset_x: SYMBOL_SIZE * 0.15,
-                            depth_offset_y: SYMBOL_SIZE * 0.15,
+                            width: symbol_size * 0.7,
+                            height: symbol_size * 0.7,
+                            depth_offset_x: symbol_size * 0.15,
+                            depth_offset_y: symbol_size * 0.15,
                             color_face_light_factor: 1.0,
                             color_face_dark_factor: 0.7,
                         };
@@ -477,10 +478,10 @@ pub fn render_tab_content(
                     },
                     SymbolType::AluminumIngot => {
                         let ingot_config = IngotNodeConfig {
-                            width: SYMBOL_SIZE * 0.7,
-                            height: SYMBOL_SIZE * 0.7,
-                            depth_offset_x: SYMBOL_SIZE * 0.15,
-                            depth_offset_y: SYMBOL_SIZE * 0.15,
+                            width: symbol_size * 0.7,
+                            height: symbol_size * 0.7,
+                            depth_offset_x: symbol_size * 0.15,
+                            depth_offset_y: symbol_size * 0.15,
                             color_face_light_factor: 1.0,
                             color_face_dark_factor: 0.7,
                         };
@@ -490,7 +491,7 @@ pub fn render_tab_content(
                     SymbolType::HullPlate => {
                         let hull_cfg = &vcfg.component.hull;
                         let hull_config = HullConfig {
-                            width: SYMBOL_SIZE * 0.8,
+                            width: symbol_size * 0.8,
                             rib_count: hull_cfg.rib_count,
                             color_frame: egui::Color32::from_rgba_unmultiplied(150, 100, 100, alpha),
                             color_outline: egui::Color32::from_rgba_unmultiplied(200, 130, 130, alpha),
@@ -501,7 +502,7 @@ pub fn render_tab_content(
                     SymbolType::Thruster => {
                         let thruster_cfg = &vcfg.component.thruster;
                         let thruster_config = ThrusterConfig {
-                            width: SYMBOL_SIZE * 0.8,
+                            width: symbol_size * 0.8,
                             color_nozzle: egui::Color32::from_rgba_unmultiplied(100, 100, 150, alpha),
                             color_body: egui::Color32::from_rgba_unmultiplied(130, 130, 180, alpha),
                             color_wire: egui::Color32::from_rgba_unmultiplied(200, 50, 50, alpha),
@@ -514,7 +515,7 @@ pub fn render_tab_content(
                     SymbolType::AICore => {
                         let ai_core_cfg = &vcfg.component.ai_core;
                         let ai_core_config = AICoreConfig {
-                            radius: SYMBOL_SIZE * 0.4,
+                            radius: symbol_size * 0.4,
                             fin_count: ai_core_cfg.fin_count,
                             fin_length: ai_core_cfg.fin_length,
                             fin_width: ai_core_cfg.fin_width,
@@ -529,8 +530,8 @@ pub fn render_tab_content(
                     SymbolType::Canister => {
                         let canister_cfg = &vcfg.component.canister;
                         let canister_config = CanisterConfig {
-                            width: SYMBOL_SIZE * 0.6,
-                            height: SYMBOL_SIZE * 0.8,
+                            width: symbol_size * 0.6,
+                            height: symbol_size * 0.8,
                             lid_height_ratio: canister_cfg.lid_height_ratio,
                             color_body: egui::Color32::from_rgba_unmultiplied(180, 180, 140, alpha),
                             color_lid: egui::Color32::from_rgba_unmultiplied(150, 150, 110, alpha),
@@ -542,61 +543,61 @@ pub fn render_tab_content(
                     _ => {},
                 }
 
-                let name_pos = egui::pos2(x, y + SYMBOL_SIZE / 2.0 + 4.0);
+                let name_pos = egui::pos2(x, y + symbol_size / 2.0 + 4.0);
                 painter.text(name_pos, egui::Align2::CENTER_TOP, name, egui::FontId::proportional(10.0), egui::Color32::from_rgba_unmultiplied(0, 200, 200, alpha));
 
-                let count_pos = egui::pos2(x, y + SYMBOL_SIZE / 2.0 + 18.0);
+                let count_pos = egui::pos2(x, y + symbol_size / 2.0 + 18.0);
                 painter.text(count_pos, egui::Align2::CENTER_TOP, &format!("{}", count.floor()), egui::FontId::proportional(10.0), egui::Color32::from_rgba_unmultiplied(0, 204, 102, alpha));
             };
 
             // Row 1: Iron Ore → Iron Ingot → Hull Plate
             let row_y = row_centers[0];
-            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::IronOre, iron_state, "Iron Ore", station.iron_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ORE + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::IronIngot, iron_ingot_state, "Iron Ingot", station.iron_ingots, vcfg);
-            painter.line_segment([egui::pos2(X_INGOT + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::HullPlate, hull_plate_state, "Hull Plate", station.hull_plate_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, content_top_y + DRONE_Y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, content_top_y + DRONE_Y), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y - 3.0), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
+            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::IronOre, iron_state, "Iron Ore", station.iron_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ORE + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::IronIngot, iron_ingot_state, "Iron Ingot", station.iron_ingots, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_INGOT + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::HullPlate, hull_plate_state, "Hull Plate", station.hull_plate_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, drone_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, drone_y), egui::pos2(X_ARROW_END - 6.0, drone_y - 3.0), egui::pos2(X_ARROW_END - 6.0, drone_y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
 
             // Row 2: Tungsten Ore → Tungsten Ingot → Thruster
             let row_y = row_centers[1];
-            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::TungstenOre, tungsten_state, "Tungsten Ore", station.tungsten_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ORE + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::TungstenIngot, tungsten_ingot_state, "Tungsten Ingot", station.tungsten_ingots, vcfg);
-            painter.line_segment([egui::pos2(X_INGOT + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::Thruster, thruster_state, "Thruster", station.thruster_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, content_top_y + DRONE_Y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, content_top_y + DRONE_Y), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y - 3.0), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
+            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::TungstenOre, tungsten_state, "Tungsten Ore", station.tungsten_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ORE + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::TungstenIngot, tungsten_ingot_state, "Tungsten Ingot", station.tungsten_ingots, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_INGOT + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::Thruster, thruster_state, "Thruster", station.thruster_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, drone_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, drone_y), egui::pos2(X_ARROW_END - 6.0, drone_y - 3.0), egui::pos2(X_ARROW_END - 6.0, drone_y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
 
             // Row 3: Nickel Ore → Nickel Ingot → AI Core
             let row_y = row_centers[2];
-            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::NickelOre, nickel_state, "Nickel Ore", station.nickel_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ORE + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::NickelIngot, nickel_ingot_state, "Nickel Ingot", station.nickel_ingots, vcfg);
-            painter.line_segment([egui::pos2(X_INGOT + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::AICore, ai_core_state, "AI Core", station.ai_cores, vcfg);
-            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, content_top_y + DRONE_Y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, content_top_y + DRONE_Y), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y - 3.0), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
+            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::NickelOre, nickel_state, "Nickel Ore", station.nickel_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ORE + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::NickelIngot, nickel_ingot_state, "Nickel Ingot", station.nickel_ingots, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_INGOT + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::AICore, ai_core_state, "AI Core", station.ai_cores, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, drone_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, drone_y), egui::pos2(X_ARROW_END - 6.0, drone_y - 3.0), egui::pos2(X_ARROW_END - 6.0, drone_y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
 
             // Row 4: Aluminum Ore → Aluminum Ingot → Canister
             let row_y = row_centers[3];
-            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::AluminumOre, aluminum_state, "Aluminum Ore", station.aluminum_reserves, vcfg);
-            painter.line_segment([egui::pos2(X_ORE + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::AluminumIngot, aluminum_ingot_state, "Aluminum Ingot", station.aluminum_ingots, vcfg);
-            painter.line_segment([egui::pos2(X_INGOT + SYMBOL_SIZE / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - SYMBOL_SIZE / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::Canister, canister_state, "Canister", station.aluminum_canisters, vcfg);
-            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, content_top_y + DRONE_Y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
-            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, content_top_y + DRONE_Y), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y - 3.0), egui::pos2(X_ARROW_END - 6.0, content_top_y + DRONE_Y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
+            draw_symbol_text(&painter, X_ORE, row_y, SymbolType::AluminumOre, aluminum_state, "Aluminum Ore", station.aluminum_reserves, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ORE + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_INGOT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_INGOT, row_y, SymbolType::AluminumIngot, aluminum_ingot_state, "Aluminum Ingot", station.aluminum_ingots, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_INGOT + symbol_size / 2.0 + 8.0, row_y), egui::pos2(X_COMPONENT - symbol_size / 2.0 - 8.0, row_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            draw_symbol_text(&painter, X_COMPONENT, row_y, SymbolType::Canister, canister_state, "Canister", station.aluminum_canisters, vcfg, symbol_size);
+            painter.line_segment([egui::pos2(X_ARROW_START, row_y), egui::pos2(X_ARROW_END, drone_y)], egui::Stroke::new(1.5, egui::Color32::from_rgb(0, 200, 200)));
+            painter.add(egui::Shape::convex_polygon(vec![egui::pos2(X_ARROW_END, drone_y), egui::pos2(X_ARROW_END - 6.0, drone_y - 3.0), egui::pos2(X_ARROW_END - 6.0, drone_y + 3.0)], egui::Color32::from_rgb(0, 200, 200), egui::Stroke::NONE));
 
-            // Single drone at x=660, y=200
-            let drone_pos = egui::pos2(X_DRONE, content_top_y + DRONE_Y);
-            let drone_rect = egui::Rect::from_center_size(drone_pos, egui::vec2(DRONE_SIZE, DRONE_SIZE));
+            // Single drone at x=660, dynamic y
+            let drone_pos = egui::pos2(X_DRONE, drone_y);
+            let drone_rect = egui::Rect::from_center_size(drone_pos, egui::vec2(drone_size, drone_size));
             let drone_painter = painter.with_clip_rect(drone_rect);
             let drone_bay_cfg = &vcfg.component.drone_bay;
             let drone_bay_config = DroneBayConfig {
-                width: DRONE_SIZE * 0.8,
-                height: DRONE_SIZE * 0.8,
+                width: drone_size * 0.8,
+                height: drone_size * 0.8,
                 color_ready: egui::Color32::from_rgb(0, 200, 100),
                 color_empty: egui::Color32::from_rgb(100, 100, 100),
                 nose_height_ratio: drone_bay_cfg.nose_height_ratio,
@@ -609,8 +610,8 @@ pub fn render_tab_content(
             let drone_is_ready = station.drone_count > 0;
             component_nodes::draw_drone_bay(&drone_painter, drone_rect.center(), &drone_bay_config, drone_is_ready);
 
-            painter.text(egui::pos2(X_DRONE, drone_pos.y + DRONE_SIZE / 2.0 + 4.0), egui::Align2::CENTER_TOP, "Drone Bay", egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 200, 200));
-            painter.text(egui::pos2(X_DRONE, drone_pos.y + DRONE_SIZE / 2.0 + 20.0), egui::Align2::CENTER_TOP, &format!("Fleet: {}", station.drone_count), egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 204, 102));
+            painter.text(egui::pos2(X_DRONE, drone_pos.y + drone_size / 2.0 + 4.0), egui::Align2::CENTER_TOP, "Drone Bay", egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 200, 200));
+            painter.text(egui::pos2(X_DRONE, drone_pos.y + drone_size / 2.0 + 20.0), egui::Align2::CENTER_TOP, &format!("Fleet: {}", station.drone_count), egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 204, 102));
         }
         ActiveStationTab::Production => {
             ui.heading("FORGE");
