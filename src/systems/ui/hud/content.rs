@@ -321,13 +321,12 @@ pub fn render_tab_content(
             const X_ARROW_START: f32 = 428.0;
             const X_ARROW_END: f32 = 648.0;
             const X_DRONE: f32 = 660.0;
-            const CONTENT_TOP: f32 = 12.0;
+            const CONTENT_TOP: f32 = 4.0;
 
             // Calculate dynamic sizing based on available height
-            let available_height = ui.available_height() - 40.0; // leave margin
-            info!("available_height: {}", available_height);
-            let row_height = available_height / 3.2; // 4 rows + fleet row
-            let symbol_size = (row_height * 0.55).clamp(20.0, 30.0);
+            let available_height = ui.available_height() - 10.0; // leave margin
+            let row_height = available_height / 4.0; // 4 rows
+            let symbol_size = (row_height * 0.55).clamp(24.0, 36.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
             // Allocate full available height
@@ -338,10 +337,10 @@ pub fn render_tab_content(
 
             // Row y positions - spread evenly across available height
             let row_centers = [
-                content_top_y + (0.5 * row_height),
-                content_top_y + (1.5 * row_height),
-                content_top_y + (2.5 * row_height),
-                content_top_y + (3.5 * row_height),
+                content_top_y + (0.2 * row_height),
+                content_top_y + (1.2 * row_height),
+                content_top_y + (2.2 * row_height),
+                content_top_y + (3.2 * row_height),
             ];
             
             // Drone vertical center (middle of all 4 rows)
