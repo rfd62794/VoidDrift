@@ -325,7 +325,7 @@ pub fn render_tab_content(
 
             // Calculate dynamic sizing based on available height
             let available_height = ui.available_height() - 10.0; // leave margin
-            let row_height = available_height / 4.0; // 4 rows
+            let row_height = available_height / 3.8; // 4 rows
             let symbol_size = (row_height * 0.5).clamp(16.0, 22.0);
             let drone_size = (row_height * 0.6).clamp(32.0, 56.0);
 
@@ -546,7 +546,7 @@ pub fn render_tab_content(
                 let name_pos = egui::pos2(x, y + symbol_size / 2.0 + 6.0);
                 painter.text(name_pos, egui::Align2::CENTER_TOP, name, egui::FontId::proportional(10.0), egui::Color32::from_rgba_unmultiplied(0, 200, 200, alpha));
 
-                let count_pos = egui::pos2(x, y + symbol_size / 2.0 - 4.0);
+                let count_pos = egui::pos2(x, y + symbol_size / 2.0 + 14.0);
                 painter.text(count_pos, egui::Align2::CENTER_TOP, &format!("{}", count.floor()), egui::FontId::proportional(10.0), egui::Color32::from_rgba_unmultiplied(0, 204, 102, alpha));
             };
 
