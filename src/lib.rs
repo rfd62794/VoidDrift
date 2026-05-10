@@ -50,33 +50,34 @@ fn detect_device_type(mut device_type: ResMut<DeviceType>) {
 #[cfg(target_arch = "wasm32")]
 fn setup_fullscreen_resize_handler() {
     use wasm_bindgen::prelude::*;
-    use web_sys::{window, EventTarget};
+    use web_sys::window;
+
+    let win = window().unwrap();
+    let document = win.document().unwrap();
     
-    let window = window().unwrap();
-    let closure = Closure::wrap(Box::new(move || {
-        let win = web_sys::window().unwrap();
-        let w = win.inner_width().unwrap().as_f64().unwrap() as u32;
-        let h = win.inner_height().unwrap().as_f64().unwrap() as u32;
-        
-        // Resize the bevy canvas to match browser window
-        if let Some(document) = win.document() {
-            if let Some(canvas) = document.get_element_by_id("bevy-canvas") {
-                let canvas: web_sys::HtmlCanvasElement = canvas.dyn_into().unwrap();
-                canvas.set_width(w);
-                canvas.set_height(h);
+    if let Some(canvas) = document.get_element_by_id("bevy-canvas") {
+        let closure = Closure::wrap(Box::new(move || {
+            let win = web_sys::window().unwrap();
+            let w = win.inner_width().unwrap().as_f64().unwrap() as u32;
+            let h = win.inner_height().unwrap().as_f64().unwrap() as u32;
+            
+            if let Some(doc) = win.document() {
+                if let Some(c) = doc.get_element_by_id("bevy-canvas") {
+                    let c: web_sys::HtmlCanvasElement = c.dyn_into().unwrap();
+                    c.set_width(w);
+                    c.set_height(h);
+                }
             }
-        }
-    }) as Box<dyn Fn()>);
-    
-    window
-        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())
-        .unwrap();
-    
-    window
-        .add_event_listener_with_callback("resize", closure.as_ref().unchecked_ref())
-        .unwrap();
-    
-    closure.forget();
+        }) as Box<dyn Fn()>);
+
+        // Listen on window resize — fires when iframe goes fullscreen
+        win.add_event_listener_with_callback(
+            "resize",
+            closure.as_ref().unchecked_ref()
+        ).unwrap();
+        
+        closure.forget();
+    }
 }
 
 mod constants;
