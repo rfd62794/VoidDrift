@@ -85,6 +85,25 @@ if ($null -ne $indexBackup) {
     }
 }
 
+# Restore custom canvas CSS for fullscreen support
+$customCSS = @"
+        canvas {
+            width: 100%; height: 100%;
+            max-width: 720px; max-height: 100vh;
+            aspect-ratio: 9 / 16; display: block;
+            margin: 0 auto; touch-action: none;
+        }
+        canvas:fullscreen, canvas:-webkit-full-screen, canvas:-moz-full-screen {
+            width: 100vw; height: 100vh;
+            max-width: 100vw; max-height: 100vh;
+            aspect-ratio: auto; margin: 0;
+        }
+"@
+$indexContent = Get-Content $indexPath -Raw
+$indexContent = $indexContent -replace 'canvas \{[^}]*\}', $customCSS.Trim()
+Set-Content -Path $indexPath -Value $indexContent -NoNewline
+Write-Host "  Custom canvas CSS restored." -ForegroundColor Green
+
 # ---------------------------------------------------------------------------
 # Step 3: Verify artifacts
 # ---------------------------------------------------------------------------
