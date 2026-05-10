@@ -215,7 +215,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             .frame(egui::Frame::NONE
                 .fill(egui::Color32::from_rgb(8, 10, 16))
                 .inner_margin(egui::Margin::symmetric(8, 8)))
-            .exact_height(layout.content_height)
             .show(ctx, |ui| {
                 ui.set_width(ui.available_width());
                 if let Ok((_ent, mut station, _queues)) = station_result {
