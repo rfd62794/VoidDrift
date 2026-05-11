@@ -1,5 +1,30 @@
 use serde::Deserialize;
 
+fn read_yaml(filename: &'static str) -> &'static str {
+    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
+    {
+        let path = concat!("../../assets/content/", filename);
+        // include_str! requires literal, so we match on filename
+        match filename {
+            "echo.yaml" => include_str!("../../assets/content/echo.yaml"),
+            "tutorial.yaml" => include_str!("../../assets/content/tutorial.yaml"),
+            "objectives.yaml" => include_str!("../../assets/content/objectives.yaml"),
+            "requests.yaml" => include_str!("../../assets/content/requests.yaml"),
+            "logs.yaml" => include_str!("../../assets/content/logs.yaml"),
+            _ => panic!("Unknown config file: {}", filename),
+        }
+    }
+
+    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
+    {
+        Box::leak(
+            std::fs::read_to_string(format!("assets/content/{}", filename))
+                .expect(&format!("Failed to read assets/content/{}", filename))
+                .into_boxed_str(),
+        )
+    }
+}
+
 #[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]
 pub struct ContentConfig {
     pub one_shots: Vec<OneShotLine>,
@@ -31,22 +56,8 @@ pub struct EventPool {
 
 impl ContentConfig {
     pub fn load() -> Self {
-        let src = Self::read_yaml();
+        let src = read_yaml("echo.yaml");
         serde_yaml::from_str(src).expect("Failed to parse assets/content/echo.yaml")
-    }
-
-    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
-    fn read_yaml() -> &'static str {
-        include_str!("../../assets/content/echo.yaml")
-    }
-
-    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
-    fn read_yaml() -> &'static str {
-        Box::leak(
-            std::fs::read_to_string("assets/content/echo.yaml")
-                .expect("Failed to read assets/content/echo.yaml")
-                .into_boxed_str(),
-        )
     }
 }
 
@@ -73,22 +84,8 @@ pub struct TutorialPopup {
 
 impl TutorialConfig {
     pub fn load() -> Self {
-        let src = Self::read_yaml();
+        let src = read_yaml("tutorial.yaml");
         serde_yaml::from_str(src).expect("Failed to parse assets/content/tutorial.yaml")
-    }
-
-    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
-    fn read_yaml() -> &'static str {
-        include_str!("../../assets/content/tutorial.yaml")
-    }
-
-    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
-    fn read_yaml() -> &'static str {
-        Box::leak(
-            std::fs::read_to_string("assets/content/tutorial.yaml")
-                .expect("Failed to read assets/content/tutorial.yaml")
-                .into_boxed_str(),
-        )
     }
 }
 
@@ -114,22 +111,8 @@ pub struct ObjectiveTriggers {
 
 impl QuestConfig {
     pub fn load() -> Self {
-        let src = Self::read_yaml();
+        let src = read_yaml("objectives.yaml");
         serde_yaml::from_str(src).expect("Failed to parse assets/content/objectives.yaml")
-    }
-
-    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
-    fn read_yaml() -> &'static str {
-        include_str!("../../assets/content/objectives.yaml")
-    }
-
-    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
-    fn read_yaml() -> &'static str {
-        Box::leak(
-            std::fs::read_to_string("assets/content/objectives.yaml")
-                .expect("Failed to read assets/content/objectives.yaml")
-                .into_boxed_str(),
-        )
     }
 }
 
@@ -166,22 +149,8 @@ pub struct RewardDef {
 
 impl RequestConfig {
     pub fn load() -> Self {
-        let src = Self::read_yaml();
+        let src = read_yaml("requests.yaml");
         serde_yaml::from_str(src).expect("Failed to parse assets/content/requests.yaml")
-    }
-
-    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
-    fn read_yaml() -> &'static str {
-        include_str!("../../assets/content/requests.yaml")
-    }
-
-    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
-    fn read_yaml() -> &'static str {
-        Box::leak(
-            std::fs::read_to_string("assets/content/requests.yaml")
-                .expect("Failed to read assets/content/requests.yaml")
-                .into_boxed_str(),
-        )
     }
 }
 
@@ -200,21 +169,7 @@ pub struct LogEntry {
 
 impl LogsConfig {
     pub fn load() -> Self {
-        let src = Self::read_yaml();
+        let src = read_yaml("logs.yaml");
         serde_yaml::from_str(src).expect("Failed to parse assets/content/logs.yaml")
-    }
-
-    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
-    fn read_yaml() -> &'static str {
-        include_str!("../../assets/content/logs.yaml")
-    }
-
-    #[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
-    fn read_yaml() -> &'static str {
-        Box::leak(
-            std::fs::read_to_string("assets/content/logs.yaml")
-                .expect("Failed to read assets/content/logs.yaml")
-                .into_boxed_str(),
-        )
     }
 }
