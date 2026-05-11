@@ -6,6 +6,7 @@ use crate::config::BalanceConfig;
 use crate::config::VisualConfig;
 use crate::config::visual::{rgb, rgba};
 use crate::systems::persistence::save::SaveData;
+use crate::spawn_drone_core_children;
 
 pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,
@@ -178,31 +179,7 @@ pub fn spawn_saved_drones(
 
         let md = &vcfg.drone.mission;
         commands.entity(ship_ent).with_children(|parent| {
-            parent.spawn((
-                ThrusterGlow,
-                Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-                MeshMaterial2d(materials.add(rgb(md.color_thruster))),
-                Transform::from_xyz(0.0, -18.0, 0.1),
-                Visibility::Hidden,
-            ));
-            parent.spawn((
-                MiningBeam,
-                Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-                MeshMaterial2d(materials.add(rgba(md.color_beam, md.beam_alpha))),
-                Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_beam - vcfg.z_layer.z_ship),
-                Visibility::Hidden,
-            ));
-            parent.spawn((
-                Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
-                MeshMaterial2d(materials.add(rgb(md.color_cargo_bg))),
-                Transform::from_xyz(0.0, 24.0, vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship),
-            ));
-            parent.spawn((
-                ShipCargoBarFill,
-                Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
-                MeshMaterial2d(materials.add(rgb(md.color_cargo_fill))),
-                Transform::from_xyz(0.0, 24.0, (vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship) + 0.05),
-            ));
+            spawn_drone_core_children!(parent, meshes, materials, md, vcfg);
         });
     }
 }

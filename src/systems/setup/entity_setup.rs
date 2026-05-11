@@ -7,6 +7,7 @@ use crate::config::visual::rgb;
 use crate::systems::visuals::{build_mesh_from_polygon, generate_rocket_points};
 use crate::systems::visuals::component_nodes::RocketConfig;
 use bevy_egui::egui::Color32;
+use crate::spawn_drone_core_children;
 
 /// Convert ShipOpeningConfig to RocketConfig for mesh generation.
 fn opening_config_to_rocket_config(ship_cfg: &crate::config::visual::ShipOpeningConfig) -> RocketConfig {
@@ -82,31 +83,7 @@ pub fn spawn_opening_drone(
 
     let od = &vcfg.drone.opening;
     commands.entity(parent_ent).with_children(|parent| {
-        parent.spawn((
-            ThrusterGlow,
-            Mesh2d(meshes.add(Rectangle::new(6.0, 8.0))),
-            MeshMaterial2d(materials.add(rgb(od.color_thruster))),
-            Transform::from_xyz(0.0, -18.0, 0.1),
-            Visibility::Hidden,
-        ));
-        parent.spawn((
-            MiningBeam,
-            Mesh2d(meshes.add(Rectangle::new(2.0, 1.0))),
-            MeshMaterial2d(materials.add(crate::config::visual::rgba(od.color_beam, od.beam_alpha))),
-            Transform::from_xyz(0.0, 0.0, vcfg.z_layer.z_beam - vcfg.z_layer.z_ship),
-            Visibility::Hidden,
-        ));
-        parent.spawn((
-            Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
-            MeshMaterial2d(materials.add(rgb(od.color_cargo_bg))),
-            Transform::from_xyz(0.0, 24.0, vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship),
-        ));
-        parent.spawn((
-            ShipCargoBarFill,
-            Mesh2d(meshes.add(Rectangle::new(od.cargo_bar_w, od.cargo_bar_h))),
-            MeshMaterial2d(materials.add(rgb(od.color_cargo_fill))),
-            Transform::from_xyz(0.0, 24.0, (vcfg.z_layer.z_cargo_bar - vcfg.z_layer.z_ship) + 0.05),
-        ));
+        spawn_drone_core_children!(parent, meshes, materials, od, vcfg);
         parent.spawn((
             MapElement,
             Mesh2d(meshes.add(triangle_mesh(od.map_icon_w, od.map_icon_h))),
@@ -141,6 +118,39 @@ pub fn spawn_opening_drone(
             Transform::from_xyz(0.0, 12.0, vcfg.z_layer.z_hud - vcfg.z_layer.z_ship),
         ));
     });
+}
+
+/// Macro to spawn the 4 shared drone child entities (ThrusterGlow, MiningBeam, cargo bars).
+/// Used by both spawn_opening_drone and restore.rs spawn_saved_drones.
+#[macro_export]
+macro_rules! spawn_drone_core_children {
+    ($parent:expr, $meshes:expr, $materials:expr, $drone_config:expr, $vcfg:expr) => {
+        $parent.spawn((
+            ThrusterGlow,
+            Mesh2d($meshes.add(Rectangle::new(6.0, 8.0))),
+            MeshMaterial2d($materials.add(rgb($drone_config.color_thruster))),
+            Transform::from_xyz(0.0, -18.0, 0.1),
+            Visibility::Hidden,
+        ));
+        $parent.spawn((
+            MiningBeam,
+            Mesh2d($meshes.add(Rectangle::new(2.0, 1.0))),
+            MeshMaterial2d($materials.add(crate::config::visual::rgba($drone_config.color_beam, $drone_config.beam_alpha))),
+            Transform::from_xyz(0.0, 0.0, $vcfg.z_layer.z_beam - $vcfg.z_layer.z_ship),
+            Visibility::Hidden,
+        ));
+        $parent.spawn((
+            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_w, $drone_config.cargo_bar_h))),
+            MeshMaterial2d($materials.add(rgb($drone_config.color_cargo_bg))),
+            Transform::from_xyz(0.0, 24.0, $vcfg.z_layer.z_cargo_bar - $vcfg.z_layer.z_ship),
+        ));
+        $parent.spawn((
+            ShipCargoBarFill,
+            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_w, $drone_config.cargo_bar_h))),
+            MeshMaterial2d($materials.add(rgb($drone_config.color_cargo_fill))),
+            Transform::from_xyz(0.0, 24.0, ($vcfg.z_layer.z_cargo_bar - $vcfg.z_layer.z_ship) + 0.05),
+        ));
+    };
 }
 
 pub fn spawn_station(
