@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
-use bevy::sprite::AlphaMode2d;
-use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::components::resources::{ShipQueue, MaxDispatch};
 use crate::config::VisualConfig;
@@ -9,6 +7,10 @@ use crate::systems::persistence::save::{list_saves, load_game, autosave_path, Sa
 
 #[path = "restore.rs"]
 pub mod restore;
+#[path = "save_overlay.rs"]
+pub mod save_overlay;
+#[path = "menu_starfield.rs"]
+pub mod menu_starfield;
 
 #[derive(Resource, Default)]
 pub struct MainMenuState {
@@ -241,74 +243,6 @@ fn format_timestamp(ts: &str, time: &Res<Time>) -> String {
     }).unwrap_or_else(|_| ts.to_string())
 }
 
-
-fn spawn_menu_starfield(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    vcfg: &VisualConfig,
-) {
-    let mut rng = rand::rngs::StdRng::seed_from_u64(0xDEAD_BEEF_u64);
-    let far_mat = materials.add(ColorMaterial {
-        color: Color::srgba(1.0, 1.0, 1.0, 1.0),
-        alpha_mode: AlphaMode2d::Opaque,
-        ..default()
-    });
-    let near_mat = materials.add(ColorMaterial {
-        color: Color::srgba(0.8, 0.85, 1.0, 1.0),
-        alpha_mode: AlphaMode2d::Opaque,
-        ..default()
-    });
-    let star_sm = meshes.add(Rectangle::new(2.0, 2.0));
-    let star_lg = meshes.add(Rectangle::new(3.0, 3.0));
-    let radius = 1200.0;
-
-    for _ in 0..1600 {
-        let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-        let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
-        let x = angle.cos() * distance;
-        let y = angle.sin() * distance;
-        commands.spawn((
-            MenuStar,
-            Mesh2d(star_sm.clone()),
-            MeshMaterial2d(far_mat.clone()),
-            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_far),
-        ));
-    }
-    for _ in 0..600 {
-        let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-        let distance = rng.gen_range(0.0..1.0_f32).sqrt() * radius;
-        let x = angle.cos() * distance;
-        let y = angle.sin() * distance;
-        commands.spawn((
-            MenuStar,
-            Mesh2d(star_lg.clone()),
-            MeshMaterial2d(near_mat.clone()),
-            Transform::from_xyz(x, y, vcfg.z_layer.z_stars_near),
-        ));
-    }
-}
-
-pub fn menu_star_drift_system(
-    time: Res<Time>,
-    mut star_query: Query<&mut Transform, With<MenuStar>>,
-) {
-    let drift = Vec2::new(8.0, -3.0) * time.delta_secs();
-    let wrap_radius = 1200.0;
-
-    for mut transform in star_query.iter_mut() {
-        transform.translation.x += drift.x;
-        transform.translation.y += drift.y;
-
-        // Wrap: if star drifts outside the spawn radius, teleport back to opposite edge
-        let pos = transform.translation.truncate();
-        if pos.length() > wrap_radius {
-            transform.translation.x = -pos.x * 0.9;
-            transform.translation.y = -pos.y * 0.9;
-        }
-    }
-}
-
 fn spawn_menu_camera(commands: &mut Commands) {
     commands.spawn((
         Camera2d::default(),
@@ -335,97 +269,5 @@ pub fn cleanup_menu(
 }
 
 pub use restore::ingame_startup_system;
-
-pub fn save_overlay_system(
-    mut contexts: EguiContexts,
-    mut menu_state: ResMut<MainMenuState>,
-    mut next_state: ResMut<NextState<AppState>>,
-    mut save_events: EventWriter<crate::systems::persistence::save::SaveRequestEvent>,
-) {
-    let ctx = contexts.ctx_mut();
-
-    if menu_state.show_save_overlay {
-        egui::Window::new("save_overlay")
-            .fixed_pos([
-                ctx.screen_rect().width() / 2.0 - 160.0,
-                ctx.screen_rect().height() / 2.0 - 200.0,
-            ])
-            .fixed_size([320.0, 400.0])
-            .title_bar(false)
-            .frame(egui::Frame::NONE
-                .fill(egui::Color32::from_rgba_premultiplied(4, 8, 12, 240))
-                .stroke(egui::Stroke::new(1.0,
-                    egui::Color32::from_rgb(0, 100, 50))))
-            .show(ctx, |ui| {
-                ui.label(egui::RichText::new("SAVE / LOAD")
-                    .size(14.0)
-                    .color(egui::Color32::from_rgb(0, 200, 100)));
-
-                ui.separator();
-
-                // Save name input
-                ui.label(egui::RichText::new("SAVE NAME:")
-                    .size(11.0)
-                    .color(egui::Color32::from_rgb(80, 120, 80)));
-
-                ui.text_edit_singleline(&mut menu_state.save_name_input);
-
-                ui.add_space(8.0);
-
-                // Save as Play Save
-                if ui.add_sized([300.0, 44.0],
-                    egui::Button::new("SAVE - PLAY")).clicked() {
-                    let name = if menu_state.save_name_input.is_empty() {
-                        "quicksave".to_string()
-                    } else {
-                        menu_state.save_name_input.clone()
-                    };
-                    save_events.send(crate::systems::persistence::save::SaveRequestEvent {
-                        name,
-                        category: crate::systems::persistence::save::SaveCategory::Play,
-                        description: String::new(),
-                    });
-                    menu_state.show_save_overlay = false;
-                }
-
-                // Save as Stage Save - developer mode only
-                if menu_state.developer_mode {
-                    if ui.add_sized([300.0, 44.0],
-                        egui::Button::new(
-                            egui::RichText::new("SAVE - STAGE")
-                                .color(egui::Color32::from_rgb(200, 160, 0))
-                        )).clicked() {
-                        if !menu_state.save_name_input.is_empty() {
-                            save_events.send(crate::systems::persistence::save::SaveRequestEvent {
-                                name: menu_state.save_name_input.clone(),
-                                category: crate::systems::persistence::save::SaveCategory::Stage,
-                                description: format!("Stage save - {}", chrono::Local::now().format("%Y-%m-%d %H:%M")),
-                            });
-                            menu_state.show_save_overlay = false;
-                        }
-                    }
-                }
-
-                ui.separator();
-
-                // Return to main menu
-                if ui.add_sized([300.0, 44.0],
-                    egui::Button::new("MAIN MENU")).clicked() {
-                    next_state.set(AppState::MainMenu);
-                    menu_state.show_save_overlay = false;
-                }
-
-                ui.add_space(4.0);
-
-                // Close overlay
-                if ui.add_sized([300.0, 36.0],
-                    egui::Button::new(
-                        egui::RichText::new("CLOSE")
-                            .size(12.0)
-                            .color(egui::Color32::from_rgb(80, 80, 80))
-                    )).clicked() {
-                    menu_state.show_save_overlay = false;
-                }
-            });
-    }
-}
+pub use save_overlay::save_overlay_system;
+pub use menu_starfield::{spawn_menu_starfield, menu_star_drift_system};
