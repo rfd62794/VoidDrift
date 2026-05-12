@@ -1,6 +1,7 @@
 use bevy_egui::egui;
 use crate::components::*;
 use crate::config::BalanceConfig;
+use crate::ui_kit::{primitives::vd_button, styles::ButtonStyle};
 
 pub fn add_log_entry(station: &mut Station, entry: String, cfg: &BalanceConfig) {
     if station.log.back() == Some(&entry) { return; }
@@ -82,7 +83,8 @@ pub fn render_queue_card(
 
             ui.add_space(4.0);
             if let Some(job) = queue {
-                if ui.add(egui::Button::new("CLEAR QUEUE").min_size(egui::vec2(160.0, 30.0))).clicked() {
+                let clear_response = vd_button(ui, "CLEAR QUEUE", ButtonStyle::wide(), true, None);
+                if clear_response.clicked() {
                     job.batches = 1; job.clearing = true;
                     add_log_entry(station, format!("> {} QUEUE CLEARED.", input_name), cfg);
                 }
