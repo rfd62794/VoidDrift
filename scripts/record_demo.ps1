@@ -49,7 +49,7 @@ $obs = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if ($obs) {
-    Start-Process $obs
+    Start-Process $obs -WorkingDirectory (Split-Path $obs)
     Start-Sleep -Seconds 3
     Write-Host "OBS launched from: $obs"
 } else {

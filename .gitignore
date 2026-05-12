@@ -44,3 +44,4 @@ __pycache__
 
 # Local reference material (saved web pages, etc.) — never commit
 /examples/
+/videos/
