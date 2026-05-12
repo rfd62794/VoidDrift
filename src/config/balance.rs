@@ -83,6 +83,9 @@ pub struct MapConfig {
 #[derive(Deserialize, Clone, Debug)]
 pub struct AsteroidSpawningConfig {
     pub max_per_field: u32,
+    pub spawn_distance_min: f32,
+    pub spawn_distance_max: f32,
+    pub spawn_retry_count: usize,
 }
 
 #[derive(Deserialize, Clone, Debug, bevy::prelude::Resource)]

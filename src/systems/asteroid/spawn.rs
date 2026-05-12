@@ -51,10 +51,10 @@ pub fn spawn_asteroid(
     let mut found_spot = false;
 
     // Try to find a valid spot
-    for _ in 0..10 {
+    for _ in 0..cfg.asteroid_spawning.spawn_retry_count {
         let angle = rng.gen_range(0.0..std::f32::consts::TAU);
         // Using existing radial boundary distances (roughly ~200.0 to 500.0 from origin)
-        let distance = rng.gen_range(200.0..500.0);
+        let distance = rng.gen_range(cfg.asteroid_spawning.spawn_distance_min..cfg.asteroid_spawning.spawn_distance_max);
         let candidate_pos = base_pos + Vec2::new(angle.cos() * distance, angle.sin() * distance);
 
         let mut too_close = false;

@@ -65,3 +65,6 @@ zoom_speed = 0.01
 
 [asteroid_spawning]
 max_per_field = 1
+spawn_distance_min = 200.0
+spawn_distance_max = 500.0
+spawn_retry_count = 10
