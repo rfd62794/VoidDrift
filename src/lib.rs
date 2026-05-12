@@ -50,6 +50,8 @@ fn detect_device_type(mut device_type: ResMut<DeviceType>) {
 mod constants;
 pub use constants::*;
 
+pub mod ui_kit;
+
 pub mod config;
 use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig, LogsConfig};
 
