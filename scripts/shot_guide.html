@@ -52,12 +52,41 @@
     letter-spacing: 1px;
     margin-bottom: 14px;
   }
-  .shot-desc {
-    font-size: 17px;
+  .lane-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #6677aa;
+    margin-bottom: 6px;
+  }
+  .on-screen {
+    font-size: 1.4rem;
+    line-height: 1.35;
+    color: #ffffff;
+    font-style: italic;
+    text-align: center;
+    margin-bottom: 16px;
+    min-height: 72px;
+  }
+  .divider {
+    height: 1px;
+    background: #303050;
+    margin: 0 0 12px 0;
+  }
+  .cue-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #f59e0b;
+    margin-bottom: 4px;
+  }
+  .your-cue {
+    font-size: 0.9rem;
     line-height: 1.4;
-    color: #c8c8d8;
-    margin-bottom: 22px;
-    min-height: 70px;
+    color: #f59e0b;
+    text-align: left;
+    margin-bottom: 20px;
+    min-height: 36px;
   }
   .timer {
     font-size: 48px;
@@ -135,7 +164,11 @@
     </div>
     <div class="shot-num" id="shotNum">01</div>
     <div class="shot-name" id="shotName">LOADING</div>
-    <div class="shot-desc" id="shotDesc">Let the starfield render, station appears</div>
+    <div class="lane-label">On Screen</div>
+    <div class="on-screen" id="onScreen">A broken station. A black hole. Something already waiting.</div>
+    <div class="divider"></div>
+    <div class="cue-label">Your Cue</div>
+    <div class="your-cue" id="yourCue">Let the game load. Don't touch anything.</div>
     <div class="timer" id="timer">5.0</div>
     <div class="bar-wrap"><div class="bar" id="bar"></div></div>
     <div class="next-preview">Next: <span id="nextName">MINING</span></div>
@@ -159,17 +192,17 @@
   </div>
 
 <script>
-  try { window.resizeTo(400, 520); } catch (e) {}
+  try { window.resizeTo(400, 640); } catch (e) {}
 
   const shots = [
-    { name: "LOADING",  desc: "Let the starfield render, station appears", dur: 5 },
-    { name: "MINING",   desc: "Tap an asteroid — watch drone dispatch",    dur: 10 },
-    { name: "FLEET",    desc: "3-4 drones in motion simultaneously",       dur: 10 },
-    { name: "DRAWER",   desc: "Open drawer — show CARGO tab, ore numbers", dur: 10 },
-    { name: "SIGNAL",   desc: "Purple bottle appears — tap to collect",    dur: 10 },
-    { name: "ECHO",     desc: "Signal strip narrative text scrolling",     dur: 10 },
-    { name: "PIPELINE", desc: "Open PIPELINE — show production tree",      dur: 10 },
-    { name: "TITLE",    desc: "Hold on game title — let it breathe",       dur: 5 },
+    { name: "LOADING",  onScreen: "A broken station. A black hole. Something already waiting.",        cue: "Let the game load. Don't touch anything.",              dur: 5 },
+    { name: "MINING",   onScreen: "Tap an asteroid. A mining drone dispatches automatically.",         cue: "Tap the nearest asteroid. Watch drone leave station.",  dur: 10 },
+    { name: "FLEET",    onScreen: "More drones. More reach. The fleet grows itself.",                  cue: "Tap 2-3 more asteroids. Show drones in motion.",         dur: 10 },
+    { name: "DRAWER",   onScreen: "The station tracks everything. Ore, reserves, output.",             cue: "Swipe up drawer. Show CARGO tab with ore numbers.",      dur: 10 },
+    { name: "SIGNAL",   onScreen: "Something sends a message. You didn't ask for contact.",            cue: "Wait for purple bottle. Tap it. Let the text appear.",   dur: 10 },
+    { name: "ECHO",     onScreen: "Echo is the station AI. She knows more than she says.",             cue: "Show signal strip scrolling. Don't skip it.",             dur: 10 },
+    { name: "PIPELINE", onScreen: "Every ore type. Every conversion. One production chain.",           cue: "Tap PIPELINE button. Let tree render fully.",             dur: 10 },
+    { name: "TITLE",    onScreen: "VoidDrift. Play free in browser.",                                  cue: "Hold here. Don't move. Let it breathe.",                  dur: 5 },
   ];
 
   let i = 0;
@@ -185,7 +218,8 @@
     $("idx").textContent = i + 1;
     $("shotNum").textContent = String(i + 1).padStart(2, "0");
     $("shotName").textContent = s.name;
-    $("shotDesc").textContent = s.desc;
+    $("onScreen").textContent = s.onScreen;
+    $("yourCue").textContent = s.cue;
     $("timer").textContent = remaining.toFixed(1);
     const pct = 100 * (1 - remaining / s.dur);
     $("bar").style.width = pct + "%";

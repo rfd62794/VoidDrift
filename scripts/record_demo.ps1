@@ -22,7 +22,7 @@ Write-Host "Browser open at 720x1280 portrait"
 Start-Sleep -Seconds 1
 Start-Process $chrome -ArgumentList @(
     "--new-window",
-    "--window-size=400,520",
+    "--window-size=400,640",
     "--window-position=840,0",
     "--app=file:///C:/Github/VoidDrift/scripts/shot_guide.html"
 )
