@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::{egui, EguiContexts};
 use crate::components::*;
-use crate::components::resources::MaxDispatch;
+use crate::components::resources::{MaxDispatch, ProdTreeViewState};
 use crate::scenes::main_menu::MainMenuState;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
@@ -136,6 +136,7 @@ pub struct HudParams<'w, 's> {
     pub logs_cfg: Res<'w, crate::config::LogsConfig>,
     pub save_data: ResMut<'w, crate::systems::persistence::save::SaveData>,
     pub view_state: ResMut<'w, ViewState>,
+    pub prod_tree_view_state: ResMut<'w, ProdTreeViewState>,
     pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
     pub telemetry_consent: ResMut<'w, TelemetryConsent>,
     pub telemetry_session_counter: ResMut<'w, TelemetrySessionCounter>,
@@ -391,6 +392,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                     &params.visual_cfg,
                     &mut params.world_view_rect,
                     &mut params.view_state,
+                    &mut params.prod_tree_view_state,
                 );
             });
         return; // Skip normal HUD rendering

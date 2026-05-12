@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::egui;
 use std::collections::{VecDeque, HashSet};
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
@@ -223,3 +224,18 @@ pub struct ContentState {
 
 #[derive(Resource, Default)]
 pub struct CameraDelta(pub Vec2);
+
+#[derive(Resource)]
+pub struct ProdTreeViewState {
+    pub zoom: f32,
+    pub pan: egui::Vec2,
+}
+
+impl Default for ProdTreeViewState {
+    fn default() -> Self {
+        Self {
+            zoom: 1.0,
+            pan: egui::Vec2::ZERO,
+        }
+    }
+}

@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-use bevy::sprite::AlphaMode2d;
 use crate::components::*;
 use super::MainMenuState;
 use crate::config::BalanceConfig;
 use crate::config::VisualConfig;
-use crate::config::visual::{rgb, rgba};
+use crate::config::visual::rgb;
 use crate::systems::persistence::save::SaveData;
 use crate::spawn_drone_core_children;
 use crate::systems::setup::mesh_builder::triangle_mesh;

@@ -23,7 +23,7 @@ pub fn mining_system(
         if is_mining {
             // If we have a current target, try to mine it
             if let Some(target_entity) = ship.current_mining_target {
-                if let Ok((_, mut asteroid, a_transform, mat_handle)) = asteroid_query.get_mut(target_entity) {
+                if let Ok((_, mut asteroid, a_transform, _mat_handle)) = asteroid_query.get_mut(target_entity) {
                     let dist = ship_transform.translation.distance(a_transform.translation);
                     if dist < 80.0 {
                         // Check laser tier

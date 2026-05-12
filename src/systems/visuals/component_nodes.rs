@@ -181,9 +181,8 @@ pub fn draw_thruster(painter: &egui::Painter, center: egui::Pos2, config: &Thrus
     );
     painter.rect_filled(body_rect, 0.0, config.color_body);
 
-    let mut rng = StdRng::seed_from_u64(42);
     for wire_idx in 0..config.wire_count {
-        rng = StdRng::seed_from_u64(wire_idx as u64);
+        let mut rng = StdRng::seed_from_u64(wire_idx as u64);
         let start_y = center.y + rng.gen_range(-height * 0.3..height * 0.3);
         let end_y = center.y + rng.gen_range(-height * 0.3..height * 0.3);
 

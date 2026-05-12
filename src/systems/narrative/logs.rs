@@ -9,7 +9,7 @@ pub fn check_log_unlocks(
     view_state: Res<ViewState>,
     station_query: Query<(&crate::game_state::Station, &crate::game_state::StationQueues)>,
 ) {
-    let (station, queues) = match station_query.get_single() {
+    let (station, _queues) = match station_query.get_single() {
         Ok(s) => s,
         Err(_) => return,
     };

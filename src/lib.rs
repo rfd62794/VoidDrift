@@ -104,6 +104,7 @@ fn configure_shared_app(app: &mut App) {
         .insert_resource(ContentState::default())
         .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
+        .init_resource::<ProdTreeViewState>()
         .add_systems(Startup, (
             configure_egui_scale,
             systems::visuals::debug_log::setup_debug_log_system,

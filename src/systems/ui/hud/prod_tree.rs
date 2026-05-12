@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy_egui::egui;
-use bevy::ecs::system::SystemParam;
 use crate::components::*;
 use crate::config::VisualConfig;
 use crate::config::visual::rgb_u8_to_egui;
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
 use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
+use crate::components::resources::ProdTreeViewState;
 
 pub fn render_production_tree(
     ui: &mut egui::Ui,
@@ -15,6 +15,7 @@ pub fn render_production_tree(
     visual_cfg: &VisualConfig,
     world_view_rect: &mut WorldViewRect,
     view_state: &mut ViewState,
+    prod_tree_view_state: &mut ProdTreeViewState,
 ) {
     let rect = ui.max_rect();
     
@@ -25,11 +26,47 @@ pub fn render_production_tree(
     let painter = ui.painter();
     let text_color = egui::Color32::WHITE;
     
+    // Capture input for zoom/pan
+    let interact_response = ui.interact(
+        rect,
+        ui.id().with("prod_tree_pan"),
+        egui::Sense::click_and_drag(),
+    );
+    
+    ui.ctx().input(|i| {
+        let zoom_min = visual_cfg.production_tree.zoom_min;
+        let zoom_max = visual_cfg.production_tree.zoom_max;
+        
+        // Pinch zoom (Android) + scroll wheel (desktop)
+        let zoom_delta = i.zoom_delta();
+        if zoom_delta != 1.0 {
+            prod_tree_view_state.zoom = (prod_tree_view_state.zoom * zoom_delta)
+                .clamp(zoom_min, zoom_max);
+        }
+    });
+    
+    // Drag pan — only when dragging within panel
+    if interact_response.dragged() {
+        prod_tree_view_state.pan += interact_response.drag_delta();
+    }
+    
+    // Double-tap reset
+    if interact_response.double_clicked() {
+        prod_tree_view_state.zoom = 1.0;
+        prod_tree_view_state.pan = egui::Vec2::ZERO;
+    }
+    
     // Grid dimensions
     let col_width = rect.width() / 4.0;
     let row_height = rect.height() / 5.0;
     let node_size = egui::vec2(visual_cfg.production_tree.node_width, visual_cfg.production_tree.node_height);
     let drone_bay_size = egui::vec2(visual_cfg.production_tree.drone_bay_width, visual_cfg.production_tree.drone_bay_height);
+    
+    // Transform helper for zoom/pan
+    let scale = prod_tree_view_state.zoom;
+    let transform = |logical_offset: egui::Vec2| -> egui::Pos2 {
+        rect.center() + prod_tree_view_state.pan + (logical_offset * scale)
+    };
     
     // Access station data for active states
     let (station, mut local_toggles) = if let Ok((_, st, _)) = station_query.get_single() {
@@ -38,31 +75,35 @@ pub fn render_production_tree(
         (None, toggles.clone())
     };
     
-    // Compute all node centers first
-    let node_center = |col: usize, row: usize| -> egui::Pos2 {
-        egui::pos2(
-            rect.min.x + col_width * (col as f32 + 0.5),
-            rect.min.y + row_height * (row as f32 + 0.5),
+    // Compute all node centers first (logical offsets from center)
+    let node_center = |col: usize, row: usize| -> egui::Vec2 {
+        egui::vec2(
+            (col as f32 - 1.5) * col_width,
+            (row as f32 - 2.0) * row_height,
         )
     };
     
-    // Named centers for arrow routing
-    let iron_ore     = node_center(0, 0);
-    let tungsten_ore = node_center(1, 0);
-    let nickel_ore   = node_center(2, 0);
-    let aluminum_ore = node_center(3, 0);
+    // Named centers for arrow routing (transformed positions)
+    let iron_ore     = transform(node_center(0, 0));
+    let tungsten_ore = transform(node_center(1, 0));
+    let nickel_ore   = transform(node_center(2, 0));
+    let aluminum_ore = transform(node_center(3, 0));
     
-    let iron_ingot     = node_center(0, 1);
-    let tungsten_ingot = node_center(1, 1);
-    let nickel_ingot   = node_center(2, 1);
-    let aluminum_ingot = node_center(3, 1);
+    let iron_ingot     = transform(node_center(0, 1));
+    let tungsten_ingot = transform(node_center(1, 1));
+    let nickel_ingot   = transform(node_center(2, 1));
+    let aluminum_ingot = transform(node_center(3, 1));
     
-    let hull_plate = node_center(0, 2);
-    let thruster   = node_center(1, 2);
-    let ai_core    = node_center(2, 2);
-    let canister   = node_center(3, 2);
+    let hull_plate = transform(node_center(0, 2));
+    let thruster   = transform(node_center(1, 2));
+    let ai_core    = transform(node_center(2, 2));
+    let canister   = transform(node_center(3, 2));
     
-    let drone_bay  = node_center(1, 3); // wide, centered
+    let drone_bay  = transform(node_center(1, 3)); // wide, centered
+    
+    // Scaled node sizes
+    let scaled_node_size = node_size * scale;
+    let scaled_drone_bay_size = drone_bay_size * scale;
     
     // Arrow drawing helper with three-state colors and ON/OFF label
     let draw_arrow = |from: egui::Pos2, to: egui::Pos2, toggle_on: bool, has_inventory: bool| -> egui::Rect {
@@ -75,32 +116,33 @@ pub fn render_production_tree(
         };
         let stroke = egui::Stroke::new(1.5, color);
         
-        // Arrow shaft — from bottom of source node to top of target node
-        let shaft_from = egui::pos2(from.x, from.y + 20.0); // bottom of node
-        let shaft_to = egui::pos2(to.x, to.y - 20.0);       // top of node
+        // Arrow shaft — from bottom of source node to top of target node (scaled offsets)
+        let node_half_height = scaled_node_size.y / 2.0;
+        let shaft_from = egui::pos2(from.x, from.y + node_half_height);
+        let shaft_to = egui::pos2(to.x, to.y - node_half_height);
         painter.line_segment([shaft_from, shaft_to], stroke);
         
-        // Arrowhead — small triangle at shaft_to
+        // Arrowhead — small triangle at shaft_to (scaled)
         let tip = shaft_to;
-        let left = egui::pos2(tip.x - 5.0, tip.y - 8.0);
-        let right = egui::pos2(tip.x + 5.0, tip.y - 8.0);
+        let left = egui::pos2(tip.x - 5.0 * scale, tip.y - 8.0 * scale);
+        let right = egui::pos2(tip.x + 5.0 * scale, tip.y - 8.0 * scale);
         painter.add(egui::Shape::convex_polygon(
             vec![tip, left, right],
             color,
             egui::Stroke::NONE,
         ));
         
-        // ON/OFF label centered on shaft
+        // ON/OFF label centered on shaft (scaled font)
         let mid = egui::pos2(
             (shaft_from.x + shaft_to.x) / 2.0,
             (shaft_from.y + shaft_to.y) / 2.0,
         );
         let label = if toggle_on { "ON" } else { "OFF" };
         painter.text(mid, egui::Align2::CENTER_CENTER, label, 
-            egui::FontId::proportional(9.0), color);
+            egui::FontId::proportional(9.0 * scale), color);
         
-        // Return clickable rect for Part 3
-        egui::Rect::from_center_size(mid, egui::vec2(50.0, 30.0))
+        // Return clickable rect for Part 3 (scaled)
+        egui::Rect::from_center_size(mid, egui::vec2(50.0 * scale, 30.0 * scale))
     };
     
     // Ore → Ingot (toggle-based)
@@ -191,11 +233,8 @@ pub fn render_production_tree(
         };
         let border_stroke = egui::Stroke::new(1.5, border_color);
         
-        let cell_center = egui::pos2(
-            rect.min.x + col_width * (col as f32 + 0.5),
-            rect.min.y + row_height * (row as f32 + 0.5),
-        );
-        let size = if is_wide { drone_bay_size } else { node_size };
+        let cell_center = transform(node_center(col, row));
+        let size = if is_wide { scaled_drone_bay_size } else { scaled_node_size };
         let node_rect = egui::Rect::from_center_size(cell_center, size);
         
         painter.rect_filled(node_rect, 4.0, fill_color);

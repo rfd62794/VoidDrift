@@ -247,6 +247,7 @@ fn reset_loop_stall_timer_on_pipeline_open(
     }
 }
 
+#[allow(dead_code)]
 fn reset_loop_stall_timer_on_upgrade(
     mut timer: ResMut<LoopStallTimer>,
 ) {

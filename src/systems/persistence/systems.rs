@@ -54,7 +54,7 @@ pub fn collect_save_data(
         tab_foundry: false, // TODO: collect from tabs resource
         tab_hangar: false, // TODO: collect from tabs resource
         drone_count: station.drone_count as u8,
-        drones: drone_query.iter().map(|(ship, transform, heading, target)| {
+        drones: drone_query.iter().map(|(_ship, transform, heading, target)| {
             DroneSaveData {
                 assignment_sector: "Unknown".to_string(),
                 assignment_pos_x: target.map(|t| t.destination.x).unwrap_or(0.0),

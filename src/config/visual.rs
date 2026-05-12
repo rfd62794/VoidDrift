@@ -78,6 +78,8 @@ pub struct ProductionTreeConfig {
     pub node_height: f32,
     pub drone_bay_width: f32,
     pub drone_bay_height: f32,
+    pub zoom_min: f32,
+    pub zoom_max: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]

@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::config::{BalanceConfig, RequestConfig, LogsConfig, VisualConfig};
-use crate::config::visual::{rgb_u8_to_egui};
 use crate::systems::visuals::ore_polygon::{self, OrePolygonConfig};
 use crate::systems::visuals::ingot_node::{self, IngotNodeConfig};
 use crate::systems::visuals::component_nodes::{self, ThrusterConfig, HullConfig, CanisterConfig, AICoreConfig, DroneBayConfig};
@@ -29,226 +28,6 @@ enum SymbolType {
     Thruster,
     AICore,
     Canister,
-    DroneBay,
-}
-
-fn draw_chain_column(
-    ui: &mut egui::Ui,
-    symbol_type: SymbolType,
-    name: &str,
-    count: f32,
-    state: SymbolState,
-    size: f32,
-    vcfg: &VisualConfig,
-) {
-    ui.vertical_centered(|ui| {
-        // Determine alpha based on state
-        let alpha = match state {
-            SymbolState::Locked => 51,
-            SymbolState::ActiveEmpty => 128,
-            SymbolState::ActivePopulated => 255,
-        };
-
-        // Draw symbol
-        let desired_size = egui::vec2(size, size);
-        let (rect, _response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
-        let painter = ui.painter_at(rect);
-
-        // Draw procedural visual
-        match symbol_type {
-            SymbolType::IronOre => {
-                let ore_cfg = &vcfg.production_tree.ore_node;
-                let mut ore_config = OrePolygonConfig {
-                    radius: size * 0.4,
-                    vertex_count: ore_cfg.vertex_count,
-                    jaggedness: ore_cfg.jaggedness,
-                    color_body: rgb_u8_to_egui(vcfg.ore.metal.color_body),
-                    color_vein: rgb_u8_to_egui(vcfg.ore.metal.color_vein),
-                    band_count: 5,
-                    band_width_min: 0.02,
-                    band_width_max: 0.05,
-                    grain_angle_deg: 45.0,
-                    seed: 1u64,
-                };
-                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
-                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
-                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config, 0.8);
-            }
-            SymbolType::TungstenOre => {
-                let ore_cfg = &vcfg.production_tree.ore_node;
-                let mut ore_config = OrePolygonConfig {
-                    radius: size * 0.4,
-                    vertex_count: ore_cfg.vertex_count,
-                    jaggedness: ore_cfg.jaggedness,
-                    color_body: rgb_u8_to_egui(vcfg.ore.h3_gas.color_body),
-                    color_vein: rgb_u8_to_egui(vcfg.ore.h3_gas.color_vein),
-                    band_count: 5,
-                    band_width_min: 0.02,
-                    band_width_max: 0.05,
-                    grain_angle_deg: 45.0,
-                    seed: 2u64,
-                };
-                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
-                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
-                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config, 0.8);
-            }
-            SymbolType::NickelOre => {
-                let ore_cfg = &vcfg.production_tree.ore_node;
-                let mut ore_config = OrePolygonConfig {
-                    radius: size * 0.4,
-                    vertex_count: ore_cfg.vertex_count,
-                    jaggedness: ore_cfg.jaggedness,
-                    color_body: rgb_u8_to_egui(vcfg.ore.void_essence.color_body),
-                    color_vein: rgb_u8_to_egui(vcfg.ore.void_essence.color_vein),
-                    band_count: 5,
-                    band_width_min: 0.02,
-                    band_width_max: 0.05,
-                    grain_angle_deg: 45.0,
-                    seed: 3u64,
-                };
-                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
-                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
-                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config, 0.8);
-            }
-            SymbolType::AluminumOre => {
-                let ore_cfg = &vcfg.production_tree.ore_node;
-                let mut ore_config = OrePolygonConfig {
-                    radius: size * 0.4,
-                    vertex_count: ore_cfg.vertex_count,
-                    jaggedness: ore_cfg.jaggedness,
-                    color_body: rgb_u8_to_egui(vcfg.ore.metal.color_body),
-                    color_vein: rgb_u8_to_egui(vcfg.ore.metal.color_vein),
-                    band_count: 5,
-                    band_width_min: 0.02,
-                    band_width_max: 0.05,
-                    grain_angle_deg: 45.0,
-                    seed: 4u64,
-                };
-                ore_config.color_body = egui::Color32::from_rgba_unmultiplied(ore_config.color_body.r(), ore_config.color_body.g(), ore_config.color_body.b(), alpha);
-                ore_config.color_vein = egui::Color32::from_rgba_unmultiplied(ore_config.color_vein.r(), ore_config.color_vein.g(), ore_config.color_vein.b(), alpha);
-                ore_polygon::draw_ore_polygon(&painter, rect.center(), &ore_config, 0.8);
-            }
-            SymbolType::IronIngot | SymbolType::TungstenIngot | SymbolType::NickelIngot | SymbolType::AluminumIngot => {
-                let base_color = match symbol_type {
-                    SymbolType::IronIngot => rgb_u8_to_egui(vcfg.ore.metal.color_vein),
-                    SymbolType::TungstenIngot => rgb_u8_to_egui(vcfg.ore.h3_gas.color_vein),
-                    SymbolType::NickelIngot => rgb_u8_to_egui(vcfg.ore.void_essence.color_vein),
-                    SymbolType::AluminumIngot => rgb_u8_to_egui(vcfg.ore.metal.color_vein),
-                    _ => egui::Color32::WHITE,
-                };
-                let base_color = egui::Color32::from_rgba_unmultiplied(base_color.r(), base_color.g(), base_color.b(), alpha);
-                painter.rect_filled(rect, 2.0, base_color);
-            }
-            SymbolType::HullPlate => {
-                let hull_cfg = &vcfg.component.hull;
-                let mut hull_config = HullConfig {
-                    width: size * 0.8,
-                    rib_count: hull_cfg.rib_count,
-                    color_frame: rgb_u8_to_egui(hull_cfg.color_frame),
-                    color_outline: rgb_u8_to_egui(hull_cfg.color_outline),
-                    stroke_width: hull_cfg.stroke_width,
-                };
-                hull_config.color_frame = egui::Color32::from_rgba_unmultiplied(hull_config.color_frame.r(), hull_config.color_frame.g(), hull_config.color_frame.b(), alpha);
-                hull_config.color_outline = egui::Color32::from_rgba_unmultiplied(hull_config.color_outline.r(), hull_config.color_outline.g(), hull_config.color_outline.b(), alpha);
-                component_nodes::draw_hull(&painter, rect.center(), &hull_config);
-            }
-            SymbolType::Thruster => {
-                let thruster_cfg = &vcfg.component.thruster;
-                let mut thruster_config = ThrusterConfig {
-                    width: size * 0.8,
-                    color_nozzle: rgb_u8_to_egui(thruster_cfg.color_nozzle),
-                    color_body: rgb_u8_to_egui(thruster_cfg.color_body),
-                    color_wire: rgb_u8_to_egui(thruster_cfg.color_wire),
-                    wire_count: thruster_cfg.wire_count,
-                    nozzle_width_ratio: thruster_cfg.nozzle_width_ratio,
-                    body_width_ratio: thruster_cfg.body_width_ratio,
-                };
-                thruster_config.color_nozzle = egui::Color32::from_rgba_unmultiplied(thruster_config.color_nozzle.r(), thruster_config.color_nozzle.g(), thruster_config.color_nozzle.b(), alpha);
-                thruster_config.color_body = egui::Color32::from_rgba_unmultiplied(thruster_config.color_body.r(), thruster_config.color_body.g(), thruster_config.color_body.b(), alpha);
-                thruster_config.color_wire = egui::Color32::from_rgba_unmultiplied(thruster_config.color_wire.r(), thruster_config.color_wire.g(), thruster_config.color_wire.b(), alpha);
-                component_nodes::draw_thruster(&painter, rect.center(), &thruster_config);
-            }
-            SymbolType::AICore => {
-                let ai_core_cfg = &vcfg.component.ai_core;
-                let mut ai_core_config = AICoreConfig {
-                    radius: size * 0.4,
-                    fin_count: ai_core_cfg.fin_count,
-                    fin_length: ai_core_cfg.fin_length,
-                    fin_width: ai_core_cfg.fin_width,
-                    color_body: rgb_u8_to_egui(ai_core_cfg.color_body),
-                    color_fins: rgb_u8_to_egui(ai_core_cfg.color_fins),
-                    color_fan_housing: rgb_u8_to_egui(ai_core_cfg.color_fan_housing),
-                    fan_radius_ratio: ai_core_cfg.fan_radius_ratio,
-                    fan_blade_count: ai_core_cfg.fan_blade_count,
-                };
-                ai_core_config.color_body = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_body.r(), ai_core_config.color_body.g(), ai_core_config.color_body.b(), alpha);
-                ai_core_config.color_fins = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_fins.r(), ai_core_config.color_fins.g(), ai_core_config.color_fins.b(), alpha);
-                ai_core_config.color_fan_housing = egui::Color32::from_rgba_unmultiplied(ai_core_config.color_fan_housing.r(), ai_core_config.color_fan_housing.g(), ai_core_config.color_fan_housing.b(), alpha);
-                component_nodes::draw_ai_core(&painter, rect.center(), &ai_core_config);
-            }
-            SymbolType::Canister => {
-                let canister_cfg = &vcfg.component.canister;
-                let mut canister_config = CanisterConfig {
-                    width: size * 0.5,
-                    height: size * 0.7,
-                    lid_height_ratio: canister_cfg.lid_height_ratio,
-                    color_body: rgb_u8_to_egui(canister_cfg.color_body),
-                    color_lid: rgb_u8_to_egui(canister_cfg.color_lid),
-                    color_highlight: rgb_u8_to_egui(canister_cfg.color_highlight),
-                    color_handle: rgb_u8_to_egui(canister_cfg.color_handle),
-                };
-                canister_config.color_body = egui::Color32::from_rgba_unmultiplied(canister_config.color_body.r(), canister_config.color_body.g(), canister_config.color_body.b(), alpha);
-                canister_config.color_lid = egui::Color32::from_rgba_unmultiplied(canister_config.color_lid.r(), canister_config.color_lid.g(), canister_config.color_lid.b(), alpha);
-                canister_config.color_highlight = egui::Color32::from_rgba_unmultiplied(canister_config.color_highlight.r(), canister_config.color_highlight.g(), canister_config.color_highlight.b(), alpha);
-                canister_config.color_handle = egui::Color32::from_rgba_unmultiplied(canister_config.color_handle.r(), canister_config.color_handle.g(), canister_config.color_handle.b(), alpha);
-                component_nodes::draw_canister(&painter, rect.center(), &canister_config);
-            }
-            SymbolType::DroneBay => {
-                let drone_bay_cfg = &vcfg.component.drone_bay;
-                let mut drone_bay_config = DroneBayConfig {
-                    width: size * 0.8,
-                    height: size * 0.6,
-                    color_ready: rgb_u8_to_egui(drone_bay_cfg.color_ready),
-                    color_empty: rgb_u8_to_egui(drone_bay_cfg.color_empty),
-                    nose_height_ratio: drone_bay_cfg.nose_height_ratio,
-                    fin_width_ratio: drone_bay_cfg.fin_width_ratio,
-                    fin_height_ratio: drone_bay_cfg.fin_height_ratio,
-                    porthole_radius: drone_bay_cfg.porthole_radius,
-                    porthole_offset_y: drone_bay_cfg.porthole_offset_y,
-                    exhaust_radius: drone_bay_cfg.exhaust_radius,
-                };
-                let is_ready = count > 0.0;
-                let color = if is_ready { drone_bay_config.color_ready } else { drone_bay_config.color_empty };
-                let color = egui::Color32::from_rgba_unmultiplied(color.r(), color.g(), color.b(), alpha);
-                drone_bay_config.color_ready = color;
-                drone_bay_config.color_empty = color;
-                component_nodes::draw_drone_bay(&painter, rect.center(), &drone_bay_config, is_ready);
-            }
-        }
-
-        // Draw full name below symbol
-        let name_color = match state {
-            SymbolState::Locked => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 51),
-            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 128),
-            SymbolState::ActivePopulated => egui::Color32::from_rgba_unmultiplied(0, 200, 200, 255),
-        };
-        ui.label(egui::RichText::new(name).color(name_color).size(11.0));
-
-        // Draw count below name
-        let count_text = match state {
-            SymbolState::Locked => String::new(),
-            SymbolState::ActiveEmpty => "0".to_string(),
-            SymbolState::ActivePopulated => format!("{:.0}", count),
-        };
-        let count_color = match state {
-            SymbolState::Locked => egui::Color32::TRANSPARENT,
-            SymbolState::ActiveEmpty => egui::Color32::from_rgba_unmultiplied(0, 204, 102, 102),
-            SymbolState::ActivePopulated => egui::Color32::from_rgb(0, 204, 102),
-        };
-        if !count_text.is_empty() {
-            ui.label(egui::RichText::new(count_text).color(count_color).size(12.0).strong());
-        }
-    });
 }
 
 fn render_ore_pipeline(
@@ -299,7 +78,7 @@ pub fn render_tab_content(
     _queue: &ShipQueue,
     prod_tab: &mut ProductionTabState,
     req_tab: &mut RequestsTabState,
-    repair_events: &mut EventWriter<RepairStationEvent>,
+    _repair_events: &mut EventWriter<RepairStationEvent>,
     fulfill_events: &mut EventWriter<FulfillRequestEvent>,
     cfg: &BalanceConfig,
     request_cfg: &RequestConfig,
@@ -539,7 +318,6 @@ pub fn render_tab_content(
                         };
                         component_nodes::draw_canister(&symbol_painter, symbol_rect.center(), &canister_config);
                     },
-                    _ => {},
                 }
 
                 let name_pos = egui::pos2(x, y + symbol_size / 2.0 + 6.0);
