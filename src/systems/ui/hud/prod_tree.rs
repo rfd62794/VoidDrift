@@ -28,8 +28,8 @@ pub fn render_production_tree(
     // Grid dimensions
     let col_width = rect.width() / 4.0;
     let row_height = rect.height() / 5.0;
-    let node_size = egui::vec2(100.0, 40.0);
-    let drone_bay_size = egui::vec2(200.0, 40.0);
+    let node_size = egui::vec2(visual_cfg.production_tree.node_width, visual_cfg.production_tree.node_height);
+    let drone_bay_size = egui::vec2(visual_cfg.production_tree.drone_bay_width, visual_cfg.production_tree.drone_bay_height);
     
     // Access station data for active states
     let (station, mut local_toggles) = if let Ok((_, st, _)) = station_query.get_single() {

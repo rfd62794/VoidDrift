@@ -74,6 +74,10 @@ pub struct IngotNodeConfig {
 pub struct ProductionTreeConfig {
     pub ore_node: OreNodeConfig,
     pub ingot_node: IngotNodeConfig,
+    pub node_width: f32,
+    pub node_height: f32,
+    pub drone_bay_width: f32,
+    pub drone_bay_height: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]

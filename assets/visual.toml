@@ -159,6 +159,12 @@ depth_offset_y         = -7.0
 color_face_light_factor = 1.25
 color_face_dark_factor  = 0.55
 
+[production_tree]
+node_width      = 100.0
+node_height     = 40.0
+drone_bay_width = 200.0
+drone_bay_height = 40.0
+
 [ingot.metal]
 color = [180, 185, 200]
 
