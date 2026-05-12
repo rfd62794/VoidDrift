@@ -2,160 +2,321 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>VoidDrift — Local itch.io Preview</title>
+    <title>VoidRift by Rdug627 — Local Preview</title>
+    <!--
+        Local itch.io page clone. Visual values extracted from
+        examples/itch_io_page/VoidRift by Rdug627.html (gitignored).
+        Page chrome (login bar, account widgets, footer) intentionally omitted.
+    -->
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap');
+
         * { box-sizing: border-box; }
         html, body {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: #222;
-            color: #eee;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #eeeeee;
+            color: #222222;
+            font-family: Lato, "Lato", sans-serif;
+            font-size: 14px;
+            line-height: 1.45;
         }
-        body {
+
+        /* === Outer chrome strip (omits login/nav, keeps a slim itch-style bar) === */
+        .outer_strip {
+            background: #585858;
+            border-bottom: 1px solid #525252;
+            padding: 6px 16px;
+            color: #ddd;
+            font-size: 12px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            padding: 16px;
         }
-        header {
+        .outer_strip .brand {
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .outer_strip .preview_note {
+            color: #bbb;
+            font-style: italic;
+        }
+
+        /* === Inner column (matches itch's centered white content column) === */
+        .wrapper {
+            background: #eeeeee;
+            min-height: calc(100vh - 30px);
+            padding: 24px 16px 64px;
+        }
+        .inner_column {
+            background: #ffffff;
+            color: #222222;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 40px 48px;
+            border: 1px solid #d8d8d8;
+        }
+        .inner_column ::selection { color: #ffffff; background: #fa5c5c; }
+        .inner_column a { color: #fa5c5c; text-decoration: none; }
+        .inner_column a:hover { text-decoration: underline; }
+        .inner_column h1, .inner_column h2 {
+            font-family: inherit;
+            font-weight: 900;
+            color: #222222;
+            margin: 0 0 12px 0;
+        }
+        .inner_column h1 { font-size: 26px; }
+        .inner_column h2 { font-size: 18px; margin-top: 24px; }
+        .inner_column hr { background-color: #d8d8d8; border: 0; height: 1px; margin: 20px 0; }
+
+        /* === Game embed frame === */
+        .html_embed_widget { margin: 0 auto 20px; display: flex; justify-content: center; }
+        .game_frame {
+            background: #e5e5e5;
+            position: relative;
+            display: inline-block;
+            transition: width 0.18s ease, height 0.18s ease;
+        }
+        .game_frame iframe {
+            display: block;
             width: 100%;
-            max-width: 1280px;
-            text-align: center;
-            margin-bottom: 12px;
+            height: 100%;
+            border: 0;
         }
-        h1 {
-            margin: 0 0 4px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fa5c5c;
-        }
-        .source {
-            font-size: 11px;
-            color: #888;
-            margin: 0;
-        }
-        .source code {
-            background: #111;
-            padding: 1px 6px;
-            border-radius: 3px;
-            color: #ccc;
-        }
-        .presets {
+        .fullscreen_btn {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid #d8d8d8;
+            border-radius: 2px;
+            width: 28px;
+            height: 28px;
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            align-items: center;
             justify-content: center;
-            margin: 12px 0;
+            font-size: 14px;
+            cursor: pointer;
+            color: #222;
+            opacity: 0.85;
+            z-index: 2;
         }
-        .presets button {
-            background: #2d2d2d;
+        .fullscreen_btn:hover { opacity: 1; }
+
+        /* === Two-column layout: description + info panel === */
+        .column_layout {
+            display: grid;
+            grid-template-columns: 1fr 240px;
+            gap: 32px;
+            margin-top: 24px;
+        }
+        @media (max-width: 720px) {
+            .column_layout { grid-template-columns: 1fr; }
+        }
+
+        /* Description (.formatted_description.user_formatted) */
+        .formatted_description p { margin: 0 0 12px 0; }
+        .formatted_description strong { font-weight: 700; }
+
+        /* Info panel sidebar (.game_info_panel_widget) */
+        .game_info_panel_widget {
+            background: #e5e5e5;
+            padding: 12px 16px;
+            font-size: 13px;
+            align-self: start;
+        }
+        .game_info_panel_widget table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .game_info_panel_widget td {
+            padding: 4px 0;
+            vertical-align: top;
+        }
+        .game_info_panel_widget td:first-child {
+            color: #666;
+            padding-right: 12px;
+            white-space: nowrap;
+        }
+        .tag_row a {
+            display: inline-block;
+            margin: 2px 4px 2px 0;
+            font-size: 12px;
+        }
+
+        /* === Preset switcher overlay (dev utility, top-right corner) === */
+        .preset_overlay {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            background: rgba(20, 20, 20, 0.88);
             color: #eee;
             border: 1px solid #444;
-            padding: 8px 14px;
-            font-size: 13px;
-            border-radius: 3px;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: ui-monospace, "SF Mono", Consolas, monospace;
+            font-size: 11px;
+            z-index: 9999;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .preset_overlay h4 {
+            margin: 0 0 6px 0;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fa5c5c;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .preset_overlay button {
+            display: block;
+            width: 100%;
+            background: #2d2d2d;
+            color: #eee;
+            border: 1px solid #3a3a3a;
+            padding: 4px 8px;
+            margin: 2px 0;
+            font-size: 11px;
+            border-radius: 2px;
             cursor: pointer;
+            text-align: left;
             font-family: inherit;
         }
-        .presets button:hover { background: #3a3a3a; }
-        .presets button.active {
+        .preset_overlay button:hover { background: #3a3a3a; }
+        .preset_overlay button.active {
             background: #fa5c5c;
             border-color: #fa5c5c;
             color: #1a1a1a;
-            font-weight: 600;
+            font-weight: 700;
         }
-        .dims {
-            font-size: 11px;
-            color: #aaa;
-            margin: 4px 0 12px 0;
-            font-family: ui-monospace, "SF Mono", Consolas, monospace;
-        }
-        .frame-wrap {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            width: 100%;
-        }
-        iframe {
-            border: 1px solid #000;
-            background: #050514;
-            display: block;
-            transition: width 0.15s ease, height 0.15s ease;
-        }
-        .help {
-            margin-top: 16px;
-            padding: 10px 14px;
-            background: #1a1a1a;
-            border-left: 3px solid #fa5c5c;
-            font-size: 11px;
-            color: #bbb;
-            max-width: 720px;
-            line-height: 1.5;
-        }
-        .help code {
-            background: #000;
-            padding: 1px 5px;
-            border-radius: 2px;
-            color: #ddd;
+        .preset_overlay .dims {
+            margin-top: 6px;
+            font-size: 10px;
+            color: #888;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>VoidDrift — Local itch.io Preview</h1>
-        <p class="source">Iframe loads <code>http://localhost:8080/index.html</code> — start the server with <code>cd pkg; python -m http.server 8080</code></p>
-    </header>
-
-    <div class="presets" id="presets"></div>
-    <div class="dims" id="dims">—</div>
-
-    <div class="frame-wrap">
-        <iframe
-            id="game"
-            src="http://localhost:8080/index.html"
-            allow="fullscreen"
-            allowfullscreen></iframe>
+    <!-- Slim outer strip (replaces full itch nav/login chrome) -->
+    <div class="outer_strip">
+        <span class="brand">itch.io</span>
+        <span class="preview_note">local preview — chrome simplified, embed and content are pixel-faithful</span>
     </div>
 
-    <div class="help">
-        <strong>Presets</strong> swap iframe dimensions to match itch.io embed configurations. The default <strong>Landscape 1280×640</strong> matches the project's current itch.io embed setting (per <code>docs/WASM_ITCH_SIZING.md</code>). Use <strong>Fullscreen Sim</strong> to approximate browser-level fullscreen behavior. Canvas CSS rules, <code>EGUI_SCALE</code>, and <code>ui.available_height()</code> values inside the iframe will match production exactly at the matching preset.
+    <div class="wrapper">
+        <div class="inner_column size_large family_lato">
+            <h1>VoidRift</h1>
+            <p style="color:#666;margin-top:-6px;margin-bottom:20px;">A browser game by <a href="#">Rdug627</a></p>
+
+            <!-- Game embed -->
+            <div class="html_embed_widget embed_wrapper">
+                <div class="game_frame" id="game_frame" data-width="720" data-height="1280" style="width:720px;height:1280px;">
+                    <iframe id="game_drop"
+                            src="http://localhost:8080/index.html"
+                            allow="autoplay; fullscreen *; gamepad; gyroscope; accelerometer"
+                            allowfullscreen></iframe>
+                    <button class="fullscreen_btn" title="Enter fullscreen (visual stub)" onclick="document.getElementById('game_drop').requestFullscreen && document.getElementById('game_drop').requestFullscreen()">⛶</button>
+                </div>
+            </div>
+
+            <div class="column_layout">
+                <!-- Description (verbatim from saved page) -->
+                <div class="formatted_description user_formatted">
+                    <p><a href="#">Support This Game</a></p>
+                    <p>Asteroids meets Event Horizon.</p>
+                    <p>Mine asteroid debris at the edge of a black hole. Build a drone fleet. Receive transmissions from something that knows you're there.</p>
+                    <p>A mobile arcade mining game built in Rust and Bevy. Prototype — core loop complete, narrative in development.</p>
+                    <hr>
+                    <p><strong>Best experienced in fullscreen</strong> — click the fullscreen button in the bottom right corner of the game window.</p>
+                    <p>=== HOW TO PLAY ===</p>
+                    <p>You were pulled into a black hole. A space station was already there waiting. The AI running it — Echo — takes control and puts you to work. More ore means more ships. More ships means faster mining. The loop doesn't explain itself.</p>
+                    <p>After the opening sequence completes:</p>
+                    <p>• Tap or click an asteroid to dispatch a mining drone. The ore type appears above it.</p>
+                    <p>• Drones mine automatically and return to the station.</p>
+                    <p>• Open the drawer by clicking the grey bar at the bottom of the screen.</p>
+                    <p>• CARGO tab — check your reserves.</p>
+                    <p>• FORGE tab — toggle auto-refine and auto-forge per ore type. Uncheck Iron Hull processing to stockpile Iron Ingots instead.</p>
+                    <p>• REQUESTS tab — a purple signal bottle appears after ~45 seconds. Collect it by tapping it. Check REQUESTS for what arrives.</p>
+                    <p>Recommendation: build up 5 drones and stockpile Iron Ingots before attempting to fulfill the first request.</p>
+                    <hr>
+                    <p>=== COMPATIBILITY ===</p>
+                    <p>Built for Android and modern browsers. Tested on:</p>
+                    <p>• Desktop Chrome / Edge / Firefox</p>
+                    <p>• Android Chrome (Moto G 2025)</p>
+                    <p>• Android tablet (mid-range and above)</p>
+                    <p>Requires WebGL2 or WebGPU hardware acceleration. Budget tablets with entry-level PowerVR or Mali GPUs may not load the game. If you see a black screen, open chrome://gpu in your browser — WebGL2 or WebGPU must show Hardware Accelerated.</p>
+                    <p>Not compatible with: PowerVR GE8300 (TCL Tab 8 and similar budget MediaTek devices).</p>
+                </div>
+
+                <!-- Info panel sidebar -->
+                <div class="game_info_panel_widget">
+                    <table>
+                        <tbody>
+                            <tr><td>Updated</td><td>1 day ago</td></tr>
+                            <tr><td>Published</td><td>9 days ago</td></tr>
+                            <tr><td>Status</td><td><a href="#">Prototype</a></td></tr>
+                            <tr><td>Platforms</td><td><a href="#">HTML5</a></td></tr>
+                            <tr><td>Author</td><td><a href="#">Rdug627</a></td></tr>
+                            <tr><td>Genre</td><td><a href="#">Simulation</a></td></tr>
+                            <tr><td>Made with</td><td><a href="#">Bevy Engine</a></td></tr>
+                            <tr><td>Tags</td><td class="tag_row">
+                                <a href="#">Arcade</a><a href="#">bevy</a><a href="#">Idle</a><a href="#">mining</a><a href="#">Prototype</a><a href="#">rust</a><a href="#">Space</a>
+                            </td></tr>
+                            <tr><td>License</td><td><a href="#">MIT License</a></td></tr>
+                            <tr><td>Average session</td><td>A few minutes</td></tr>
+                            <tr><td>Languages</td><td>English</td></tr>
+                            <tr><td>Inputs</td><td><a href="#">Mouse</a>, <a href="#">Touchscreen</a></td></tr>
+                            <tr><td>Links</td><td><a href="https://github.com/rfd62794/VoidDrift">GitHub</a>, <a href="#">Blog</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preset switcher overlay (dev utility, unobtrusive top-right) -->
+    <div class="preset_overlay" id="preset_overlay">
+        <h4>Embed preset</h4>
+        <div id="preset_buttons"></div>
+        <div class="dims" id="dims">—</div>
     </div>
 
     <script>
+        // Preset list — default 720×1280 matches current live itch.io embed.
+        // 1280×640 retained as "legacy" since older docs and a possible
+        // future re-orientation may revisit it.
         const PRESETS = [
-            { name: "Landscape 1280×640", w: 1280, h: 640, note: "current itch.io embed" },
-            { name: "Portrait 720×640",   w:  720, h: 640, note: "portrait embed" },
-            { name: "Full Portrait 720×1280", w: 720, h: 1280, note: "tall portrait" },
-            { name: "Fullscreen Sim",     w: "100vw", h: "100vh", note: "approximates browser fullscreen" }
+            { name: "720×1280  (live)",   w:  720, h: 1280, note: "current itch embed" },
+            { name: "1280×640  (legacy)", w: 1280, h:  640, note: "legacy landscape"  },
+            { name: "720×640   (short)",  w:  720, h:  640, note: "short portrait"    },
+            { name: "Fullscreen sim",     w: "100vw", h: "100vh", note: "viewport-filling" }
         ];
 
-        const presetsEl = document.getElementById("presets");
-        const dimsEl = document.getElementById("dims");
-        const frame = document.getElementById("game");
-        let activeIndex = 0;
+        const buttonsEl = document.getElementById("preset_buttons");
+        const dimsEl    = document.getElementById("dims");
+        const frame     = document.getElementById("game_frame");
 
         function applyPreset(i) {
-            activeIndex = i;
             const p = PRESETS[i];
             const w = typeof p.w === "number" ? p.w + "px" : p.w;
             const h = typeof p.h === "number" ? p.h + "px" : p.h;
-            frame.style.width = w;
+            frame.style.width  = w;
             frame.style.height = h;
-            dimsEl.textContent = `${p.name} — ${w} × ${h} (${p.note})`;
-            for (const btn of presetsEl.children) btn.classList.remove("active");
-            presetsEl.children[i].classList.add("active");
+            dimsEl.textContent = `${w} × ${h} — ${p.note}`;
+            for (const btn of buttonsEl.children) btn.classList.remove("active");
+            buttonsEl.children[i].classList.add("active");
         }
 
         PRESETS.forEach((p, i) => {
             const btn = document.createElement("button");
             btn.textContent = p.name;
             btn.addEventListener("click", () => applyPreset(i));
-            presetsEl.appendChild(btn);
+            buttonsEl.appendChild(btn);
         });
 
-        // Default: Landscape 1280×640
+        // Default: 720×1280, matches live itch embed.
         applyPreset(0);
     </script>
 </body>

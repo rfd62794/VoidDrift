@@ -67,7 +67,7 @@ Open scripts/local_itch_preview.html in browser
 **What this does:**
 - Builds WASM via wasm-pack
 - Serves `pkg/` directory on localhost:8080
-- Opens preview page with iframe at exact itch.io dimensions (1280×640 landscape)
+- Opens preview page with iframe at exact itch.io dimensions (720×1280 portrait)
 - Loads your WASM build inside the iframe
 - Four preset sizes to test: Embed, Tablet, Mobile Portrait, Mobile Landscape
 
@@ -100,14 +100,14 @@ Open scripts/local_itch_preview.html in browser
 ```
 
 **Step 4: Select preset size matching your test target**
-- **Landscape 1280×640** — current itch.io embed setting
-- **Portrait 720×640** — portrait embed
-- **Full Portrait 720×1280** — tall portrait
+- **Full Portrait 720×1280** — current itch.io embed setting
+- **Landscape 1280×640** — legacy landscape embed
+- **Portrait 720×640** — short portrait
 - **Fullscreen Sim** — approximates browser fullscreen
 
 This replicates the exact iframe constraints itch.io applies. Canvas CSS rules, EGUI_SCALE, and available_height values will match production exactly. Use this before every publish.
 
-**Known values at Landscape 1280×640:**
+**Known values at Full Portrait 720×1280:**
 - `ui.available_height()` in cargo tab = 162.1875px
 - Canvas constrained by `max-width: 720px, max-height: 100vh`
 

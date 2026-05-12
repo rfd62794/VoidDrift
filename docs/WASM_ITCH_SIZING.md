@@ -3,7 +3,7 @@
 ## Confirmed Runtime Values (May 2026)
 
 ### Canvas and Embed
-- itch.io embed: 1280x640 (landscape, manually set)
+- itch.io embed: 720x1280 (portrait, manually set)
 - Canvas CSS: max-width 720px, max-height 100vh, aspect-ratio 9/16
 - Fullscreen CSS: canvas:fullscreen removes constraints
 
