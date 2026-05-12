@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>VoidDrift — Local itch.io Preview</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: #222;
+            color: #eee;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+        header {
+            width: 100%;
+            max-width: 1280px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fa5c5c;
+        }
+        .source {
+            font-size: 11px;
+            color: #888;
+            margin: 0;
+        }
+        .source code {
+            background: #111;
+            padding: 1px 6px;
+            border-radius: 3px;
+            color: #ccc;
+        }
+        .presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 12px 0;
+        }
+        .presets button {
+            background: #2d2d2d;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .presets button:hover { background: #3a3a3a; }
+        .presets button.active {
+            background: #fa5c5c;
+            border-color: #fa5c5c;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+        .dims {
+            font-size: 11px;
+            color: #aaa;
+            margin: 4px 0 12px 0;
+            font-family: ui-monospace, "SF Mono", Consolas, monospace;
+        }
+        .frame-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+        }
+        iframe {
+            border: 1px solid #000;
+            background: #050514;
+            display: block;
+            transition: width 0.15s ease, height 0.15s ease;
+        }
+        .help {
+            margin-top: 16px;
+            padding: 10px 14px;
+            background: #1a1a1a;
+            border-left: 3px solid #fa5c5c;
+            font-size: 11px;
+            color: #bbb;
+            max-width: 720px;
+            line-height: 1.5;
+        }
+        .help code {
+            background: #000;
+            padding: 1px 5px;
+            border-radius: 2px;
+            color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>VoidDrift — Local itch.io Preview</h1>
+        <p class="source">Iframe loads <code>http://localhost:8080/index.html</code> — start the server with <code>cd pkg; python -m http.server 8080</code></p>
+    </header>
+
+    <div class="presets" id="presets"></div>
+    <div class="dims" id="dims">—</div>
+
+    <div class="frame-wrap">
+        <iframe
+            id="game"
+            src="http://localhost:8080/index.html"
+            allow="fullscreen"
+            allowfullscreen></iframe>
+    </div>
+
+    <div class="help">
+        <strong>Presets</strong> swap iframe dimensions to match itch.io embed configurations. The default <strong>Landscape 1280×640</strong> matches the project's current itch.io embed setting (per <code>docs/WASM_ITCH_SIZING.md</code>). Use <strong>Fullscreen Sim</strong> to approximate browser-level fullscreen behavior. Canvas CSS rules, <code>EGUI_SCALE</code>, and <code>ui.available_height()</code> values inside the iframe will match production exactly at the matching preset.
+    </div>
+
+    <script>
+        const PRESETS = [
+            { name: "Landscape 1280×640", w: 1280, h: 640, note: "current itch.io embed" },
+            { name: "Portrait 720×640",   w:  720, h: 640, note: "portrait embed" },
+            { name: "Full Portrait 720×1280", w: 720, h: 1280, note: "tall portrait" },
+            { name: "Fullscreen Sim",     w: "100vw", h: "100vh", note: "approximates browser fullscreen" }
+        ];
+
+        const presetsEl = document.getElementById("presets");
+        const dimsEl = document.getElementById("dims");
+        const frame = document.getElementById("game");
+        let activeIndex = 0;
+
+        function applyPreset(i) {
+            activeIndex = i;
+            const p = PRESETS[i];
+            const w = typeof p.w === "number" ? p.w + "px" : p.w;
+            const h = typeof p.h === "number" ? p.h + "px" : p.h;
+            frame.style.width = w;
+            frame.style.height = h;
+            dimsEl.textContent = `${p.name} — ${w} × ${h} (${p.note})`;
+            for (const btn of presetsEl.children) btn.classList.remove("active");
+            presetsEl.children[i].classList.add("active");
+        }
+
+        PRESETS.forEach((p, i) => {
+            const btn = document.createElement("button");
+            btn.textContent = p.name;
+            btn.addEventListener("click", () => applyPreset(i));
+            presetsEl.appendChild(btn);
+        });
+
+        // Default: Landscape 1280×640
+        applyPreset(0);
+    </script>
+</body>
+</html>

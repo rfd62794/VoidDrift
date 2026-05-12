@@ -41,3 +41,6 @@ logcat_gate0.txt
 
 *.pyc
 __pycache__
+
+# Local reference material (saved web pages, etc.) — never commit
+/examples/
