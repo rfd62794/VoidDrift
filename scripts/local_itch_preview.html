@@ -53,7 +53,7 @@
         .inner_column {
             background: #ffffff;
             color: #222222;
-            max-width: 960px;
+            max-width: 1040px;
             margin: 0 auto;
             padding: 32px 40px 48px;
             border: 1px solid #d8d8d8;
@@ -119,6 +119,21 @@
         /* Description (.formatted_description.user_formatted) */
         .formatted_description p { margin: 0 0 12px 0; }
         .formatted_description strong { font-weight: 700; }
+
+        /* Donate / Support button — matches itch's prominent red CTA */
+        .donate_btn {
+            display: inline-block;
+            background: #fa5c5c;
+            color: #ffffff !important;
+            padding: 10px 20px;
+            font-weight: 700;
+            text-decoration: none !important;
+            text-shadow: 0 1px 0 #e54747;
+            margin: 8px 0 16px 0;
+            border-radius: 2px;
+        }
+        .donate_btn:hover { background: #e54747; }
+        .donate_wrap { text-align: center; margin: 0 0 16px 0; }
 
         /* Info panel sidebar (.game_info_panel_widget) */
         .game_info_panel_widget {
@@ -224,7 +239,7 @@
             <div class="column_layout">
                 <!-- Description (verbatim from saved page) -->
                 <div class="formatted_description user_formatted">
-                    <p><a href="#">Support This Game</a></p>
+                    <div class="donate_wrap"><a href="#" class="donate_btn">Support This Game</a></div>
                     <p>Asteroids meets Event Horizon.</p>
                     <p>Mine asteroid debris at the edge of a black hole. Build a drone fleet. Receive transmissions from something that knows you're there.</p>
                     <p>A mobile arcade mining game built in Rust and Bevy. Prototype — core loop complete, narrative in development.</p>
