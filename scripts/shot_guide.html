@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VoidDrift Shot Guide</title>
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: #1a1a2e;
+    color: #e6e6f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    padding: 18px 22px;
+    box-sizing: border-box;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #303050;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .title {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #8888aa;
+    text-transform: uppercase;
+  }
+  .counter {
+    font-size: 13px;
+    color: #8888aa;
+    font-variant-numeric: tabular-nums;
+  }
+  .shot-num {
+    font-size: 64px;
+    font-weight: 700;
+    color: #00d4ff;
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .shot-name {
+    font-size: 28px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .shot-desc {
+    font-size: 17px;
+    line-height: 1.4;
+    color: #c8c8d8;
+    margin-bottom: 22px;
+    min-height: 70px;
+  }
+  .timer {
+    font-size: 48px;
+    font-weight: 600;
+    color: #ffcc44;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .bar-wrap {
+    height: 10px;
+    background: #2a2a44;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .bar {
+    height: 100%;
+    background: linear-gradient(90deg, #00d4ff, #ffcc44);
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+  }
+  button {
+    flex: 1;
+    background: #2a2a44;
+    color: #e6e6f0;
+    border: 1px solid #404060;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { background: #353560; }
+  button.primary { background: #0066aa; border-color: #00d4ff; }
+  button.primary:hover { background: #0088cc; }
+  .next-preview {
+    font-size: 12px;
+    color: #6666aa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .complete {
+    text-align: center;
+    padding-top: 40px;
+  }
+  .complete .big {
+    font-size: 32px;
+    color: #44ff88;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .complete .sub {
+    font-size: 16px;
+    color: #c8c8d8;
+    line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <div id="active">
+    <div class="header">
+      <div class="title">VoidDrift Demo</div>
+      <div class="counter"><span id="idx">1</span> / <span id="total">8</span></div>
+    </div>
+    <div class="shot-num" id="shotNum">01</div>
+    <div class="shot-name" id="shotName">LOADING</div>
+    <div class="shot-desc" id="shotDesc">Let the starfield render, station appears</div>
+    <div class="timer" id="timer">5.0</div>
+    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+    <div class="next-preview">Next: <span id="nextName">MINING</span></div>
+    <div class="controls">
+      <button id="pauseBtn">Pause</button>
+      <button id="nextBtn" class="primary">Next &raquo;</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+
+  <div id="done" class="complete hidden">
+    <div class="big">RECORDING COMPLETE</div>
+    <div class="sub">
+      Stop OBS now.<br><br>
+      Then run:<br>
+      <code>.\scripts\trim_demo.ps1</code>
+    </div>
+    <div class="controls" style="margin-top: 30px;">
+      <button id="restartBtn2" class="primary">Restart</button>
+    </div>
+  </div>
+
+<script>
+  try { window.resizeTo(400, 520); } catch (e) {}
+
+  const shots = [
+    { name: "LOADING",  desc: "Let the starfield render, station appears", dur: 5 },
+    { name: "MINING",   desc: "Tap an asteroid — watch drone dispatch",    dur: 10 },
+    { name: "FLEET",    desc: "3-4 drones in motion simultaneously",       dur: 10 },
+    { name: "DRAWER",   desc: "Open drawer — show CARGO tab, ore numbers", dur: 10 },
+    { name: "SIGNAL",   desc: "Purple bottle appears — tap to collect",    dur: 10 },
+    { name: "ECHO",     desc: "Signal strip narrative text scrolling",     dur: 10 },
+    { name: "PIPELINE", desc: "Open PIPELINE — show production tree",      dur: 10 },
+    { name: "TITLE",    desc: "Hold on game title — let it breathe",       dur: 5 },
+  ];
+
+  let i = 0;
+  let remaining = shots[0].dur;
+  let paused = false;
+  let lastTick = performance.now();
+
+  const $ = id => document.getElementById(id);
+  $("total").textContent = shots.length;
+
+  function render() {
+    const s = shots[i];
+    $("idx").textContent = i + 1;
+    $("shotNum").textContent = String(i + 1).padStart(2, "0");
+    $("shotName").textContent = s.name;
+    $("shotDesc").textContent = s.desc;
+    $("timer").textContent = remaining.toFixed(1);
+    const pct = 100 * (1 - remaining / s.dur);
+    $("bar").style.width = pct + "%";
+    $("nextName").textContent = i + 1 < shots.length ? shots[i + 1].name : "— DONE —";
+  }
+
+  function advance() {
+    i++;
+    if (i >= shots.length) {
+      $("active").classList.add("hidden");
+      $("done").classList.remove("hidden");
+      return;
+    }
+    remaining = shots[i].dur;
+    render();
+  }
+
+  function tick(now) {
+    const dt = (now - lastTick) / 1000;
+    lastTick = now;
+    if (!paused && !$("active").classList.contains("hidden")) {
+      remaining -= dt;
+      if (remaining <= 0) {
+        advance();
+      } else {
+        render();
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function restart() {
+    i = 0;
+    remaining = shots[0].dur;
+    paused = false;
+    $("pauseBtn").textContent = "Pause";
+    $("done").classList.add("hidden");
+    $("active").classList.remove("hidden");
+    render();
+  }
+
+  $("nextBtn").addEventListener("click", advance);
+  $("restartBtn").addEventListener("click", restart);
+  $("restartBtn2").addEventListener("click", restart);
+  $("pauseBtn").addEventListener("click", () => {
+    paused = !paused;
+    $("pauseBtn").textContent = paused ? "Resume" : "Pause";
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") { e.preventDefault(); $("pauseBtn").click(); }
+    else if (e.code === "ArrowRight" || e.code === "Enter") { advance(); }
+    else if (e.code === "KeyR") { restart(); }
+  });
+
+  render();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
