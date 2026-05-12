@@ -195,7 +195,7 @@ pub fn spawn_station(
             cargo_capacity_multiplier: 1.0,
             ship_speed_multiplier: 1.0,
             power_multiplier: 1.0,
-            max_active_asteroids: 3,
+            max_active_asteroids: 8,
         },
         StationQueues::default(),
         Transform::from_xyz(crate::constants::STATION_POS.x, crate::constants::STATION_POS.y, vcfg.z_layer.z_environment),
