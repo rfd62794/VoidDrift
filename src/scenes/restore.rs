@@ -7,6 +7,7 @@ use crate::config::VisualConfig;
 use crate::config::visual::{rgb, rgba};
 use crate::systems::persistence::save::SaveData;
 use crate::spawn_drone_core_children;
+use crate::systems::setup::mesh_builder::triangle_mesh;
 
 pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,
@@ -166,7 +167,7 @@ pub fn spawn_saved_drones(
             AutonomousShipTag,
             LastHeading(d.heading),
             Transform::from_xyz(d.pos_x, d.pos_y, vcfg.z_layer.z_ship),
-            Mesh2d(meshes.add(crate::systems::setup::triangle_mesh(vcfg.drone.mission.hull_w, vcfg.drone.mission.hull_h))),
+            Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_w, vcfg.drone.mission.hull_h))),
             MeshMaterial2d(materials.add(rgb(vcfg.drone.mission.color_hull))),
         )).id();
 
