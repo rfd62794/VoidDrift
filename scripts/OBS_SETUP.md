@@ -29,3 +29,10 @@
 
 ## After recording
 Run: .\scripts\trim_demo.ps1 -Input raw_demo.mp4 -DurationSec 90
+
+## FFmpeg
+
+FFmpeg location: `C:\Github\GameReviewAgent\content-engine\ffmpeg.exe`
+
+Not on system PATH - either add to PATH or update `trim_demo.ps1` to hardcode this path.
+
