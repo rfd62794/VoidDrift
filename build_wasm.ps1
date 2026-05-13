@@ -85,7 +85,10 @@ if ($null -ne $indexBackup) {
     }
 }
 
-# Restore custom canvas CSS for fullscreen support
+# Restore custom canvas CSS for fullscreen support.
+# Strip ALL existing canvas CSS rules (handles base block, fullscreen variants,
+# and any duplicates accumulated from prior buggy builds), then inject the
+# canonical block once before </style>. Idempotent across rebuilds.
 $customCSS = @"
         canvas {
             width: 100%; height: 100%;
@@ -100,7 +103,11 @@ $customCSS = @"
         }
 "@
 $indexContent = Get-Content $indexPath -Raw
-$indexContent = $indexContent -replace 'canvas \{[^}]*\}', $customCSS.Trim()
+# Strip every CSS rule whose selector starts with `canvas` (multiline-safe).
+# Anchored to line start with optional indent to avoid matching the <canvas> HTML tag.
+$indexContent = $indexContent -replace '(?m)^[ \t]*canvas[^{]*\{[^}]*\}\r?\n?', ''
+# Inject canonical CSS once, just before </style>.
+$indexContent = $indexContent -replace '</style>', ($customCSS.Trim() + "`r`n    </style>")
 Set-Content -Path $indexPath -Value $indexContent -NoNewline
 Write-Host "  Custom canvas CSS restored." -ForegroundColor Green
 
