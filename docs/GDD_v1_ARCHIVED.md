@@ -1,3 +1,9 @@
+# ARCHIVED — GDD v1.0 (April 2026)
+# Superseded by GDD_v2.md (May 2026)
+# Retained for historical reference only. Do not implement from this document.
+
+---
+
 # Voidrift - Game Design Document v1.0
 **Station and Drone Command**
 *A mobile idle management game for Android*
