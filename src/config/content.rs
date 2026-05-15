@@ -3,7 +3,6 @@ use serde::Deserialize;
 fn read_yaml(filename: &'static str) -> &'static str {
     #[cfg(any(target_arch = "wasm32", target_os = "android"))]
     {
-        let path = concat!("../../assets/content/", filename);
         // include_str! requires literal, so we match on filename
         match filename {
             "echo.yaml" => include_str!("../../assets/content/echo.yaml"),
