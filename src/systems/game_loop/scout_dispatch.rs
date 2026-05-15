@@ -17,7 +17,7 @@ pub fn scout_dispatch_system(
         &Transform,
     ), With<Drone>>,
     asteroids: Query<(&ActiveAsteroid, &Transform, Entity), With<InnerRingAsteroid>>,
-    occupied: Query<&AutonomousAssignment>,
+    occupied: Query<&AutonomousAssignment, Without<Drone>>,
 ) {
     if !scout_enabled.active {
         return;
