@@ -20,6 +20,7 @@ pub fn collect_save_data(
     time: &Res<Time>,
     telemetry_consent: &Res<crate::systems::telemetry::TelemetryConsent>,
     telemetry_session_counter: &Res<crate::systems::telemetry::TelemetrySessionCounter>,
+    scout_enabled: &crate::components::resources::ScoutEnabled,
 ) -> SaveData {
     SaveData {
         save_version: SAVE_VERSION,
@@ -74,6 +75,7 @@ pub fn collect_save_data(
         telemetry_consent: telemetry_consent.opted_in,
         telemetry_sessions: telemetry_session_counter.sessions,
         unlocked_logs: vec![], // Collected from GameState resource in a future task
+        scout_enabled: scout_enabled.active,
     }
 }
 
@@ -90,6 +92,7 @@ pub fn autosave_system(
     time: Res<Time>,
     telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
     telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
+    scout_enabled: Res<crate::components::resources::ScoutEnabled>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for _ in events.read() {
@@ -107,6 +110,7 @@ pub fn autosave_system(
                 &time,
                 &telemetry_consent,
                 &telemetry_session_counter,
+                &scout_enabled,
             );
             if let Err(e) = save_game(&data) {
                 warn!("Autosave failed: {e}");
@@ -128,6 +132,7 @@ pub fn save_request_system(
     time: Res<Time>,
     telemetry_consent: Res<crate::systems::telemetry::TelemetryConsent>,
     telemetry_session_counter: Res<crate::systems::telemetry::TelemetrySessionCounter>,
+    scout_enabled: Res<crate::components::resources::ScoutEnabled>,
 ) {
     if let Ok(station) = station_query.get_single() {
         for event in events.read() {
@@ -145,6 +150,7 @@ pub fn save_request_system(
                 &time,
                 &telemetry_consent,
                 &telemetry_session_counter,
+                &scout_enabled,
             );
             
             if let Err(e) = save_game(&data) {

@@ -68,6 +68,10 @@ pub struct SaveData {
     // Logs state
     #[serde(default)]
     pub unlocked_logs: Vec<String>,
+
+    // Scout Mk I automation state
+    #[serde(default)]
+    pub scout_enabled: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]

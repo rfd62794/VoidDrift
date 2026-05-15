@@ -143,6 +143,7 @@ pub fn spawn_asteroid(
             ore_remaining: ore_amount,
             lifespan_timer: cfg.asteroid.max_lifespan_secs,
         },
+        InnerRingAsteroid, // TODO(#59): Attach based on actual ring when Ring 2/Ring 3 are implemented
         Transform::from_xyz(position.x, position.y, vcfg.z_layer.z_environment),
         GlobalTransform::default(),
         Visibility::default(),

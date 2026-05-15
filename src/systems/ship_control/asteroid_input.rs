@@ -77,6 +77,7 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
                     let spawn_pos = p.station_query.get_single()
                         .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
                     spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
+                        Drone { class: DroneClass::Mining, tier: 1 },
                         spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
                         active_asteroid.ore_type, &p.bcfg, &p.vcfg);
                     dispatched = true;
@@ -102,6 +103,7 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
                             let spawn_pos = p.station_query.get_single()
                                 .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
                             spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
+                                Drone { class: DroneClass::Mining, tier: 1 },
                                 spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
                                 active_asteroid.ore_type, &p.bcfg, &p.vcfg);
                             dispatched = true;

@@ -85,6 +85,7 @@ pub fn render_tab_content(
     logs_cfg: &LogsConfig,
     save_data: &SaveData,
     vcfg: &VisualConfig,
+    scout_enabled: &mut crate::components::resources::ScoutEnabled,
 ) {
     match active_tab {
         ActiveStationTab::Cargo => {
@@ -387,6 +388,33 @@ pub fn render_tab_content(
 
             painter.text(egui::pos2(X_DRONE, drone_pos.y + drone_size / 2.0 + 4.0), egui::Align2::CENTER_TOP, "Drone Bay", egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 200, 200));
             painter.text(egui::pos2(X_DRONE, drone_pos.y + drone_size / 2.0 + 20.0), egui::Align2::CENTER_TOP, &format!("Fleet: {}", station.drone_count), egui::FontId::proportional(12.0), egui::Color32::from_rgb(0, 204, 102));
+        }
+        ActiveStationTab::Hangar => {
+            ui.heading("HANGAR");
+            ui.add_space(8.0);
+            
+            // Scout Mk I toggle row
+            if scout_enabled.unlocked {
+                ui.add_space(12.0);
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("SCOUT Mk I").size(14.0).color(egui::Color32::from_rgb(0, 200, 200)));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let btn_text = if scout_enabled.active { "ON" } else { "OFF" };
+                        let btn_color = if scout_enabled.active { egui::Color32::from_rgb(0, 204, 102) } else { egui::Color32::from_rgb(100, 100, 100) };
+                        let btn_pos = ui.cursor().right_bottom();
+                        let btn_rect = egui::Rect::from_min_max(btn_pos, btn_pos + egui::vec2(40.0, 24.0));
+                        let response = ui.interact(btn_rect, egui::Id::new("scout_toggle"), egui::Sense::click());
+                        if response.clicked() {
+                            scout_enabled.active = !scout_enabled.active;
+                        }
+                        ui.painter().rect_filled(btn_rect, 0.0, btn_color);
+                        ui.painter().text(btn_rect.center(), egui::Align2::CENTER_CENTER, btn_text, egui::FontId::proportional(12.0), egui::Color32::WHITE);
+                        ui.add_space(50.0); // Spacer before label
+                    });
+                    ui.label(egui::RichText::new("Auto-dispatch to Inner Ring").size(12.0).color(egui::Color32::from_gray(160)));
+                });
+                ui.add_space(4.0);
+            }
         }
         ActiveStationTab::Production => {
             ui.heading("FORGE");

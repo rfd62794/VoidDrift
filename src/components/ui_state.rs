@@ -4,6 +4,7 @@ use bevy::prelude::*;
 pub enum ActiveStationTab {
     #[default]
     Cargo,
+    Hangar,
     Production,
     Requests,
     Logs,

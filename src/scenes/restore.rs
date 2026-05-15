@@ -129,6 +129,12 @@ pub fn restore_save_state(
     signal_log.entries.push_back("ECHO: SAVE LOADED SUCCESSFULLY.".to_string());
     signal_log.entries.push_back(format!("ECHO: {} RESTORED.", save_data.save_name.to_uppercase()));
 
+    // Restore Scout Mk I automation state
+    commands.insert_resource(crate::components::resources::ScoutEnabled {
+        active: save_data.scout_enabled,
+        unlocked: true, // Hardcoded for testing per directive
+    });
+
     // Restore telemetry consent and session counter
     commands.insert_resource(crate::systems::telemetry::TelemetryConsent {
         opted_in: save_data.telemetry_consent,

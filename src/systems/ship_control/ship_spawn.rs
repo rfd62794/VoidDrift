@@ -51,6 +51,7 @@ pub fn spawn_drone_ship(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
+    drone: Drone,
     start_pos: Vec2,
     target: AutopilotTarget,
     ore_type: OreDeposit,
@@ -61,6 +62,7 @@ pub fn spawn_drone_ship(
     let rocket_parts = generate_rocket_points(&rocket_config);
 
     let ship_ent = commands.spawn((
+        drone,
         Ship {
             state: ShipState::Navigating,
             speed: bcfg.mining.ship_speed,

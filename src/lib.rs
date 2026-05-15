@@ -56,10 +56,11 @@ pub mod config;
 use config::{BalanceConfig, VisualConfig, ContentConfig, TutorialConfig, QuestConfig, RequestConfig, LogsConfig};
 
 mod components;
-pub use crate::components::*;
+pub use components::*;
 
-pub mod systems;
-pub mod scenes;
+mod scenes;
+mod systems;
+
 use systems::telemetry::TelemetryPlugin;
 use scenes::main_menu::MainMenuState;
 use systems::setup::cleanup_world_entities;
@@ -72,6 +73,9 @@ fn configure_shared_app(app: &mut App) {
     app
         .add_plugins(EguiPlugin)
         .add_plugins(TelemetryPlugin)
+        .register_type::<crate::components::DroneClass>()
+        .register_type::<crate::components::Drone>()
+        .register_type::<crate::components::resources::ScoutEnabled>()
         .init_state::<GameState>()
         .init_state::<AppState>()
         .insert_resource(ClearColor(Color::srgb(0.02, 0.02, 0.07)))
@@ -82,6 +86,7 @@ fn configure_shared_app(app: &mut App) {
         .insert_resource(ActiveStationTab::default())
         .insert_resource(DrawerState::default())
         .insert_resource(UiLayout::default())
+        .insert_resource(ScoutEnabled { active: false, unlocked: true })
         .insert_resource(WorldViewRect::default())
         .insert_resource(ForgeSettings::default())
         .insert_resource(ProductionToggles::default())
@@ -151,8 +156,8 @@ fn configure_shared_app(app: &mut App) {
             systems::setup::setup_world,
             systems::asteroid::spawn::spawn_initial_asteroids,
             systems::visuals::debug_log::setup_debug_log_system,
-            scenes::main_menu::ingame_startup_system,
         ).chain())
+        .add_systems(OnEnter(AppState::InGame), scenes::main_menu::ingame_startup_system.run_if(|| true))
         .add_systems(Update, (
             systems::ship_control::autopilot::autopilot_system,
             systems::game_loop::economy::ship_docked_economy_system,
@@ -184,6 +189,8 @@ fn configure_shared_app(app: &mut App) {
             systems::ui::hud::ship_cargo_display_system,
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_dispatch_system
+            .run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
             systems::ui::tutorial::tutorial_system,

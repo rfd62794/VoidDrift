@@ -140,6 +140,7 @@ pub struct HudParams<'w, 's> {
     pub telemetry_opt_in: ResMut<'w, TelemetryOptInPrompt>,
     pub telemetry_consent: ResMut<'w, TelemetryConsent>,
     pub telemetry_session_counter: ResMut<'w, TelemetrySessionCounter>,
+    pub scout_enabled: ResMut<'w, crate::components::resources::ScoutEnabled>,
 }
 
 pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
@@ -239,6 +240,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         &params.logs_cfg,
                         &params.save_data,
                         &params.visual_cfg,
+                        &mut params.scout_enabled,
                     );
                 } else {
                     ui.vertical_centered(|ui| {
@@ -268,11 +270,12 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
             .exact_height(layout.secondary_tab_height)
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
-                let tab_w = ui.available_width() / 4.0;
+                let tab_w = ui.available_width() / 5.0;
                 let tab_size = egui::vec2(tab_w, layout.secondary_tab_height - 8.0);
                 ui.horizontal(|ui| {
                     for (tab, label) in [
                         (ActiveStationTab::Cargo,      "CARGO"),
+                        (ActiveStationTab::Hangar,     "HANGAR"),
                         (ActiveStationTab::Production, "FORGE"),
                         (ActiveStationTab::Requests,   "QUESTS"),
                         (ActiveStationTab::Logs,       "LOGS"),

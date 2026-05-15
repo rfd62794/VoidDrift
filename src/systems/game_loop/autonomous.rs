@@ -7,14 +7,14 @@ pub fn autonomous_ship_system(
     time: Res<Time>,
     cfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
-    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
+    mut ship_query: Query<(Entity, &mut AutonomousShip, &mut Transform, &mut AutonomousAssignment, &Drone), (Without<Station>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     station_query: Query<(&Station, &Transform), (Without<AutonomousShip>, Without<MiningBeam>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     berth_query: Query<(Entity, &Berth)>,
     mut commands: Commands,
     mut cargo_docked_events: EventWriter<ShipDockedWithCargo>,
 ) {
     if let Ok((station, s_transform)) = station_query.get_single() {
-        for (ship_entity, mut ship, mut transform, mut assignment) in ship_query.iter_mut() {
+        for (ship_entity, mut ship, mut transform, mut assignment, _drone) in ship_query.iter_mut() {
             match ship.state {
                 AutonomousShipState::Holding => {
                     ship.state = AutonomousShipState::Outbound;
