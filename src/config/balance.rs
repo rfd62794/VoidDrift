@@ -1,6 +1,21 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
+pub struct RingConfig {
+    pub inner_radius: f32,
+    pub outer_radius: f32,
+    pub density: u32,
+    pub ore_types: Vec<String>,
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct RingsConfig {
+    pub inner: RingConfig,
+    pub middle: RingConfig,
+    pub outer: RingConfig,
+}
+
+#[derive(Deserialize, Clone, Debug)]
 pub struct MiningConfig {
     pub ship_speed: f32,
     pub cargo_capacity: u32,
@@ -100,6 +115,7 @@ pub struct BalanceConfig {
     pub ui: UiConfig,
     pub map: MapConfig,
     pub asteroid_spawning: AsteroidSpawningConfig,
+    pub rings: RingsConfig,
 }
 
 impl BalanceConfig {
@@ -120,5 +136,32 @@ impl BalanceConfig {
                 .expect("Failed to read assets/balance.toml")
                 .into_boxed_str(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test anchor for Issue #59: test_ring_config_loads_all_three_rings
+    #[test]
+    fn test_ring_config_loads_all_three_rings() {
+        let config = BalanceConfig::load();
+        
+        // Confirm inner/middle/outer all deserialize with non-zero radius and density
+        assert!(config.rings.inner.inner_radius > 0.0);
+        assert!(config.rings.inner.outer_radius > 0.0);
+        assert!(config.rings.inner.density > 0);
+        assert!(!config.rings.inner.ore_types.is_empty());
+        
+        assert!(config.rings.middle.inner_radius > 0.0);
+        assert!(config.rings.middle.outer_radius > 0.0);
+        assert!(config.rings.middle.density > 0);
+        assert!(!config.rings.middle.ore_types.is_empty());
+        
+        assert!(config.rings.outer.inner_radius > 0.0);
+        assert!(config.rings.outer.outer_radius > 0.0);
+        assert!(config.rings.outer.density > 0);
+        assert!(!config.rings.outer.ore_types.is_empty());
     }
 }

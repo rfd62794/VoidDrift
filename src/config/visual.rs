@@ -173,18 +173,18 @@ pub struct EguiConfig {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct DroneVisualEntry {
-    pub hull_w: f32,
-    pub hull_h: f32,
+    pub hull_width: f32,
+    pub hull_height: f32,
     pub color_hull: [f32; 3],
     pub color_beam: [f32; 3],
     pub beam_alpha: f32,
     pub color_thruster: [f32; 3],
     pub color_cargo_fill: [f32; 3],
     pub color_cargo_bg: [f32; 3],
-    pub cargo_bar_w: f32,
-    pub cargo_bar_h: f32,
-    pub map_icon_w: f32,
-    pub map_icon_h: f32,
+    pub cargo_bar_width: f32,
+    pub cargo_bar_height: f32,
+    pub map_icon_width: f32,
+    pub map_icon_height: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -351,4 +351,35 @@ pub fn rgb_u8(c: [u8; 3]) -> bevy::prelude::Color {
 
 pub fn rgb_u8_to_egui(c: [u8; 3]) -> egui::Color32 {
     egui::Color32::from_rgb(c[0], c[1], c[2])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test anchor for Issue #58: test_visual_config_loads_without_error
+    #[test]
+    fn test_visual_config_loads_without_error() {
+        // Load visual.toml via the existing config load path
+        let config = VisualConfig::load();
+        
+        // Verify no missing field errors occurred (config loaded successfully)
+        // Verify key fields are present with expected types
+        assert!(config.starfield.far_count > 0);
+        assert!(config.asteroid.color_iron.len() == 3);
+        assert!(config.drone.opening.hull_width > 0.0);
+        assert!(config.drone.opening.hull_height > 0.0);
+        assert!(config.drone.opening.cargo_bar_width > 0.0);
+        assert!(config.drone.opening.cargo_bar_height > 0.0);
+        assert!(config.drone.opening.map_icon_width > 0.0);
+        assert!(config.drone.opening.map_icon_height > 0.0);
+        
+        // Verify drone.mission also has the renamed fields
+        assert!(config.drone.mission.hull_width > 0.0);
+        assert!(config.drone.mission.hull_height > 0.0);
+        assert!(config.drone.mission.cargo_bar_width > 0.0);
+        assert!(config.drone.mission.cargo_bar_height > 0.0);
+        assert!(config.drone.mission.map_icon_width > 0.0);
+        assert!(config.drone.mission.map_icon_height > 0.0);
+    }
 }

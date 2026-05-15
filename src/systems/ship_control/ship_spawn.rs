@@ -105,13 +105,13 @@ pub fn spawn_drone_ship(
             Visibility::Hidden,
         ));
         parent.spawn((
-            Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
+            Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_width, md.cargo_bar_height))),
             MeshMaterial2d(materials.add(rgb(md.color_cargo_bg))),
             Transform::from_xyz(0.0, 24.0, z_cargo_bar - z_ship),
         ));
         parent.spawn((
             ShipCargoBarFill,
-            Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_w, md.cargo_bar_h))),
+            Mesh2d(meshes.add(Rectangle::new(md.cargo_bar_width, md.cargo_bar_height))),
             MeshMaterial2d(materials.add(rgb(md.color_cargo_fill))),
             Transform::from_xyz(0.0, 24.0, (z_cargo_bar - z_ship) + 0.05),
         ));

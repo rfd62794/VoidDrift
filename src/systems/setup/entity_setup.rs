@@ -86,7 +86,7 @@ pub fn spawn_opening_drone(
         spawn_drone_core_children!(parent, meshes, materials, od, vcfg);
         parent.spawn((
             MapElement,
-            Mesh2d(meshes.add(super::mesh_builder::triangle_mesh(od.map_icon_w, od.map_icon_h))),
+            Mesh2d(meshes.add(super::mesh_builder::triangle_mesh(od.map_icon_width, od.map_icon_height))),
             MeshMaterial2d(materials.add(ColorMaterial {
                 color: rgb(od.color_hull),
                 alpha_mode: AlphaMode2d::Opaque,
@@ -140,13 +140,13 @@ macro_rules! spawn_drone_core_children {
             Visibility::Hidden,
         ));
         $parent.spawn((
-            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_w, $drone_config.cargo_bar_h))),
+            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_width, $drone_config.cargo_bar_height))),
             MeshMaterial2d($materials.add(rgb($drone_config.color_cargo_bg))),
             Transform::from_xyz(0.0, 24.0, $vcfg.z_layer.z_cargo_bar - $vcfg.z_layer.z_ship),
         ));
         $parent.spawn((
             ShipCargoBarFill,
-            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_w, $drone_config.cargo_bar_h))),
+            Mesh2d($meshes.add(Rectangle::new($drone_config.cargo_bar_width, $drone_config.cargo_bar_height))),
             MeshMaterial2d($materials.add(rgb($drone_config.color_cargo_fill))),
             Transform::from_xyz(0.0, 24.0, ($vcfg.z_layer.z_cargo_bar - $vcfg.z_layer.z_ship) + 0.05),
         ));

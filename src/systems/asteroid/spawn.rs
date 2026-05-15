@@ -5,15 +5,7 @@ use crate::components::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
 use crate::systems::visuals::{build_mesh_from_polygon_with_colors, generate_ore_polygon_points};
-
-fn ore_config_key(ore_type: &OreDeposit) -> &'static str {
-    match ore_type {
-        OreDeposit::Iron => "metal",
-        OreDeposit::Tungsten => "h3_gas",
-        OreDeposit::Nickel => "void_essence",
-        OreDeposit::Aluminum => "metal",
-    }
-}
+use crate::components::utilities::ore_config_key;
 
 pub fn spawn_initial_asteroids(
     mut commands: Commands,

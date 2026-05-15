@@ -76,33 +76,33 @@ egui_scale = 3.0
 
 [drone.opening]
 # Echo's vessel — cyan throughout, cinematic
-hull_w = 20.0
-hull_h = 28.0
+hull_width       = 20.0
+hull_height      = 28.0
 color_hull       = [0.0, 0.6,  1.0]  # Cyan
 color_beam       = [0.0, 1.0,  1.0]  # Cyan
 beam_alpha       = 0.6
 color_thruster   = [1.0, 0.3,  0.0]  # Orange
 color_cargo_fill = [0.0, 1.0,  1.0]  # Cyan
 color_cargo_bg   = [0.2, 0.2,  0.2]  # Dark grey
-cargo_bar_w = 40.0
-cargo_bar_h = 6.0
-map_icon_w = 12.0
-map_icon_h = 16.0
+cargo_bar_width  = 40.0
+cargo_bar_height = 6.0
+map_icon_width   = 12.0
+map_icon_height  = 16.0
 
 [drone.mission]
 # The fleet — matrix green hull, orange thruster, industrial
-hull_w = 20.0
-hull_h = 28.0
+hull_width       = 20.0
+hull_height      = 28.0
 color_hull       = [0.0, 1.0,  0.2]  # Matrix green
 color_beam       = [0.0, 1.0,  0.2]  # Matrix green
 beam_alpha       = 0.6
 color_thruster   = [1.0, 0.3,  0.0]  # Orange
 color_cargo_fill = [0.0, 1.0,  0.2]  # Matrix green
 color_cargo_bg   = [0.2, 0.2,  0.2]  # Dark grey
-cargo_bar_w = 30.0
-cargo_bar_h = 4.0
-map_icon_w = 12.0
-map_icon_h = 16.0
+cargo_bar_width  = 30.0
+cargo_bar_height = 4.0
+map_icon_width   = 12.0
+map_icon_height  = 16.0
 
 [ore.metal]
 color_body         = [100, 100, 100]

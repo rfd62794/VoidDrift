@@ -172,7 +172,7 @@ pub fn spawn_saved_drones(
             AutonomousShipTag,
             LastHeading(d.heading),
             Transform::from_xyz(d.pos_x, d.pos_y, vcfg.z_layer.z_ship),
-            Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_w, vcfg.drone.mission.hull_h))),
+            Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_width, vcfg.drone.mission.hull_height))),
             MeshMaterial2d(materials.add(rgb(vcfg.drone.mission.color_hull))),
         )).id();
 

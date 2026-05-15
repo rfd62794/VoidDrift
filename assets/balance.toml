@@ -68,3 +68,21 @@ max_per_field = 1
 spawn_distance_min = 200.0
 spawn_distance_max = 500.0
 spawn_retry_count = 10
+
+[rings.inner]
+inner_radius = 150.0
+outer_radius = 300.0
+density = 3
+ore_types = ["metal"]
+
+[rings.middle]
+inner_radius = 300.0
+outer_radius = 450.0
+density = 2
+ore_types = ["h3_gas", "void_essence"]
+
+[rings.outer]
+inner_radius = 450.0
+outer_radius = 600.0
+density = 1
+ore_types = ["void_essence"]
