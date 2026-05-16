@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build *)",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(Select-String \"warning:\")",
+      "Bash(Select-Object -First 60)",
+      "Bash(cargo check *)"
+    ]
+  }
+}
