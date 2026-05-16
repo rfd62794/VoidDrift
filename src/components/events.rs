@@ -33,7 +33,9 @@ pub struct RepairStationEvent;
 
 /// Fired by opening_sequence_system when the cinematic ends and gameplay begins.
 #[derive(Event)]
-pub struct OpeningCompleteEvent;
+pub struct OpeningCompleteEvent {
+    pub ship_entity: Entity,
+}
 
 /// Fired by input systems (asteroid_input, bottle_input) when a drone is dispatched.
 /// economy.rs decrements queue.available_count on receive.
