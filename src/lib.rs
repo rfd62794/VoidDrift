@@ -192,12 +192,9 @@ fn configure_shared_app(app: &mut App) {
             systems::ui::hud::ship_cargo_display_system,
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_spawn_system
-            .run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_orbit_system
-            .run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_paint_cleanup_system
-            .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_spawn_system)
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_orbit_system)
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_paint_cleanup_system)
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
             systems::ui::tutorial::tutorial_system,
