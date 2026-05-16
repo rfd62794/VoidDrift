@@ -92,6 +92,12 @@ pub fn scout_orbit_system(
         orbit.angle, scout_pos.x, scout_pos.y, asteroid_count, miner_count
     );
 
+    // Debug: Log all idle miner entities and their states
+    for (entity, ship, _assignment, drone) in idle_miners.iter() {
+        info!("[SCOUT] Idle miner: entity={:?} state={:?} class={:?} tier={}",
+            entity, ship.state, drone.class, drone.tier);
+    }
+
     let threshold = balance_config.scout.proximity_threshold;
 
     for (asteroid_entity, active_asteroid, asteroid_transform) in asteroids.iter() {
