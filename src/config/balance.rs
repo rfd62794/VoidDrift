@@ -19,7 +19,7 @@ pub struct RingsConfig {
 pub struct ScoutConfig {
     pub orbit_speed_rad_per_sec: f32,
     pub proximity_threshold: f32,
-    pub orbit_radius_offset: f32,
+    pub orbit_radius: f32,
 }
 
 #[derive(Deserialize, Clone, Debug)]

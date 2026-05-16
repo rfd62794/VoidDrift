@@ -45,8 +45,12 @@ pub fn spawn_asteroid(
     // Try to find a valid spot
     for _ in 0..cfg.asteroid_spawning.spawn_retry_count {
         let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-        // Using existing radial boundary distances (roughly ~200.0 to 500.0 from origin)
-        let distance = rng.gen_range(cfg.asteroid_spawning.spawn_distance_min..cfg.asteroid_spawning.spawn_distance_max);
+        // Force exact radial distance for Inner Ring asteroids to match Scout orbit
+        let distance = if ore_type == OreDeposit::Iron {
+            cfg.scout.orbit_radius // Match Scout orbit exactly for Iron asteroids
+        } else {
+            rng.gen_range(cfg.asteroid_spawning.spawn_distance_min..cfg.asteroid_spawning.spawn_distance_max)
+        };
         let candidate_pos = base_pos + Vec2::new(angle.cos() * distance, angle.sin() * distance);
 
         let mut too_close = false;

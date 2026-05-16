@@ -23,9 +23,7 @@ pub fn scout_spawn_system(
     if scout_enabled.active {
         // Spawn only if no Scout entity already exists
         if scout_query.is_empty() {
-            let inner_radius = balance_config.rings.inner.inner_radius;
-            let orbit_offset = balance_config.scout.orbit_radius_offset;
-            let radius = inner_radius + orbit_offset;
+            let radius = balance_config.scout.orbit_radius;
             let speed = balance_config.scout.orbit_speed_rad_per_sec;
             let vcfg = &visual_config.drone.mission;
 
@@ -79,14 +77,15 @@ pub fn scout_orbit_system(
     scout_transform.translation.x = orbit.radius * orbit.angle.cos();
     scout_transform.translation.y = orbit.radius * orbit.angle.sin();
 
-    // Rotate Scout to face movement direction (tangent to circle)
-    // Tangent direction is angle + π/2
-    let rotation_angle = orbit.angle + std::f32::consts::FRAC_PI_2;
-    scout_transform.rotation = Quat::from_rotation_z(rotation_angle);
+    // No rotation for now - let's see base triangle mesh orientation
 
     // Check proximity to unpainted asteroids
     let scout_pos = scout_transform.translation.truncate();
     let threshold = balance_config.scout.proximity_threshold;
+
+    // Debug: count asteroids and idle miners
+    let asteroid_count = asteroids.iter().count();
+    let miner_count = idle_miners.iter().count();
 
     for (asteroid_entity, active_asteroid, asteroid_transform) in asteroids.iter() {
         let asteroid_pos = asteroid_transform.translation.truncate();

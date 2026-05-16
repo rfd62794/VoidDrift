@@ -90,4 +90,4 @@ ore_types = ["void_essence"]
 [scout]
 orbit_speed_rad_per_sec = 0.3
 proximity_threshold = 100.0  # Increased from 50.0 to ensure painting works
-orbit_radius_offset = 20.0  # Additional radius beyond inner ring to skirt closer to asteroids
+orbit_radius = 300.0  # Exact radial distance for Scout orbit (matches asteroid spawn range)
