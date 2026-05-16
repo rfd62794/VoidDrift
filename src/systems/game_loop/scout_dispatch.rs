@@ -101,7 +101,7 @@ pub fn scout_orbit_system(
         if dist <= threshold {
             // Check if asteroid already painted
             if !painted_query.contains(asteroid_entity) {
-                // Spawn green Annulus ring at asteroid position (mirror DestinationHighlight pattern)
+                // Spawn green Annulus ring as child of asteroid (auto-despawns with asteroid)
                 let ring_entity = commands.spawn((
                     MapElement,
                     Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
@@ -110,9 +110,12 @@ pub fn scout_orbit_system(
                         alpha_mode: AlphaMode2d::Opaque,
                         ..default()
                     })),
-                    Transform::from_translation(asteroid_transform.translation),
+                    Transform::from_translation(Vec3::ZERO),
                     Visibility::Inherited,
                 )).id();
+
+                // Make ring a child of asteroid
+                commands.entity(asteroid_entity).add_child(ring_entity);
 
                 // Attach Painted to asteroid with ring entity reference
                 commands.entity(asteroid_entity).insert(Painted { ring_entity });
@@ -125,6 +128,8 @@ pub fn scout_orbit_system(
                 ship.state == AutonomousShipState::Holding
                     && drone.class == DroneClass::Mining
             });
+
+            info!("[SCOUT] Found miner: {}", miner.is_some());
 
             if let Some((miner_entity, mut ship_state, mut assignment, _)) = miner {
                 // Dispatch Mining drone
