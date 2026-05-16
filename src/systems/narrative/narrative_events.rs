@@ -70,6 +70,10 @@ pub fn narrative_event_system(
 
         commands.entity(ship_entity).remove::<InOpeningSequence>();
 
+        // Explicitly remove DroneTarget if present (shouldn't be, but kills it at source)
+        commands.entity(ship_entity).remove::<DroneTarget>();
+        info!("[Voidrift] DroneTarget remove called on opening ship entity");
+
         info!("[Voidrift] OpeningCompleteEvent received. Ship transformed into Mining drone. Queue: {}", queue.available_count);
     }
 }

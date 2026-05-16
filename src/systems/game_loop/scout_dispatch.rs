@@ -59,7 +59,9 @@ pub fn scout_orbit_system(
     mut scout_query: Query<(&mut ScoutOrbit, &mut Transform), With<ScoutOrbit>>,
     asteroids: Query<(Entity, &ActiveAsteroid, &Transform), (With<InnerRingAsteroid>, Without<ScoutOrbit>)>,
     painted_query: Query<(), With<Painted>>,
-    mut idle_miners: Query<(Entity, &mut AutonomousShip, &mut AutonomousAssignment, &Drone), (Without<DroneTarget>, With<AutonomousShip>)>,
+    loose_query: Query<Entity, (With<AutonomousShip>, With<Drone>)>,
+    drone_target_query: Query<Entity, With<DroneTarget>>,
+    mut idle_miners: Query<(Entity, &mut AutonomousShip, &Drone), Without<DroneTarget>>,
     balance_config: Res<BalanceConfig>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -85,15 +87,17 @@ pub fn scout_orbit_system(
     // Check proximity to unpainted asteroids
     let asteroid_count = asteroids.iter().count();
     let miner_count = idle_miners.iter().count();
+    let loose_miners = loose_query.iter().count();
+    let drone_target_count = drone_target_query.iter().count();
     let scout_pos = scout_transform.translation.truncate();
 
     info!(
-        "[SCOUT] angle={:.2} pos=({:.1},{:.1}) asteroids={} miners={}",
-        orbit.angle, scout_pos.x, scout_pos.y, asteroid_count, miner_count
+        "[SCOUT] angle={:.2} pos=({:.1},{:.1}) asteroids={} miners={} loose_miners={} drone_targets={}",
+        orbit.angle, scout_pos.x, scout_pos.y, asteroid_count, miner_count, loose_miners, drone_target_count
     );
 
     // Debug: Log all idle miner entities and their states
-    for (entity, ship, _assignment, drone) in idle_miners.iter() {
+    for (entity, ship, drone) in idle_miners.iter() {
         info!("[SCOUT] Idle miner: entity={:?} state={:?} class={:?} tier={}",
             entity, ship.state, drone.class, drone.tier);
     }
@@ -130,21 +134,23 @@ pub fn scout_orbit_system(
             }
 
             // Find one idle Mining drone with no current target (any tier)
-            let miner = idle_miners.iter_mut().find(|(_, ship, _, drone)| {
+            let miner = idle_miners.iter_mut().find(|(_, ship, drone)| {
                 ship.state == AutonomousShipState::Holding
                     && drone.class == DroneClass::Mining
             });
 
             info!("[SCOUT] Found miner: {}", miner.is_some());
 
-            if let Some((miner_entity, mut ship_state, mut assignment, _)) = miner {
+            if let Some((miner_entity, mut ship_state, _)) = miner {
                 // Dispatch Mining drone
-                *assignment = AutonomousAssignment {
+                ship_state.state = AutonomousShipState::Outbound;
+
+                // Insert fresh AutonomousAssignment
+                commands.entity(miner_entity).insert(AutonomousAssignment {
                     target_pos: asteroid_pos,
                     ore_type: active_asteroid.ore_type,
                     sector_name: "S1".to_string(), // Inner Ring sector placeholder
-                };
-                ship_state.state = AutonomousShipState::Outbound;
+                });
 
                 // Tag the miner so cleanup knows which asteroid it was sent to
                 commands.entity(miner_entity).insert(DroneTarget { asteroid: asteroid_entity });
