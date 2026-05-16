@@ -75,6 +75,9 @@ fn configure_shared_app(app: &mut App) {
         .add_plugins(TelemetryPlugin)
         .register_type::<crate::components::DroneClass>()
         .register_type::<crate::components::Drone>()
+        .register_type::<crate::components::Painted>()
+        .register_type::<crate::components::ScoutOrbit>()
+        .register_type::<crate::components::DroneTarget>()
         .register_type::<crate::components::resources::ScoutEnabled>()
         .init_state::<GameState>()
         .init_state::<AppState>()
@@ -189,7 +192,11 @@ fn configure_shared_app(app: &mut App) {
             systems::ui::hud::ship_cargo_display_system,
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_dispatch_system
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_spawn_system
+            .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_orbit_system
+            .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::scout_dispatch::scout_paint_cleanup_system
             .run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,

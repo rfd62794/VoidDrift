@@ -181,6 +181,31 @@ impl Default for Drone {
     }
 }
 
+/// Marker on asteroid entities that Scout has targeted.
+/// Stores the green Annulus ring entity for cleanup on despawn.
+#[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
+pub struct Painted {
+    pub ring_entity: Entity,
+}
+
+/// On the Scout drone entity. Drives circular orbit math.
+#[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
+pub struct ScoutOrbit {
+    pub angle: f32,        // current radians, 0.0 at start
+    pub radius: f32,       // read from RingConfig.inner_radius at spawn
+    pub speed: f32,        // rad/sec, read from balance.toml [scout]
+}
+
+/// On a dispatched Mining drone. Stores the asteroid entity it was sent to.
+/// Removed by cleanup system when drone returns to Holding.
+#[derive(Component, Debug, Clone, Reflect)]
+#[reflect(Component)]
+pub struct DroneTarget {
+    pub asteroid: Entity,
+}
+
 #[derive(Component, Default)]
 pub struct StationQueues {
     pub iron_refinery: Option<crate::components::ProcessingJob>,

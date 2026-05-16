@@ -16,6 +16,13 @@ pub struct RingsConfig {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+pub struct ScoutConfig {
+    pub orbit_speed_rad_per_sec: f32,
+    pub proximity_threshold: f32,
+    pub orbit_radius_offset: f32,
+}
+
+#[derive(Deserialize, Clone, Debug)]
 pub struct MiningConfig {
     pub ship_speed: f32,
     pub cargo_capacity: u32,
@@ -116,6 +123,7 @@ pub struct BalanceConfig {
     pub map: MapConfig,
     pub asteroid_spawning: AsteroidSpawningConfig,
     pub rings: RingsConfig,
+    pub scout: ScoutConfig,
 }
 
 impl BalanceConfig {
