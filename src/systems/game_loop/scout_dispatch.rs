@@ -132,13 +132,14 @@ pub fn scout_orbit_system(
                     target_pos: asteroid_pos,
                     ore_type: active_asteroid.ore_type,
                     sector_name: "S1".to_string(), // Inner Ring sector placeholder
-            };
-            ship_state.state = AutonomousShipState::Outbound;
+                };
+                ship_state.state = AutonomousShipState::Outbound;
 
-            // Tag the miner so cleanup knows which asteroid it was sent to
-            commands.entity(miner_entity).insert(DroneTarget { asteroid: asteroid_entity });
+                // Tag the miner so cleanup knows which asteroid it was sent to
+                commands.entity(miner_entity).insert(DroneTarget { asteroid: asteroid_entity });
 
-            break; // One paint per system tick — Scout continues orbit next frame
+                break; // One paint per system tick — Scout continues orbit next frame
+            }
         }
     }
 }
