@@ -6,20 +6,16 @@ use crate::BalanceConfig;
 use crate::VisualConfig;
 
 /// System 1: scout_spawn_system
-/// Watches ScoutEnabled for changes. Spawns the Scout entity when toggled ON, despawns when toggled OFF.
+/// Spawns the Scout entity when ScoutEnabled is active, despawns when inactive.
 pub fn scout_spawn_system(
     mut commands: Commands,
     scout_enabled: Res<ScoutEnabled>,
-    scout_query: Query<Entity, (With<Drone>, With<ScoutOrbit>)>,
+    scout_query: Query<Entity, With<ScoutOrbit>>,
     balance_config: Res<BalanceConfig>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     visual_config: Res<VisualConfig>,
 ) {
-    if !scout_enabled.is_changed() {
-        return;
-    }
-
     if scout_enabled.active {
         // Spawn only if no Scout entity already exists
         if scout_query.is_empty() {
@@ -77,15 +73,13 @@ pub fn scout_orbit_system(
     scout_transform.translation.x = orbit.radius * orbit.angle.cos();
     scout_transform.translation.y = orbit.radius * orbit.angle.sin();
 
-    // No rotation for now - let's see base triangle mesh orientation
+    // Rotate Scout to face movement direction (tangent to circle)
+    // Base triangle points radially outward, so rotate -π/2 to face tangent
+    scout_transform.rotation = Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2);
 
     // Check proximity to unpainted asteroids
     let scout_pos = scout_transform.translation.truncate();
     let threshold = balance_config.scout.proximity_threshold;
-
-    // Debug: count asteroids and idle miners
-    let asteroid_count = asteroids.iter().count();
-    let miner_count = idle_miners.iter().count();
 
     for (asteroid_entity, active_asteroid, asteroid_transform) in asteroids.iter() {
         let asteroid_pos = asteroid_transform.translation.truncate();
