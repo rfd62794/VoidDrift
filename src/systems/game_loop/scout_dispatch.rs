@@ -16,12 +16,12 @@ pub fn scout_spawn_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     visual_config: Res<VisualConfig>,
 ) {
-    eprintln!("[SCOUT_SPAWN] active={} scout_exists={}", scout_enabled.active, !scout_query.is_empty());
+    info!("[SCOUT_SPAWN] active={} scout_exists={}", scout_enabled.active, !scout_query.is_empty());
 
     if scout_enabled.active {
         // Spawn only if no Scout entity already exists
         if scout_query.is_empty() {
-            eprintln!("[SCOUT_SPAWN] Spawning Scout entity");
+            info!("[SCOUT_SPAWN] Spawning Scout entity");
             let radius = balance_config.scout.orbit_radius;
             let speed = balance_config.scout.orbit_speed_rad_per_sec;
             let vcfg = &visual_config.drone.mission;
@@ -42,7 +42,7 @@ pub fn scout_spawn_system(
     } else {
         // Despawn Scout entity and clear all Painted components
         for entity in scout_query.iter() {
-            eprintln!("[SCOUT_SPAWN] Despawning Scout entity");
+            info!("[SCOUT_SPAWN] Despawning Scout entity");
             commands.entity(entity).despawn_recursive();
         }
         // Painted cleanup handled by scout_paint_cleanup_system
@@ -86,7 +86,7 @@ pub fn scout_orbit_system(
     let miner_count = idle_miners.iter().count();
     let scout_pos = scout_transform.translation.truncate();
 
-    eprintln!(
+    info!(
         "[SCOUT] angle={:.2} pos=({:.1},{:.1}) asteroids={} miners={}",
         orbit.angle, scout_pos.x, scout_pos.y, asteroid_count, miner_count
     );
