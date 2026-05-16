@@ -1,5 +1,10 @@
 use bevy::prelude::*;
+use bevy::sprite::AlphaMode2d;
 use crate::components::*;
+use crate::config::{BalanceConfig, VisualConfig};
+use crate::config::visual::rgb;
+use crate::spawn_drone_core_children;
+use crate::systems::setup::mesh_builder::triangle_mesh;
 
 fn fire_signal(signal_log: &mut SignalLog, id: u32, message: &str) {
     if !signal_log.fired.contains(&id) {
@@ -18,6 +23,10 @@ pub fn opening_sequence_system(
     mut signal_log: ResMut<SignalLog>,
     mut opening_complete_events: EventWriter<OpeningCompleteEvent>,
     mut pan_state: ResMut<MapPanState>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    cfg: Res<BalanceConfig>,
+    vcfg: Res<VisualConfig>,
 ) {
     if opening.phase == OpeningPhase::Complete {
         pan_state.is_focused = false;
@@ -101,26 +110,46 @@ pub fn opening_sequence_system(
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
 
-                // Convert opening ship to Mining drone instead of despawning
-                commands.entity(ship_ent)
-                    .remove::<InOpeningSequence>()
-                    .insert(Drone {
+                // Despawn opening ship
+                commands.entity(ship_ent).despawn_recursive();
+
+                // Spawn autonomous Mining drone at station position with visual components
+                let drone_ent = commands.spawn((
+                    Drone {
                         class: DroneClass::Mining,
                         tier: 1,
-                    })
-                    .insert(AutonomousShip {
+                    },
+                    AutonomousShip {
                         state: AutonomousShipState::Holding,
                         cargo: 0.0,
                         cargo_type: OreDeposit::Iron,
-                    })
-                    .insert(AutonomousAssignment {
-                        target_pos: Vec2::ZERO,
+                    },
+                    AutonomousAssignment {
+                        target_pos: station_pos,
                         ore_type: OreDeposit::Iron,
-                        sector_name: String::new(),
-                    });
+                        sector_name: "S1".to_string(),
+                    },
+                    AutonomousShipTag,
+                    LastHeading(0.0),
+                    Transform::from_xyz(station_pos.x, station_pos.y, vcfg.z_layer.z_ship),
+                    MapElement,
+                    Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_width, vcfg.drone.mission.hull_height))),
+                    MeshMaterial2d(materials.add(ColorMaterial {
+                        color: Color::srgba(vcfg.drone.mission.color_hull[0] as f32 / 255.0,
+                                                  vcfg.drone.mission.color_hull[1] as f32 / 255.0,
+                                                  vcfg.drone.mission.color_hull[2] as f32 / 255.0, 1.0),
+                        alpha_mode: AlphaMode2d::Opaque,
+                        ..default()
+                    })),
+                )).id();
+
+                // Add visual children (thruster, beam, cargo bars)
+                commands.entity(drone_ent).with_children(|parent| {
+                    spawn_drone_core_children!(parent, meshes, materials, vcfg.drone.mission, vcfg);
+                });
 
                 opening_complete_events.send(OpeningCompleteEvent);
-                info!("[Voidrift] Opening complete. Opening ship converted to Mining drone. Firing OpeningCompleteEvent.");
+                info!("[Voidrift] Opening complete. Opening ship despawned, autonomous Mining drone spawned at station. Firing OpeningCompleteEvent.");
             }
         }
         OpeningPhase::Complete => {}
