@@ -100,9 +100,27 @@ pub fn opening_sequence_system(
             if t >= 10.5 {
                 opening.phase = OpeningPhase::Complete;
                 opening.beat_timer = 0.0;
-                commands.entity(ship_ent).despawn_recursive();
+
+                // Convert opening ship to Mining drone instead of despawning
+                commands.entity(ship_ent)
+                    .remove::<InOpeningSequence>()
+                    .insert(Drone {
+                        class: DroneClass::Mining,
+                        tier: 1,
+                    })
+                    .insert(AutonomousShip {
+                        state: AutonomousShipState::Holding,
+                        cargo: 0.0,
+                        cargo_type: OreDeposit::Iron,
+                    })
+                    .insert(AutonomousAssignment {
+                        target_pos: Vec2::ZERO,
+                        ore_type: OreDeposit::Iron,
+                        sector_name: String::new(),
+                    });
+
                 opening_complete_events.send(OpeningCompleteEvent);
-                info!("[Voidrift] Opening complete. Drone absorbed by ECHO. Firing OpeningCompleteEvent.");
+                info!("[Voidrift] Opening complete. Opening ship converted to Mining drone. Firing OpeningCompleteEvent.");
             }
         }
         OpeningPhase::Complete => {}
