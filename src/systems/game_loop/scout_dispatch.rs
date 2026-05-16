@@ -57,7 +57,8 @@ pub fn scout_orbit_system(
     mut commands: Commands,
     time: Res<Time>,
     mut scout_query: Query<(&mut ScoutOrbit, &mut Transform), With<ScoutOrbit>>,
-    asteroids: Query<(Entity, &ActiveAsteroid, &Transform), (With<InnerRingAsteroid>, Without<Painted>, Without<ScoutOrbit>)>,
+    asteroids: Query<(Entity, &ActiveAsteroid, &Transform), (With<InnerRingAsteroid>, Without<ScoutOrbit>)>,
+    painted_query: Query<(), With<Painted>>,
     mut idle_miners: Query<(Entity, &mut AutonomousShip, &mut AutonomousAssignment, &Drone), (Without<DroneTarget>, With<AutonomousShip>)>,
     balance_config: Res<BalanceConfig>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -98,39 +99,39 @@ pub fn scout_orbit_system(
         let dist = (scout_pos - asteroid_pos).length();
 
         if dist <= threshold {
-            // Find one idle Mining Mk I drone with no current target
+            // Check if asteroid already painted
+            if !painted_query.contains(asteroid_entity) {
+                // Spawn green Annulus ring at asteroid position (mirror DestinationHighlight pattern)
+                let ring_entity = commands.spawn((
+                    MapElement,
+                    Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
+                    MeshMaterial2d(materials.add(ColorMaterial {
+                        color: Color::srgba(0.0, 1.0, 0.0, 0.6), // Green — Scout paint color
+                        alpha_mode: AlphaMode2d::Opaque,
+                        ..default()
+                    })),
+                    Transform::from_translation(asteroid_transform.translation),
+                    Visibility::Inherited,
+                )).id();
+
+                // Attach Painted to asteroid with ring entity reference
+                commands.entity(asteroid_entity).insert(Painted { ring_entity });
+
+                info!("[SCOUT] Painted asteroid at dist={:.1}", dist);
+            }
+
+            // Find one idle Mining drone with no current target (any tier)
             let miner = idle_miners.iter_mut().find(|(_, ship, _, drone)| {
                 ship.state == AutonomousShipState::Holding
                     && drone.class == DroneClass::Mining
-                    && drone.tier == 1
             });
 
-            let Some((miner_entity, mut ship_state, mut assignment, _)) = miner else {
-                // No idle miner — skip, Scout continues orbit
-                break;
-            };
-
-            // Spawn green Annulus ring at asteroid position (mirror DestinationHighlight pattern)
-            let ring_entity = commands.spawn((
-                MapElement,
-                Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
-                MeshMaterial2d(materials.add(ColorMaterial {
-                    color: Color::srgba(0.0, 1.0, 0.0, 0.6), // Green — Scout paint color
-                    alpha_mode: AlphaMode2d::Opaque,
-                    ..default()
-                })),
-                Transform::from_translation(asteroid_transform.translation),
-                Visibility::Inherited,
-            )).id();
-            
-            // Attach Painted to asteroid with ring entity reference
-            commands.entity(asteroid_entity).insert(Painted { ring_entity });
-
-            // Dispatch Mining drone
-            *assignment = AutonomousAssignment {
-                target_pos: asteroid_pos,
-                ore_type: active_asteroid.ore_type,
-                sector_name: "S1".to_string(), // Inner Ring sector placeholder
+            if let Some((miner_entity, mut ship_state, mut assignment, _)) = miner {
+                // Dispatch Mining drone
+                *assignment = AutonomousAssignment {
+                    target_pos: asteroid_pos,
+                    ore_type: active_asteroid.ore_type,
+                    sector_name: "S1".to_string(), // Inner Ring sector placeholder
             };
             ship_state.state = AutonomousShipState::Outbound;
 
