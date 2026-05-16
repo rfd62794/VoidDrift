@@ -81,8 +81,8 @@ pub fn scout_orbit_system(
     scout_transform.translation.y = orbit.radius * orbit.angle.sin();
 
     // Rotate Scout to face movement direction (tangent to circle)
-    // Base triangle points radially outward, so rotate -π/2 to face tangent
-    scout_transform.rotation = Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2);
+    // Tangent direction is orbit angle + π/2
+    scout_transform.rotation = Quat::from_rotation_z(orbit.angle + std::f32::consts::FRAC_PI_2);
 
     // Check proximity to unpainted asteroids
     let asteroid_count = asteroids.iter().count();
