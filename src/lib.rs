@@ -65,10 +65,11 @@ mod scenes;
 mod systems;
 pub mod drone;
 pub mod economy;
+pub mod world;
 
 use systems::telemetry::TelemetryPlugin;
 use scenes::main_menu::MainMenuState;
-use systems::setup::cleanup_world_entities;
+use world::setup::cleanup_world_entities;
 
 // ----------------------------------------------------------------------------
 // APP SETUP
@@ -160,9 +161,9 @@ fn configure_shared_app(app: &mut App) {
         ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(AppState::InGame), (
             cleanup_world_entities,
-            systems::setup::reset_game_resources,
-            systems::setup::setup_world,
-            systems::asteroid::spawn::spawn_initial_asteroids,
+            world::setup::reset_game_resources,
+            world::setup::setup_world,
+            world::asteroid::spawn_initial_asteroids,
             systems::visuals::debug_log::setup_debug_log_system,
         ).chain())
         .add_systems(OnEnter(AppState::InGame), scenes::main_menu::ingame_startup_system.run_if(|| true))
@@ -199,8 +200,8 @@ fn configure_shared_app(app: &mut App) {
             systems::visuals::map::hide_map_elements,
         ))
         .add_systems(Update, (
-            systems::asteroid::spawn::asteroid_respawn_system,
-            systems::asteroid::lifecycle::asteroid_lifecycle_system,
+            world::asteroid::asteroid_respawn_system,
+            world::asteroid_lifecycle::asteroid_lifecycle_system,
             economy::mining::mining_system,
             economy::process::auto_refine_system,
             economy::process::auto_forge_system,

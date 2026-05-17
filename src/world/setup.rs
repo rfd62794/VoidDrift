@@ -3,8 +3,8 @@ use bevy::sprite::AlphaMode2d;
 use bevy_egui::EguiContextSettings;
 use rand::{Rng, SeedableRng};
 use crate::components::*;
-use crate::systems::setup::entity_setup::*;
-use crate::systems::setup::quest_init::*;
+use crate::world::entities::*;
+use crate::world::quest_init::*;
 use crate::drone::spawn::spawn_drone_ship_with_visuals;
 use crate::config::{BalanceConfig, VisualConfig, QuestConfig};
 

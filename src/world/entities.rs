@@ -7,7 +7,6 @@ use crate::systems::visuals::{build_mesh_from_polygon, generate_rocket_points};
 use crate::systems::visuals::component_nodes::RocketConfig;
 use bevy_egui::egui::Color32;
 use crate::spawn_drone_core_children;
-use super::mesh_builder::triangle_mesh;
 
 /// Convert ShipOpeningConfig to RocketConfig for mesh generation.
 fn opening_config_to_rocket_config(ship_cfg: &crate::config::visual::ShipOpeningConfig) -> RocketConfig {
@@ -85,7 +84,7 @@ pub fn spawn_opening_drone(
         spawn_drone_core_children!(parent, meshes, materials, od, vcfg);
         parent.spawn((
             MapElement,
-            Mesh2d(meshes.add(super::mesh_builder::triangle_mesh(od.map_icon_width, od.map_icon_height))),
+            Mesh2d(meshes.add(super::ore_mesh::triangle_mesh(od.map_icon_width, od.map_icon_height))),
             MeshMaterial2d(materials.add(ColorMaterial {
                 color: rgb(od.color_hull),
                 alpha_mode: AlphaMode2d::Opaque,

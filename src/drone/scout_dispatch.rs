@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::sprite::AlphaMode2d;
 use crate::components::*;
-use crate::systems::setup::mesh_builder::triangle_mesh;
+use crate::world::ore_mesh::triangle_mesh;
 use crate::BalanceConfig;
 use crate::VisualConfig;
 
