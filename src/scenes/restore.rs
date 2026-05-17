@@ -1,12 +1,9 @@
 use bevy::prelude::*;
 use crate::components::*;
 use super::MainMenuState;
-use crate::config::BalanceConfig;
 use crate::config::VisualConfig;
-use crate::config::visual::rgb;
 use crate::systems::persistence::save::SaveData;
-use crate::spawn_drone_core_children;
-use crate::systems::setup::mesh_builder::triangle_mesh;
+use crate::systems::ship_control::ship_spawn::spawn_drone_ship_with_visuals;
 
 pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,
@@ -22,7 +19,6 @@ pub fn ingame_startup_system(
     mut requests_tab: ResMut<RequestsTabState>,
     mut tutorial: ResMut<TutorialState>,
     mut pan_state: ResMut<MapPanState>,
-    cfg: Res<BalanceConfig>,
     vcfg: Res<VisualConfig>,
 ) {
     // Reset tutorial for every session (new game starts clean; load path overrides below)
@@ -41,7 +37,7 @@ pub fn ingame_startup_system(
             &mut requests_tab,
             &mut pan_state,
         );
-        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials, &cfg, &vcfg);
+        spawn_saved_drones(&save_data, &mut commands, &mut meshes, &mut materials, &vcfg);
         // Suppress all Phase 4a tutorial popups when loading an existing save
         for id in [101u32, 102, 103, 104, 105, 106] {
             tutorial.shown.insert(id);
@@ -135,48 +131,31 @@ pub fn restore_save_state(
     });
 }
 
-/// Spawns saved drone entities from save data. State restore only — no game logic.
+/// Spawns saved drone entities from save data using Architecture B components.
 pub fn spawn_saved_drones(
     save_data: &SaveData,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    cfg: &BalanceConfig,
     vcfg: &VisualConfig,
 ) {
-    for d in save_data.drones.iter() {
-        // DroneSaveData no longer stores state, ore_type, cargo - use defaults
-        let state = ShipState::Idle;
-        let ore_type = OreDeposit::Iron;
-        let cargo = 0.0;
-
-        let ship_ent = commands.spawn((
-            Ship {
-                state,
-                speed: cfg.mining.ship_speed,
-                cargo,
-                cargo_type: ore_type,
-                cargo_capacity: cfg.mining.cargo_capacity,
-                laser_tier: LaserTier::Basic,
-                current_mining_target: None,
-            },
-            LastHeading(d.heading),
-            Transform::from_xyz(d.pos_x, d.pos_y, vcfg.z_layer.z_ship),
-            Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_width, vcfg.drone.mission.hull_height))),
-            MeshMaterial2d(materials.add(rgb(vcfg.drone.mission.color_hull))),
-        )).id();
-
+    let drone_count = save_data.ship_hulls as usize;
+    for (i, d) in save_data.drones.iter().enumerate().take(drone_count) {
+        let pos = Vec2::new(d.pos_x, d.pos_y);
+        let ship_ent = spawn_drone_ship_with_visuals(commands, meshes, materials, pos, vcfg);
         if d.assignment_pos_x != 0.0 || d.assignment_pos_y != 0.0 {
-            commands.entity(ship_ent).insert(AutopilotTarget {
-                destination: Vec2::new(d.assignment_pos_x, d.assignment_pos_y),
-                target_entity: None,
+            commands.entity(ship_ent).insert(AutonomousAssignment {
+                target_pos: Vec2::new(d.assignment_pos_x, d.assignment_pos_y),
+                ore_type: OreDeposit::Iron,
+                sector_name: "Inner Ring".to_string(),
             });
         }
-
-        let md = &vcfg.drone.mission;
-        commands.entity(ship_ent).with_children(|parent| {
-            spawn_drone_core_children!(parent, meshes, materials, md, vcfg);
-        });
+        let _ = i; // index unused
+    }
+    // Spawn remaining drones at station if save had more ship_hulls than saved positions
+    let saved_count = save_data.drones.len().min(drone_count);
+    for _ in saved_count..drone_count {
+        spawn_drone_ship_with_visuals(commands, meshes, materials, crate::constants::STATION_POS, vcfg);
     }
 }
 

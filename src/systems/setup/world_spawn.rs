@@ -5,6 +5,7 @@ use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
+use crate::systems::ship_control::ship_spawn::spawn_drone_ship_with_visuals;
 use crate::config::{BalanceConfig, VisualConfig, QuestConfig};
 
 /// Clean up all entities before setting up a new game
@@ -61,6 +62,7 @@ pub fn setup_world(
     spawn_starfield(&mut commands, &mut meshes, &mut materials, &vcfg);
     spawn_camera(&mut commands, &vcfg);
     spawn_opening_drone(&mut commands, &mut meshes, &mut materials, &asset_server, &cfg, &vcfg);
+    spawn_drone_ship_with_visuals(&mut commands, &mut meshes, &mut materials, crate::constants::STATION_POS, &vcfg);
     spawn_station(&mut commands, &mut meshes, &mut materials, max_dispatch, &cfg, &vcfg);
     spawn_berths(&mut commands, &vcfg);
     spawn_destination_highlight(&mut commands, &mut meshes, &mut materials, &vcfg);
