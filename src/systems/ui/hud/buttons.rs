@@ -2,13 +2,12 @@ use bevy::prelude::*;
 use bevy_egui::egui;
 use crate::components::*;
 use crate::scenes::main_menu::MainMenuState;
-use crate::components::resources::{ShipQueue, ViewState, MapPanState};
+use crate::components::resources::{FleetCount, ViewState, MapPanState};
 use crate::ui_kit::{primitives::vd_button, styles::{ButtonStyle, HighlightKind}};
 
 pub fn render_hud_buttons(
     ui: &mut egui::Ui,
-    autonomous_ships: &Query<Entity, With<AutonomousShipTag>>,
-    queue: &ShipQueue,
+    fleet: &FleetCount,
     station_query: &Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
     view_state: &mut ViewState,
     menu_state: &mut MainMenuState,
@@ -16,10 +15,8 @@ pub fn render_hud_buttons(
     cam_query: &mut Query<&mut OrthographicProjection, With<MainCamera>>,
 ) {
     ui.horizontal(|ui| {
-        // Left: Fleet count indicator (ready/total)
-        let deployed = autonomous_ships.iter().count();
-        let total = queue.available_count as usize + deployed;
-        ui.label(egui::RichText::new(format!("Fleet: {}/{}", queue.available_count, total))
+        // Left: Fleet count indicator (available/total)
+        ui.label(egui::RichText::new(format!("Fleet: {}/{}", fleet.available, fleet.total))
             .color(egui::Color32::from_rgb(0, 200, 200))
             .size(16.0));
 

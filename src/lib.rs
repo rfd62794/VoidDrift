@@ -97,7 +97,6 @@ fn configure_shared_app(app: &mut App) {
         .insert_resource(TutorialState::default())
         .insert_resource(MapPanState::default())
         .insert_resource(MainMenuState::default())
-        .insert_resource(ShipQueue::default())
         .insert_resource(MaxDispatch::default())
         .insert_resource(RequestsTabState::default())
         .insert_resource(ProductionTabState::default())
@@ -115,6 +114,7 @@ fn configure_shared_app(app: &mut App) {
         .insert_resource(ViewState::default())
         .init_resource::<AsteroidRespawnTimer>()
         .init_resource::<ProdTreeViewState>()
+        .init_resource::<FleetCount>()
         .add_systems(Startup, (
             configure_egui_scale,
             systems::visuals::debug_log::setup_debug_log_system,
@@ -179,6 +179,10 @@ fn configure_shared_app(app: &mut App) {
             systems::game_loop::autonomous::autonomous_beam_system.after(systems::game_loop::autonomous::autonomous_ship_system),
             systems::game_loop::autonomous::docked_autonomous_ship_system.after(systems::game_loop::autonomous::autonomous_ship_system),
         ).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::autonomous::fleet_count_system
+            .before(systems::ui::hud::hud_ui_system)
+            .before(systems::narrative::signal::signal_system)
+            .run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
             systems::visuals::map::enter_map_view,
             systems::visuals::map::show_map_elements,

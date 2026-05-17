@@ -14,7 +14,6 @@ pub fn ingame_startup_system(
     mut signal_log: ResMut<SignalLog>,
     mut station_query: Query<&mut Station, (With<Station>, Without<Ship>)>,
     mut active_tab: ResMut<ActiveStationTab>,
-    mut queue: ResMut<ShipQueue>,
     mut max_dispatch: ResMut<MaxDispatch>,
     opening_drone_query: Query<Entity, With<InOpeningSequence>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -36,7 +35,6 @@ pub fn ingame_startup_system(
             &mut signal_log,
             &mut station_query,
             &mut active_tab,
-            &mut queue,
             &mut max_dispatch,
             &opening_drone_query,
             &mut commands,
@@ -61,7 +59,6 @@ pub fn restore_save_state(
     signal_log: &mut SignalLog,
     station_query: &mut Query<&mut Station, (With<Station>, Without<Ship>)>,
     active_tab: &mut ActiveStationTab,
-    queue: &mut ShipQueue,
     max_dispatch: &mut MaxDispatch,
     opening_drone_query: &Query<Entity, With<InOpeningSequence>>,
     commands: &mut Commands,
@@ -86,12 +83,6 @@ pub fn restore_save_state(
         for ent in opening_drone_query.iter() {
             commands.entity(ent).despawn_recursive();
         }
-    }
-
-    queue.available_count = save_data.ship_hulls as u32;
-    if opening.phase == OpeningPhase::Complete && queue.available_count == 0 {
-        queue.available_count = 1;
-        info!("[Voidrift] Load sanity check: Gifting emergency drone to empty fleet.");
     }
 
     if let Ok(mut station) = station_query.get_single_mut() {

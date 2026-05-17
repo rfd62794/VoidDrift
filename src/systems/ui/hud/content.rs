@@ -75,7 +75,6 @@ pub fn render_tab_content(
     active_tab: ActiveStationTab,
     station: &mut Station,
     toggles: &mut ProductionToggles,
-    _queue: &ShipQueue,
     prod_tab: &mut ProductionTabState,
     req_tab: &mut RequestsTabState,
     _repair_events: &mut EventWriter<RepairStationEvent>,

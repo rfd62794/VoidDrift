@@ -25,7 +25,6 @@ pub fn cleanup_world_entities(
 
 /// Resets all runtime resources to a clean state before world spawn.
 pub fn reset_game_resources(
-    mut queue: ResMut<ShipQueue>,
     mut cam_delta: ResMut<CameraDelta>,
     mut signal_log: ResMut<SignalLog>,
     mut map_pan_state: ResMut<MapPanState>,
@@ -35,7 +34,6 @@ pub fn reset_game_resources(
     mut content_state: ResMut<ContentState>,
     mut view_state: ResMut<ViewState>,
 ) {
-    *queue = ShipQueue::default();
     *cam_delta = CameraDelta::default();
     *signal_log = SignalLog::default();
     *map_pan_state = MapPanState::default();

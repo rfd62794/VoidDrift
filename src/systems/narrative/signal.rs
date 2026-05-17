@@ -7,7 +7,7 @@ pub fn signal_system(
     mut signal: ResMut<SignalLog>,
     opening: Res<OpeningSequence>,
     station_query: Query<(&Station, &StationQueues), (With<Station>, Without<Ship>)>,
-    queue: Res<ShipQueue>,
+    fleet: Res<FleetCount>,
     ship_query: Query<(&Ship, &Transform), (With<InOpeningSequence>, Without<Station>, Without<MainCamera>, Without<StarLayer>, Without<StationVisualsContainer>, Without<DestinationHighlight>, Without<ShipCargoBarFill>, Without<ActiveAsteroid>, Without<Berth>)>,
     mut signal_fired_events: EventWriter<SignalFired>,
     cfg: Res<BalanceConfig>,
@@ -85,7 +85,7 @@ pub fn signal_system(
             }
 
             // ID 16: Drone queue has a ship ready
-            if queue.available_count > 0 {
+            if fleet.available > 0 {
                 emit(&mut signal, &mut signal_fired_events, 16, "> SHIP HULL COMPLETE. ASSEMBLY POSSIBLE.");
             }
 
@@ -175,11 +175,11 @@ pub fn signal_system(
             );
         }
 
-        // ID 17, 18: Fleet expansion — based on queue count
-        if queue.available_count >= 1 {
+        // ID 17, 18: Fleet expansion — based on fleet count
+        if fleet.available >= 1 {
             emit(&mut signal, &mut signal_fired_events, 17, "> AUTONOMOUS UNIT READY. AWAITING ASSIGNMENT.");
         }
-        if queue.available_count >= 2 {
+        if fleet.available >= 2 {
             emit(&mut signal, &mut signal_fired_events, 18, "> FLEET STRENGTH GROWING.");
         }
     }

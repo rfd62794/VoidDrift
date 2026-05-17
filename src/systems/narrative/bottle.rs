@@ -27,7 +27,7 @@ pub struct BottleInputParams<'w, 's> {
     pub touches: Res<'w, Touches>,
     pub camera_query: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<MainCamera>>,
     pub bottle_query: Query<'w, 's, (Entity, &'static GlobalTransform), With<ActiveBottle>>,
-    pub queue: Res<'w, ShipQueue>,
+    pub fleet: Res<'w, FleetCount>,
     pub commands: Commands<'w, 's>,
     pub opening: Res<'w, OpeningSequence>,
     pub state: Res<'w, State<GameState>>,
@@ -94,7 +94,7 @@ pub fn bottle_input_system(mut p: BottleInputParams) {
     if p.view_state.show_production_tree { return; }
     if p.contexts.ctx_mut().wants_pointer_input() { return; }
     if p.touches.iter().count() >= 2 { return; }
-    if p.queue.available_count == 0 { return; }
+    if p.fleet.available == 0 { return; }
 
     let Ok((camera, camera_transform)) = p.camera_query.get_single() else { return; };
 

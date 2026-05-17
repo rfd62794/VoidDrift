@@ -91,7 +91,8 @@ pub fn auto_build_drones_system(
     time: Res<Time>,
     mut station_query: Query<&mut Station>,
     toggles: Res<ProductionToggles>,
-    mut queue: ResMut<ShipQueue>,
+    fleet: Res<FleetCount>,
+    mut commands: Commands,
     cfg: Res<BalanceConfig>,
 ) {
     if !toggles.build_drones { return; }
@@ -99,7 +100,7 @@ pub fn auto_build_drones_system(
         if !station.online { return; }
 
         // Don't build beyond the cap
-        if queue.available_count >= cfg.drone.max_queue { return; }
+        if fleet.total >= cfg.drone.max_queue as usize { return; }
 
         // Check if we have at least partial resources to begin building
         let has_resources =
@@ -126,16 +127,27 @@ pub fn auto_build_drones_system(
             ).min(
                 (station.ai_cores / cfg.drone.cost_cores).floor() as u32
             );
-            let space_in_queue = cfg.drone.max_queue.saturating_sub(queue.available_count);
-            let actual = built.min(affordable).min(space_in_queue);
+            let space_in_fleet = (cfg.drone.max_queue as usize).saturating_sub(fleet.total);
+            let actual = (built as usize).min(affordable as usize).min(space_in_fleet);
 
             if actual > 0 {
                 station.hull_plate_reserves -= actual as f32 * cfg.drone.cost_hulls;
                 station.thruster_reserves   -= actual as f32 * cfg.drone.cost_thrusters;
                 station.ai_cores            -= actual as f32 * cfg.drone.cost_cores;
-                station.drone_count += actual;
-                queue.available_count += actual;
-                info!("[Voidrift] Drone assembly complete: {} built. Queue: {}", actual, queue.available_count);
+                station.drone_count += actual as u32;
+                for _ in 0..actual {
+                    commands.spawn((
+                        AutonomousShip {
+                            state: AutonomousShipState::Holding,
+                            cargo: 0.0,
+                            cargo_type: OreDeposit::Iron,
+                        },
+                        Drone { class: DroneClass::Mining, tier: 1 },
+                        Transform::from_translation(crate::constants::STATION_POS.extend(0.0)),
+                        Visibility::Hidden,
+                    ));
+                }
+                info!("[Voidrift] Drone assembly complete: {} built. Fleet: {}", actual, fleet.total + actual);
             }
 
             station.drone_build_progress -= station.drone_build_progress.floor();

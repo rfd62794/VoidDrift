@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use bevy::ecs::system::SystemParam;
 use bevy_egui::EguiContexts;
 use crate::components::*;
-use crate::config::{BalanceConfig, VisualConfig};
-use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
 
 #[derive(SystemParam)]
 pub struct AsteroidInputParams<'w, 's> {
@@ -12,19 +10,14 @@ pub struct AsteroidInputParams<'w, 's> {
     pub camera_query: Query<'w, 's, (&'static Camera, &'static GlobalTransform), With<MainCamera>>,
     pub marker_query: Query<'w, 's, (&'static GlobalTransform, Entity, &'static ActiveAsteroid), With<MapMarker>>,
     pub bottle_query: Query<'w, 's, &'static GlobalTransform, With<ActiveBottle>>,
-    pub queue: Res<'w, ShipQueue>,
+    pub idle_drone_query: Query<'w, 's, Entity, (With<AutonomousShip>, With<Drone>, Without<AutonomousAssignment>)>,
     pub commands: Commands<'w, 's>,
     pub opening: Res<'w, OpeningSequence>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
-    pub meshes: ResMut<'w, Assets<Mesh>>,
-    pub materials: ResMut<'w, Assets<ColorMaterial>>,
-    pub station_query: Query<'w, 's, (&'static Station, &'static Transform), With<Station>>,
-    pub dispatch_events: EventWriter<'w, DroneDispatched>,
     pub windows: Query<'w, 's, &'static Window>,
     pub mouse_button: Res<'w, ButtonInput<MouseButton>>,
-    pub bcfg: Res<'w, BalanceConfig>,
-    pub vcfg: Res<'w, VisualConfig>,
+    pub vcfg: Res<'w, crate::config::VisualConfig>,
     pub view_state: Res<'w, ViewState>,
     pub tutorial: Res<'w, TutorialState>,
 }
@@ -50,7 +43,7 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
         return;
     }
 
-    if p.queue.available_count == 0 {
+    if p.idle_drone_query.is_empty() {
         return;
     }
 
@@ -69,17 +62,18 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
             if let Some(bp) = bottle_pos_opt {
                 if world_pos.distance(bp) < p.vcfg.bottle.hit_radius { continue 'touch; }
             }
-            for (marker_gtransform, asteroid_ent, active_asteroid) in p.marker_query.iter() {
+            for (marker_gtransform, _asteroid_ent, active_asteroid) in p.marker_query.iter() {
                 let mp = marker_gtransform.translation().truncate();
                 if mp.distance(crate::constants::STATION_POS) < 10.0 { continue; }
                 if world_pos.distance(mp) < 80.0 {
                     dispatch_pos_opt = Some(mp);
-                    let spawn_pos = p.station_query.get_single()
-                        .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
-                    spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
-                        Drone { class: DroneClass::Mining, tier: 1 },
-                        spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
-                        active_asteroid.ore_type, &p.bcfg, &p.vcfg);
+                    if let Some(idle_entity) = p.idle_drone_query.iter().next() {
+                        p.commands.entity(idle_entity).insert(AutonomousAssignment {
+                            target_pos: mp,
+                            ore_type: active_asteroid.ore_type,
+                            sector_name: "Inner Ring".to_string(),
+                        });
+                    }
                     dispatched = true;
                     break 'touch;
                 }
@@ -95,17 +89,18 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
                     if let Some(bp) = bottle_pos_opt {
                         if world_pos.distance(bp) < p.vcfg.bottle.hit_radius { return; }
                     }
-                    for (marker_gtransform, asteroid_ent, active_asteroid) in p.marker_query.iter() {
+                    for (marker_gtransform, _asteroid_ent, active_asteroid) in p.marker_query.iter() {
                         let mp = marker_gtransform.translation().truncate();
                         if mp.distance(crate::constants::STATION_POS) < 10.0 { continue; }
                         if world_pos.distance(mp) < 80.0 {
                             dispatch_pos_opt = Some(mp);
-                            let spawn_pos = p.station_query.get_single()
-                                .map(|(_, t)| t.translation.truncate()).unwrap_or(crate::constants::STATION_POS);
-                            spawn_drone_ship(&mut p.commands, &mut p.meshes, &mut p.materials,
-                                Drone { class: DroneClass::Mining, tier: 1 },
-                                spawn_pos, AutopilotTarget { destination: mp, target_entity: Some(asteroid_ent) },
-                                active_asteroid.ore_type, &p.bcfg, &p.vcfg);
+                            if let Some(idle_entity) = p.idle_drone_query.iter().next() {
+                                p.commands.entity(idle_entity).insert(AutonomousAssignment {
+                                    target_pos: mp,
+                                    ore_type: active_asteroid.ore_type,
+                                    sector_name: "Inner Ring".to_string(),
+                                });
+                            }
                             dispatched = true;
                             break;
                         }
@@ -116,9 +111,8 @@ pub fn asteroid_input_system(mut p: AsteroidInputParams) {
     }
 
     if dispatched {
-        p.dispatch_events.send(DroneDispatched);
         if let Some(mp) = dispatch_pos_opt {
-            info!("[Voidrift] Ship dispatched to {:?}.", mp);
+            info!("[Voidrift] Drone assigned to {:?}.", mp);
         }
         if *p.state.get() == GameState::MapView {
             p.next_state.set(GameState::SpaceView);

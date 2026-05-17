@@ -42,13 +42,6 @@ impl Default for AsteroidRespawnTimer {
     }
 }
 
-/// Drone pool. Ships are spawned on dispatch and despawned on dock.
-/// available_count is the number of ships ready to be assigned.
-#[derive(Resource, Default)]
-pub struct ShipQueue {
-    pub available_count: u32,
-}
-
 #[derive(Resource, Default)]
 pub struct MaxDispatch(pub u32);
 
@@ -245,6 +238,13 @@ impl Default for ProdTreeViewState {
 pub struct ScoutEnabled {
     pub active: bool,
     pub unlocked: bool,
+}
+
+#[derive(Resource, Default, Debug)]
+pub struct FleetCount {
+    pub total: usize,
+    pub available: usize,  // Holding, no AutonomousAssignment
+    pub deployed: usize,   // has AutonomousAssignment
 }
 
 #[cfg(test)]

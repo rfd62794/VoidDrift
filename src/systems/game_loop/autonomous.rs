@@ -97,6 +97,17 @@ pub fn autonomous_beam_system(
     }
 }
 
+pub fn fleet_count_system(
+    mut fleet: ResMut<crate::components::resources::FleetCount>,
+    total_query: Query<Entity, (With<AutonomousShip>, With<Drone>)>,
+    available_query: Query<Entity, (With<AutonomousShip>, With<Drone>, Without<AutonomousAssignment>)>,
+    deployed_query: Query<Entity, (With<AutonomousShip>, With<Drone>, With<AutonomousAssignment>)>,
+) {
+    fleet.total = total_query.iter().count();
+    fleet.available = available_query.iter().count();
+    fleet.deployed = deployed_query.iter().count();
+}
+
 /// [PHASE B] Locks autonomous ships to berth position throughout rotation
 pub fn docked_autonomous_ship_system(
     vcfg: Res<VisualConfig>,

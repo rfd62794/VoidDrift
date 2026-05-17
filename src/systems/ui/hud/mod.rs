@@ -122,9 +122,8 @@ pub struct HudParams<'w, 's> {
     pub drawer: ResMut<'w, DrawerState>,
     pub ui_layout: Res<'w, UiLayout>,
     pub world_view_rect: ResMut<'w, WorldViewRect>,
-    pub queue: Res<'w, ShipQueue>,
     pub max_dispatch: Res<'w, MaxDispatch>,
-    pub autonomous_ships: Query<'w, 's, Entity, With<AutonomousShipTag>>,
+    pub fleet: Res<'w, FleetCount>,
     pub prod_tab: ResMut<'w, ProductionTabState>,
     pub req_tab: ResMut<'w, RequestsTabState>,
     pub repair_events: EventWriter<'w, RepairStationEvent>,
@@ -230,7 +229,6 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
                         *params.active_tab,
                         &mut station,
                         &mut params.toggles,
-                        &params.queue,
                         &mut params.prod_tab,
                         &mut params.req_tab,
                         &mut params.repair_events,
@@ -424,8 +422,7 @@ pub fn hud_ui_system(mut params: HudParams, mut was_docked: Local<bool>) {
 
             buttons::render_hud_buttons(
                 ui,
-                &params.autonomous_ships,
-                &params.queue,
+                &params.fleet,
                 &params.station_query,
                 &mut params.view_state,
                 &mut params.menu_state,

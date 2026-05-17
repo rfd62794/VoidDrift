@@ -21,7 +21,7 @@ pub fn content_event_system(
     mut bottle_events: EventReader<ShipDockedWithBottle>,
     mut dispatch_events: EventReader<DroneDispatched>,
     mut fulfill_events: EventReader<FulfillRequestEvent>,
-    queue: Res<ShipQueue>,
+    fleet: Res<FleetCount>,
     content: Res<ContentConfig>,
     mut state: ResMut<ContentState>,
     mut signal_log: ResMut<SignalLog>,
@@ -84,8 +84,8 @@ pub fn content_event_system(
         fire_one_shot("first_quest_fulfilled", &content, &mut state, &mut signal_log);
     }
 
-    // ── drone_count_5: queue filled to capacity ───────────────────────────────
-    if queue.available_count >= 5 {
+    // ── drone_count_5: fleet at capacity ───────────────────────────────────────────────────
+    if fleet.total >= 5 {
         fire_one_shot("drone_count_5", &content, &mut state, &mut signal_log);
     }
 }

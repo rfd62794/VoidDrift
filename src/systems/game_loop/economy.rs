@@ -8,10 +8,8 @@ pub fn ship_docked_economy_system(
     mut bottle_events: EventReader<ShipDockedWithBottle>,
     mut fulfill_events: EventReader<FulfillRequestEvent>,
     mut repair_events: EventReader<RepairStationEvent>,
-    mut dispatch_events: EventReader<DroneDispatched>,
     mut station_query: Query<&mut Station>,
     mut requests_tab: ResMut<RequestsTabState>,
-    mut queue: ResMut<ShipQueue>,
     mut autosave_events: EventWriter<AutosaveEvent>,
     mut commands: Commands,
     vcfg: Res<VisualConfig>,
@@ -27,20 +25,14 @@ pub fn ship_docked_economy_system(
             station.dock_state = StationDockState::Resuming;
             station.resume_timer = vcfg.station.resume_delay;
         }
-        if event.despawn {
-            queue.available_count += 1;
-            info!("[Voidrift] Ship docked & unloaded. Queue: {}", queue.available_count);
-            autosave_events.send(AutosaveEvent);
-            commands.entity(event.ship_entity).despawn_recursive();
-        } else {
+        if !event.despawn {
             info!("[Voidrift] Autonomous ship unloaded. Returning to cycle.");
             autosave_events.send(AutosaveEvent);
         }
     }
 
     for event in bottle_events.read() {
-        queue.available_count += 1;
-        info!("[Voidrift] Bottle carrier docked. Queue: {}", queue.available_count);
+        info!("[Voidrift] Bottle carrier docked.");
         autosave_events.send(AutosaveEvent);
         commands.entity(event.ship_entity).despawn_recursive();
     }
@@ -62,10 +54,4 @@ pub fn ship_docked_economy_system(
         }
     }
 
-    for _ in dispatch_events.read() {
-        if queue.available_count > 0 {
-            queue.available_count -= 1;
-            info!("[Voidrift] Drone dispatched. Queue: {}", queue.available_count);
-        }
-    }
 }
