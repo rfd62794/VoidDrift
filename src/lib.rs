@@ -1,6 +1,9 @@
 // Voidrift — Phase 10: Documentation & Final Refactor
 // ============================================================================
 
+#[cfg(test)]
+mod tests;
+
 use bevy::prelude::*;
 use bevy_egui::{EguiPlugin, EguiContexts};
 

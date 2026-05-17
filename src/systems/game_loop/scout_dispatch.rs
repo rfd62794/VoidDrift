@@ -52,7 +52,9 @@ pub fn scout_spawn_system(
 }
 
 /// System 2: scout_orbit_system
-/// Moves Scout along circular orbit. On proximity to an unpainted asteroid, paints it and dispatches a Mining drone.
+/// Moves Scout along circular orbit.
+/// Pass 1 (proximity-gated): paints unpainted asteroids within detection range.
+/// Pass 2 (no distance gate): dispatches idle drones to any painted asteroid with no assigned drone.
 pub fn scout_orbit_system(
     mut commands: Commands,
     time: Res<Time>,
@@ -62,6 +64,7 @@ pub fn scout_orbit_system(
     loose_query: Query<Entity, (With<AutonomousShip>, With<Drone>)>,
     drone_target_query: Query<Entity, With<DroneTarget>>,
     mut idle_miners: Query<(Entity, &mut AutonomousShip, &Drone), Without<DroneTarget>>,
+    active_drones: Query<(Entity, &DroneTarget), With<AutonomousShip>>,
     balance_config: Res<BalanceConfig>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -84,7 +87,6 @@ pub fn scout_orbit_system(
     // Tangent direction is orbit angle + π/2
     scout_transform.rotation = Quat::from_rotation_z(orbit.angle + std::f32::consts::FRAC_PI_2);
 
-    // Check proximity to unpainted asteroids
     let asteroid_count = asteroids.iter().count();
     let miner_count = idle_miners.iter().count();
     let loose_miners = loose_query.iter().count();
@@ -104,59 +106,60 @@ pub fn scout_orbit_system(
 
     let threshold = balance_config.scout.proximity_threshold;
 
-    for (asteroid_entity, active_asteroid, asteroid_transform) in asteroids.iter() {
+    // Pass 1 — Paint unpainted asteroids within scout detection range
+    for (asteroid_entity, _active_asteroid, asteroid_transform) in asteroids.iter() {
         let asteroid_pos = asteroid_transform.translation.truncate();
         let dist = (scout_pos - asteroid_pos).length();
+        if dist <= threshold && !painted_query.contains(asteroid_entity) {
+            // Spawn green Annulus ring as child of asteroid (auto-despawns with asteroid)
+            let ring_entity = commands.spawn((
+                MapElement,
+                Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
+                MeshMaterial2d(materials.add(ColorMaterial {
+                    color: Color::srgba(0.0, 1.0, 0.0, 0.6), // Green — Scout paint color
+                    alpha_mode: AlphaMode2d::Opaque,
+                    ..default()
+                })),
+                Transform::from_translation(Vec3::ZERO),
+                Visibility::Inherited,
+            )).id();
 
-        if dist <= threshold {
-            // Check if asteroid already painted
-            if !painted_query.contains(asteroid_entity) {
-                // Spawn green Annulus ring as child of asteroid (auto-despawns with asteroid)
-                let ring_entity = commands.spawn((
-                    MapElement,
-                    Mesh2d(meshes.add(Annulus::new(38.0, 40.0))),
-                    MeshMaterial2d(materials.add(ColorMaterial {
-                        color: Color::srgba(0.0, 1.0, 0.0, 0.6), // Green — Scout paint color
-                        alpha_mode: AlphaMode2d::Opaque,
-                        ..default()
-                    })),
-                    Transform::from_translation(Vec3::ZERO),
-                    Visibility::Inherited,
-                )).id();
+            // Make ring a child of asteroid
+            commands.entity(asteroid_entity).add_child(ring_entity);
 
-                // Make ring a child of asteroid
-                commands.entity(asteroid_entity).add_child(ring_entity);
+            // Attach Painted to asteroid with ring entity reference
+            commands.entity(asteroid_entity).insert(Painted { ring_entity });
 
-                // Attach Painted to asteroid with ring entity reference
-                commands.entity(asteroid_entity).insert(Painted { ring_entity });
+            info!("[SCOUT] Painted asteroid at dist={:.1}", dist);
+        }
+    }
 
-                info!("[SCOUT] Painted asteroid at dist={:.1}", dist);
-            }
-
-            // Find one idle Mining drone with no current target (any tier)
-            let miner = idle_miners.iter_mut().find(|(_, ship, drone)| {
-                ship.state == AutonomousShipState::Holding
-                    && drone.class == DroneClass::Mining
-            });
-
-            info!("[SCOUT] Found miner: {}", miner.is_some());
-
-            if let Some((miner_entity, mut ship_state, _)) = miner {
-                // Dispatch Mining drone
-                ship_state.state = AutonomousShipState::Outbound;
-
-                // Insert fresh AutonomousAssignment
-                commands.entity(miner_entity).insert(AutonomousAssignment {
+    // Pass 2 — Dispatch idle drone to any painted asteroid not already being served
+    for (asteroid_entity, active_asteroid, asteroid_transform) in asteroids.iter() {
+        if !painted_query.contains(asteroid_entity) {
+            continue; // not painted, skip
+        }
+        // Skip if an active drone already targets this asteroid
+        let already_served = active_drones.iter().any(|(_, dt)| dt.asteroid == asteroid_entity);
+        if already_served {
+            continue;
+        }
+        // Find an idle Mining drone and dispatch
+        let miner = idle_miners.iter_mut().find(|(_, ship, drone)| {
+            ship.state == AutonomousShipState::Holding && drone.class == DroneClass::Mining
+        });
+        info!("[SCOUT] Found miner: {}", miner.is_some());
+        if let Some((miner_entity, mut ship_state, _)) = miner {
+            let asteroid_pos = asteroid_transform.translation.truncate();
+            ship_state.state = AutonomousShipState::Outbound;
+            commands.entity(miner_entity)
+                .insert(AutonomousAssignment {
                     target_pos: asteroid_pos,
                     ore_type: active_asteroid.ore_type,
-                    sector_name: "S1".to_string(), // Inner Ring sector placeholder
-                });
-
-                // Tag the miner so cleanup knows which asteroid it was sent to
-                commands.entity(miner_entity).insert(DroneTarget { asteroid: asteroid_entity });
-
-                break; // One paint per system tick — Scout continues orbit next frame
-            }
+                    sector_name: "S1".to_string(),
+                })
+                .insert(DroneTarget { asteroid: asteroid_entity });
+            break; // one dispatch per tick
         }
     }
 }
