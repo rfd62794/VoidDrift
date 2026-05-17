@@ -31,8 +31,8 @@ pub fn opening_sequence_system(
     opening.timer += delta;
     opening.beat_timer += delta;
 
-    let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { return; };
-    let Ok((mut st, station_transform)) = station_query.get_single_mut() else { return; };
+    let Ok((ship_ent, mut ship, ship_transform)) = ship_query.get_single_mut() else { eprintln!("[opening_sequence] STALL: ship_query.get_single_mut() failed — no entity with InOpeningSequence+Ship"); return; };
+    let Ok((mut st, station_transform)) = station_query.get_single_mut() else { eprintln!("[opening_sequence] STALL: station_query.get_single_mut() failed — no entity with Station"); return; };
 
     let station_pos = station_transform.translation.truncate();
     let dist_to_station = ship_transform.translation.truncate().distance(station_pos);
