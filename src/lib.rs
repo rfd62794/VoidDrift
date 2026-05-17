@@ -174,6 +174,11 @@ fn configure_shared_app(app: &mut App) {
             systems::visuals::visuals::ship_rotation_system,
             systems::visuals::visuals::thruster_glow_system,
         ).chain().run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::autonomous::autonomous_ship_system.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, (
+            systems::game_loop::autonomous::autonomous_beam_system.after(systems::game_loop::autonomous::autonomous_ship_system),
+            systems::game_loop::autonomous::docked_autonomous_ship_system.after(systems::game_loop::autonomous::autonomous_ship_system),
+        ).run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
             systems::visuals::map::enter_map_view,
             systems::visuals::map::show_map_elements,
