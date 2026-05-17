@@ -63,6 +63,7 @@ pub use components::*;
 
 mod scenes;
 mod systems;
+pub mod drone;
 
 use systems::telemetry::TelemetryPlugin;
 use scenes::main_menu::MainMenuState;
@@ -177,16 +178,16 @@ fn configure_shared_app(app: &mut App) {
             systems::visuals::visuals::ship_rotation_system,
             systems::visuals::visuals::thruster_glow_system,
         ).chain().run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::autonomous::autonomous_ship_system.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, drone::fsm::autonomous_ship_system.run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
-            systems::game_loop::autonomous::autonomous_beam_system.after(systems::game_loop::autonomous::autonomous_ship_system),
-            systems::game_loop::autonomous::docked_autonomous_ship_system.after(systems::game_loop::autonomous::autonomous_ship_system),
+            drone::fsm::autonomous_beam_system.after(drone::fsm::autonomous_ship_system),
+            drone::fsm::docked_autonomous_ship_system.after(drone::fsm::autonomous_ship_system),
         ).run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::autonomous::fleet_count_system
+        .add_systems(Update, drone::fsm::fleet_count_system
             .before(systems::ui::hud::hud_ui_system)
             .before(systems::narrative::signal::signal_system)
             .run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::autonomous::drone_visibility_system
+        .add_systems(Update, drone::fsm::drone_visibility_system
             .run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
             systems::visuals::map::enter_map_view,
@@ -206,15 +207,15 @@ fn configure_shared_app(app: &mut App) {
             systems::ui::hud::ship_cargo_display_system,
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_spawn_system.run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_orbit_system.run_if(in_state(AppState::InGame)))
-        .add_systems(Update, systems::game_loop::scout_dispatch::scout_paint_cleanup_system.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, drone::scout_dispatch::scout_spawn_system.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, drone::scout_dispatch::scout_orbit_system.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, drone::scout_dispatch::scout_paint_cleanup_system.run_if(in_state(AppState::InGame)))
         .add_systems(Update, (
             systems::ui::hud::sync_max_drones_system,
             systems::ui::tutorial::tutorial_system,
             systems::ui::hud::hud_ui_system,
             systems::visuals::map::map_highlight_system,
-            systems::ship_control::asteroid_input::asteroid_input_system,
+            drone::manual_dispatch::asteroid_input_system,
             systems::visuals::map::pinch_zoom_system,
             systems::visuals::map::map_pan_system,
             systems::narrative::opening_sequence::opening_sequence_system,

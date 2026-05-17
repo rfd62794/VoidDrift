@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
+use crate::drone::spawn::spawn_drone_ship;
 
 fn spawn_app() -> (App, Entity) {
     let mut app = App::new();

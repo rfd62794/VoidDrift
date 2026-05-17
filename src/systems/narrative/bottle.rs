@@ -4,7 +4,7 @@ use bevy_egui::EguiContexts;
 use crate::components::*;
 use crate::config::{BalanceConfig, VisualConfig};
 use crate::config::visual::rgb;
-use crate::systems::ship_control::ship_spawn::spawn_bottle_drone;
+use crate::drone::spawn::spawn_bottle_drone;
 
 #[derive(Resource)]
 pub struct BottleSpawnTimer {

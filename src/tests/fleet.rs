@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::systems::game_loop::autonomous::fleet_count_system;
+use crate::drone::fsm::fleet_count_system;
 use super::minimal_app;
 
 fn fleet_app() -> App {

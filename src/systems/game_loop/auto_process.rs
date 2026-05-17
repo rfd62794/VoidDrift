@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::config::BalanceConfig;
-use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
+use crate::drone::spawn::spawn_drone_ship;
 
 pub fn auto_refine_system(
     time: Res<Time>,

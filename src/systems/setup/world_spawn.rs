@@ -5,7 +5,7 @@ use rand::{Rng, SeedableRng};
 use crate::components::*;
 use crate::systems::setup::entity_setup::*;
 use crate::systems::setup::quest_init::*;
-use crate::systems::ship_control::ship_spawn::spawn_drone_ship_with_visuals;
+use crate::drone::spawn::spawn_drone_ship_with_visuals;
 use crate::config::{BalanceConfig, VisualConfig, QuestConfig};
 
 /// Clean up all entities before setting up a new game

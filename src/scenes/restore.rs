@@ -3,7 +3,7 @@ use crate::components::*;
 use super::MainMenuState;
 use crate::config::VisualConfig;
 use crate::systems::persistence::save::SaveData;
-use crate::systems::ship_control::ship_spawn::spawn_drone_ship_with_visuals;
+use crate::drone::spawn::spawn_drone_ship_with_visuals;
 
 pub fn ingame_startup_system(
     mut menu_state: ResMut<MainMenuState>,

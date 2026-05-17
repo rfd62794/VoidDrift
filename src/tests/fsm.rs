@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::config::{BalanceConfig, VisualConfig};
-use crate::systems::game_loop::autonomous::autonomous_ship_system;
+use crate::drone::fsm::autonomous_ship_system;
 use super::test_station;
 
 fn fsm_app() -> App {
