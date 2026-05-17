@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::config::VisualConfig;
-use crate::systems::game_loop::economy::ship_docked_economy_system;
+use crate::economy::cargo::ship_docked_economy_system;
 use crate::systems::persistence::save::AutosaveEvent;
 use super::test_station;
 

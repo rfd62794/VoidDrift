@@ -64,6 +64,7 @@ pub use components::*;
 mod scenes;
 mod systems;
 pub mod drone;
+pub mod economy;
 
 use systems::telemetry::TelemetryPlugin;
 use scenes::main_menu::MainMenuState;
@@ -167,7 +168,7 @@ fn configure_shared_app(app: &mut App) {
         .add_systems(OnEnter(AppState::InGame), scenes::main_menu::ingame_startup_system.run_if(|| true))
         .add_systems(Update, (
             systems::ship_control::autopilot::autopilot_system,
-            systems::game_loop::economy::ship_docked_economy_system,
+            economy::cargo::ship_docked_economy_system,
             systems::narrative::narrative_events::narrative_event_system,
             systems::visuals::map::camera_follow_system,
             systems::visuals::visuals::starfield_scroll_system,
@@ -200,10 +201,10 @@ fn configure_shared_app(app: &mut App) {
         .add_systems(Update, (
             systems::asteroid::spawn::asteroid_respawn_system,
             systems::asteroid::lifecycle::asteroid_lifecycle_system,
-            systems::game_loop::mining::mining_system,
-            systems::game_loop::auto_process::auto_refine_system,
-            systems::game_loop::auto_process::auto_forge_system,
-            systems::game_loop::auto_process::auto_build_drones_system,
+            economy::mining::mining_system,
+            economy::process::auto_refine_system,
+            economy::process::auto_forge_system,
+            economy::process::auto_build_drones_system,
             systems::ui::hud::ship_cargo_display_system,
             systems::ui::hud::cargo_label_system,
         ).chain().run_if(in_state(AppState::InGame)))
