@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use crate::components::*;
-use crate::config::VisualConfig;
 
 pub fn narrative_event_system(
     mut bottle_events: EventReader<ShipDockedWithBottle>,
@@ -8,11 +7,8 @@ pub fn narrative_event_system(
     mut laser_events: EventReader<InsufficientLaserEvent>,
     mut signal_log: ResMut<SignalLog>,
     mut requests_tab: ResMut<RequestsTabState>,
-    mut queue: ResMut<ShipQueue>,
-    mut station_query: Query<&mut Station>,
-    mut ship_query: Query<(&mut Transform, &mut Ship)>,
+    ship_query: Query<Entity, With<InOpeningSequence>>,
     mut commands: Commands,
-    vcfg: Res<VisualConfig>,
 ) {
     for _event in laser_events.read() {
         signal_log.entries.push_front("> INSUFFICIENT LASER RATING. UPGRADE REQUIRED.".to_string());
@@ -39,44 +35,9 @@ pub fn narrative_event_system(
         // is despawned by ship_docked_economy_system — no explicit remove needed.
     }
 
-    for event in opening_events.read() {
-        queue.available_count += 1;
-        if let Ok(mut station) = station_query.get_single_mut() {
-            station.dock_state = StationDockState::Resuming;
-            station.resume_timer = vcfg.station.resume_delay;
+    for _ in opening_events.read() {
+        if let Ok(entity) = ship_query.get_single() {
+            commands.entity(entity).despawn_recursive();
         }
-
-        // Transform the opening ship into a Mining drone
-        let ship_entity = event.ship_entity;
-        let station_pos = if let Ok((ship_transform, _ship)) = ship_query.get(ship_entity) {
-            ship_transform.translation.truncate()
-        } else {
-            Vec2::ZERO
-        };
-
-        commands.entity(ship_entity).insert((
-            Drone { class: DroneClass::Mining, tier: 1 },
-            AutonomousShip {
-                state: AutonomousShipState::Holding,
-                cargo: 0.0,
-                cargo_type: OreDeposit::Iron,
-            },
-            AutonomousAssignment {
-                target_pos: station_pos,
-                ore_type: OreDeposit::Iron,
-                sector_name: "S1".to_string(),
-            },
-        ));
-
-        commands.entity(ship_entity).remove::<InOpeningSequence>();
-        commands.entity(ship_entity).remove::<DroneTarget>();
-        // ADR-020: Drone-1 at conversion must not carry DroneTarget.
-        // DroneTarget insertion source unidentified as of v3.5.14 — may originate
-        // in autopilot.rs or asteroid_input.rs during opening cinematic navigation.
-        // This remove enforces the invariant at the conversion boundary regardless
-        // of upstream source or system ordering.
-        // Ref: docs/adr/ADR-020-drone-spawn-invariant.md
-
-        info!("[Voidrift] OpeningCompleteEvent received. Ship transformed into Mining drone. Queue: {}", queue.available_count);
     }
 }
