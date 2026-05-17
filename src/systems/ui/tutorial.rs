@@ -22,13 +22,13 @@ pub fn tutorial_system(
         (&Ship, &Transform),
         (With<InOpeningSequence>, Without<Station>, Without<ActiveAsteroid>, Without<TutorialHighlight>),
     >,
-    station_query: Query<(&Station, &StationQueues), (Without<Ship>, Without<AutonomousShipTag>)>,
+    station_query: Query<(&Station, &StationQueues), (Without<Ship>, Without<Drone>)>,
     ast_query: Query<
         (&ActiveAsteroid, &Transform),
         (Without<Ship>, Without<Station>, Without<TutorialHighlight>),
     >,
     // T-101 to T-106: Phase 4a Echo tutorial
-    auto_ship_query: Query<&Ship, (With<AutonomousShipTag>, Without<InOpeningSequence>)>,
+    auto_ship_query: Query<&AutonomousShip, (With<AutonomousShip>, With<Drone>, Without<InOpeningSequence>)>,
     drawer_state: Res<DrawerState>,
     active_tab: Res<ActiveStationTab>,
     bottle_query: Query<&Transform, (With<ActiveBottle>, Without<TutorialHighlight>)>,
@@ -173,8 +173,8 @@ pub fn tutorial_system(
 
 fn evaluate_trigger(
     trigger: &str,
-    auto_ship_query: &Query<&Ship, (With<AutonomousShipTag>, Without<InOpeningSequence>)>,
-    station_query: &Query<(&Station, &StationQueues), (Without<Ship>, Without<AutonomousShipTag>)>,
+    auto_ship_query: &Query<&AutonomousShip, (With<AutonomousShip>, With<Drone>, Without<InOpeningSequence>)>,
+    station_query: &Query<(&Station, &StationQueues), (Without<Ship>, Without<Drone>)>,
     drawer_state: &Res<DrawerState>,
     active_tab: &Res<ActiveStationTab>,
     bottle_query: &Query<&Transform, (With<ActiveBottle>, Without<TutorialHighlight>)>,
@@ -183,7 +183,7 @@ fn evaluate_trigger(
     match trigger {
         "game_start" => true, // Always fires when opening Complete (guard at line 60)
         "drone_navigating_or_mining" => auto_ship_query.iter().any(|s| {
-            s.state == ShipState::Navigating || s.state == ShipState::Mining
+            s.state == AutonomousShipState::Outbound || s.state == AutonomousShipState::Mining
         }),
         "ore_reserves_positive" => {
             if let Ok((st, _)) = station_query.get_single() {

@@ -10,7 +10,7 @@ use crate::components::resources::ProdTreeViewState;
 
 pub fn render_production_tree(
     ui: &mut egui::Ui,
-    station_query: &mut Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    station_query: &mut Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<Drone>)>,
     toggles: &mut ProductionToggles,
     visual_cfg: &VisualConfig,
     world_view_rect: &mut WorldViewRect,

@@ -13,7 +13,7 @@ pub fn collect_save_data(
     station: &Station,
     opening: &OpeningSequence,
     active_tab: &ActiveStationTab,
-    drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    drone_query: &Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), (With<AutonomousShip>, With<Drone>)>,
     requests_tab: &RequestsTabState,
     signal_log: &SignalLog,
     time: &Res<Time>,
@@ -81,10 +81,10 @@ pub fn collect_save_data(
 // Autosave system
 pub fn autosave_system(
     mut events: EventReader<AutosaveEvent>,
-    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<Drone>)>,
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
-    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), (With<AutonomousShip>, With<Drone>)>,
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
     time: Res<Time>,
@@ -119,10 +119,10 @@ pub fn autosave_system(
 // Save request system
 pub fn save_request_system(
     mut events: EventReader<SaveRequestEvent>,
-    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    station_query: Query<&Station, (With<Station>, Without<Ship>, Without<Drone>)>,
     opening: Res<OpeningSequence>,
     active_tab: Res<ActiveStationTab>,
-    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), With<AutonomousShipTag>>,
+    drone_query: Query<(&Ship, &Transform, &LastHeading, Option<&AutopilotTarget>), (With<AutonomousShip>, With<Drone>)>,
     requests_tab: Res<RequestsTabState>,
     signal_log: Res<SignalLog>,
     time: Res<Time>,

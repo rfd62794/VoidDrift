@@ -70,6 +70,7 @@ pub fn autonomous_ship_system(
                     });
                     ship.cargo = 0.0;
                     ship.state = AutonomousShipState::Holding;
+                    commands.entity(ship_entity).remove::<AutonomousAssignment>();
                 }
             }
         }
@@ -94,6 +95,18 @@ pub fn autonomous_beam_system(
                 }
             }
         }
+    }
+}
+
+pub fn drone_visibility_system(
+    mut query: Query<(&AutonomousShip, &mut Visibility), With<Drone>>,
+) {
+    for (ship, mut vis) in query.iter_mut() {
+        *vis = if ship.state == AutonomousShipState::Holding {
+            Visibility::Hidden
+        } else {
+            Visibility::Inherited
+        };
     }
 }
 

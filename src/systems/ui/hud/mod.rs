@@ -102,7 +102,7 @@ pub fn sync_max_drones_system(
 #[derive(SystemParam)]
 pub struct HudParams<'w, 's> {
     pub contexts: EguiContexts<'w, 's>,
-    pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    pub station_query: Query<'w, 's, (Entity, &'static mut Station, &'static mut StationQueues), (With<Station>, Without<Ship>, Without<Drone>)>,
     pub state: Res<'w, State<GameState>>,
     pub next_state: ResMut<'w, NextState<GameState>>,
     pub signal_log: Res<'w, SignalLog>,

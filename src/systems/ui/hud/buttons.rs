@@ -8,7 +8,7 @@ use crate::ui_kit::{primitives::vd_button, styles::{ButtonStyle, HighlightKind}}
 pub fn render_hud_buttons(
     ui: &mut egui::Ui,
     fleet: &FleetCount,
-    station_query: &Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<AutonomousShipTag>)>,
+    station_query: &Query<(Entity, &mut Station, &mut StationQueues), (With<Station>, Without<Ship>, Without<Drone>)>,
     view_state: &mut ViewState,
     menu_state: &mut MainMenuState,
     pan_state: &mut MapPanState,

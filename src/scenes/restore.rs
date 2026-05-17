@@ -160,7 +160,6 @@ pub fn spawn_saved_drones(
                 laser_tier: LaserTier::Basic,
                 current_mining_target: None,
             },
-            AutonomousShipTag,
             LastHeading(d.heading),
             Transform::from_xyz(d.pos_x, d.pos_y, vcfg.z_layer.z_ship),
             Mesh2d(meshes.add(triangle_mesh(vcfg.drone.mission.hull_width, vcfg.drone.mission.hull_height))),

@@ -183,6 +183,8 @@ fn configure_shared_app(app: &mut App) {
             .before(systems::ui::hud::hud_ui_system)
             .before(systems::narrative::signal::signal_system)
             .run_if(in_state(AppState::InGame)))
+        .add_systems(Update, systems::game_loop::autonomous::drone_visibility_system
+            .run_if(in_state(AppState::InGame)))
         .add_systems(OnEnter(GameState::MapView), (
             systems::visuals::map::enter_map_view,
             systems::visuals::map::show_map_elements,

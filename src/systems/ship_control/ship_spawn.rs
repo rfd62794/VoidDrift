@@ -44,41 +44,46 @@ fn spawn_rocket_part(
     )).set_parent(parent);
 }
 
-/// Spawns a drone ship entity at `start_pos` heading toward `target`.
-/// Single source of truth for drone ship appearance and component bundle.
-/// Used by both `asteroid_input_system` and `bottle_input_system`.
-// ADR-020: This function must NOT insert DroneTarget.
-// Drones spawn into Holding state. DroneTarget is exclusively
-// inserted by scout_orbit_system at dispatch.
+/// Spawns an Architecture B drone entity at `pos` in Holding state.
+/// Single source of truth for drone component bundle.
 pub fn spawn_drone_ship(
+    commands: &mut Commands,
+    pos: Vec2,
+) -> Entity {
+    commands.spawn((
+        AutonomousShip {
+            state: AutonomousShipState::Holding,
+            cargo: 0.0,
+            cargo_type: OreDeposit::Iron,
+        },
+        Drone { class: DroneClass::Mining, tier: 1 },
+        Transform::from_translation(pos.extend(0.0)),
+        Visibility::Hidden,
+    )).id()
+}
+
+/// Spawns a full drone ship entity with visual children at `start_pos`.
+/// Used by restore.rs and world init for entities that need visible geometry.
+pub fn spawn_drone_ship_with_visuals(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
-    drone: Drone,
     start_pos: Vec2,
-    target: AutopilotTarget,
-    ore_type: OreDeposit,
-    bcfg: &BalanceConfig,
     vcfg: &VisualConfig,
 ) -> Entity {
     let rocket_config = ship_config_to_rocket_config(&vcfg.ship.drone);
     let rocket_parts = generate_rocket_points(&rocket_config);
 
     let ship_ent = commands.spawn((
-        drone,
-        Ship {
-            state: ShipState::Navigating,
-            speed: bcfg.mining.ship_speed,
+        AutonomousShip {
+            state: AutonomousShipState::Holding,
             cargo: 0.0,
-            cargo_type: ore_type,
-            cargo_capacity: bcfg.mining.cargo_capacity,
-            laser_tier: LaserTier::Basic,
-            current_mining_target: None,
+            cargo_type: OreDeposit::Iron,
         },
-        AutonomousShipTag,
+        Drone { class: DroneClass::Mining, tier: 1 },
         LastHeading(0.0),
-        target,
         Transform::from_xyz(start_pos.x, start_pos.y, vcfg.z_layer.z_ship),
+        Visibility::Hidden,
     )).id();
 
     // Spawn rocket parts as children
@@ -147,7 +152,6 @@ pub fn spawn_bottle_drone(
             laser_tier: LaserTier::Basic,
             current_mining_target: None,
         },
-        AutonomousShipTag,
         LastHeading(0.0),
         target,
         Transform::from_xyz(start_pos.x, start_pos.y, vcfg.z_layer.z_ship),

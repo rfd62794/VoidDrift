@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::config::BalanceConfig;
+use crate::systems::ship_control::ship_spawn::spawn_drone_ship;
 
 pub fn auto_refine_system(
     time: Res<Time>,
@@ -136,16 +137,7 @@ pub fn auto_build_drones_system(
                 station.ai_cores            -= actual as f32 * cfg.drone.cost_cores;
                 station.drone_count += actual as u32;
                 for _ in 0..actual {
-                    commands.spawn((
-                        AutonomousShip {
-                            state: AutonomousShipState::Holding,
-                            cargo: 0.0,
-                            cargo_type: OreDeposit::Iron,
-                        },
-                        Drone { class: DroneClass::Mining, tier: 1 },
-                        Transform::from_translation(crate::constants::STATION_POS.extend(0.0)),
-                        Visibility::Hidden,
-                    ));
+                    spawn_drone_ship(&mut commands, crate::constants::STATION_POS);
                 }
                 info!("[Voidrift] Drone assembly complete: {} built. Fleet: {}", actual, fleet.total + actual);
             }

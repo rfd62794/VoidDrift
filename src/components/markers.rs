@@ -34,9 +34,6 @@ pub struct ThrusterGlow;
 pub struct MiningBeam;
 
 #[derive(Component)]
-pub struct AutonomousShipTag;
-
-#[derive(Component)]
 pub struct StationVisualsContainer;
 
 #[derive(Component)]

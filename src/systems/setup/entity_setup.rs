@@ -70,7 +70,6 @@ pub fn spawn_opening_drone(
             laser_tier: LaserTier::Basic,
             current_mining_target: None,
         },
-        AutonomousShipTag,
         Transform::from_xyz(-1000.0, -800.0, vcfg.z_layer.z_ship),
     )).id();
 
