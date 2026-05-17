@@ -47,6 +47,9 @@ fn spawn_rocket_part(
 /// Spawns a drone ship entity at `start_pos` heading toward `target`.
 /// Single source of truth for drone ship appearance and component bundle.
 /// Used by both `asteroid_input_system` and `bottle_input_system`.
+// ADR-020: This function must NOT insert DroneTarget.
+// Drones spawn into Holding state. DroneTarget is exclusively
+// inserted by scout_orbit_system at dispatch.
 pub fn spawn_drone_ship(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,

@@ -70,9 +70,12 @@ pub fn narrative_event_system(
 
         commands.entity(ship_entity).remove::<InOpeningSequence>();
         commands.entity(ship_entity).remove::<DroneTarget>();
-        // Invariant: Drone-1 conversion must not carry DroneTarget.
-        // Scout dispatch eligibility depends on Without<DroneTarget>.
-        // Upstream source unidentified as of v3.5.14 — track in #TBD.
+        // ADR-020: Drone-1 at conversion must not carry DroneTarget.
+        // DroneTarget insertion source unidentified as of v3.5.14 — may originate
+        // in autopilot.rs or asteroid_input.rs during opening cinematic navigation.
+        // This remove enforces the invariant at the conversion boundary regardless
+        // of upstream source or system ordering.
+        // Ref: docs/adr/ADR-020-drone-spawn-invariant.md
 
         info!("[Voidrift] OpeningCompleteEvent received. Ship transformed into Mining drone. Queue: {}", queue.available_count);
     }
