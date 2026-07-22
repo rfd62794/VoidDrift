@@ -45,7 +45,7 @@ function gameLoop(timestamp: number): void {
   updateDroneBuild(state, dt);
 
   // Render + HUD
-  render(state, canvas, ctx);
+  render(state, canvas, ctx, timestamp);
   updateHUD(state);
 
   // Autosave every ~5s at 60fps
