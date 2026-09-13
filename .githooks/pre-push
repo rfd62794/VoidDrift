@@ -1,0 +1,5 @@
+#!/bin/sh
+# Local replacement for GitHub Actions CI: run the checks before every push.
+# Install once per clone with: powershell -File scripts/install-hooks.ps1
+# Skip once with: git push --no-verify
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(git rev-parse --show-toplevel)/scripts/check.ps1"

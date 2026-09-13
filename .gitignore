@@ -24,6 +24,7 @@ voidrift.keystore
 .env
 .env.local
 .publish.env
+.deploy.env
 
 # OS
 .DS_Store
