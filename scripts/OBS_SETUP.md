@@ -32,7 +32,7 @@ Run: .\scripts\trim_demo.ps1 -Input raw_demo.mp4 -DurationSec 90
 
 ## FFmpeg
 
-FFmpeg location: `C:\Github\GameReviewAgent\content-engine\ffmpeg.exe`
+FFmpeg is installed with winget and is on `PATH` (`ffmpeg`). If a machine doesn't have it: `winget install Gyan.FFmpeg`.
 
-Not on system PATH - either add to PATH or update `trim_demo.ps1` to hardcode this path.
+(The old copy inside GameReviewAgent is gone: that repo was retired into RFD_YT_Engine on 2026-09-13.)
 
