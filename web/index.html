@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#050A10" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>VoidDrift</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050A10;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00CC66;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #game-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: block;
+    }
+
+    /* ── HUD ──────────────────────────────────────────────────────────────── */
+
+    #hud {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Resource strip — always visible */
+    #resource-strip {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: rgba(5, 8, 14, 0.97);
+      border-top: 1px solid #0D2010;
+      padding: 6px 4px;
+      gap: 4px;
+    }
+
+    .res-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+
+    .res-icon {
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .res-label {
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      color: #3D6B4D;
+      margin-top: 2px;
+    }
+
+    .res-val {
+      font-size: 13px;
+      font-weight: bold;
+      color: #00DD77;
+      letter-spacing: 0.05em;
+      margin-top: 1px;
+    }
+
+    /* Handle bar */
+    #handle-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(8, 12, 18, 0.98);
+      border-top: 1px solid #162816;
+      padding: 7px 14px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #handle-bar:active { background: rgba(12, 20, 28, 0.99); }
+
+    #handle-label {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: #3A7A50;
+    }
+
+    #elapsed-time {
+      font-size: 10px;
+      color: #1E4A2E;
+      letter-spacing: 0.12em;
+    }
+
+    /* Production panel — collapsed by default */
+    #production-panel {
+      background: rgba(5, 9, 14, 0.99);
+      border-top: 1px solid #0D1F12;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease-out;
+    }
+
+    #production-panel.open {
+      max-height: 280px;
+    }
+
+    .prod-section {
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid #0A1A0F;
+    }
+
+    .prod-header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .prod-title {
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.15em;
+      color: #00BB55;
+    }
+
+    .prod-subtitle {
+      font-size: 9px;
+      color: #2A5A3A;
+      letter-spacing: 0.05em;
+    }
+
+    .prod-rate {
+      margin-left: auto;
+      font-size: 9px;
+      color: #00AA44;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 5px;
+      background: #0A1A10;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s linear, opacity 0.3s;
+    }
+
+    .bar-refinery { background: linear-gradient(90deg, #CC6600, #FF8800); }
+    .bar-forge    { background: linear-gradient(90deg, #AA4400, #DD6600); }
+    .bar-build    { background: linear-gradient(90deg, #006633, #00CC66); }
+
+    #hud-footer {
+      padding: 8px 14px;
+      text-align: center;
+    }
+
+    .dim-text {
+      font-size: 8px;
+      color: #1A3A22;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
