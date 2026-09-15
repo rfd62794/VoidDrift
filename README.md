@@ -4,7 +4,7 @@
 
 A mobile arcade mining game built in Rust/Bevy for Android. Mine asteroid debris at the edge of a black hole, build a drone fleet, and receive contact from factions you don't understand.
 
-> **Status:** Phase 4a Complete — `v2.8.7-tutorial-4a` — Live on [itch.io](https://rdug627.itch.io/voidrift)
+> **Status:** Phase 4a Complete — `v2.8.7-tutorial-4a` — Live on [itch.io](https://rdug627.itch.io/voidrift) | [Project Page](https://rfditservices.com/games/voiddrift/)
 
 ---
 
