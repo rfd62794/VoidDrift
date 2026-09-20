@@ -496,3 +496,17 @@ Mechanics:
 **Then refactor, then Phase 2.**
 
 **Go.**
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): d1cb0ec "Phase 1c: Complete asteroid lifecycle system (final)"; ActiveAsteroid.lifespan_timer + lifecycle.rs live in src/systems/asteroid/.
+<!-- queue:end -->

@@ -478,3 +478,17 @@ The following items are intentionally deferred for a dedicated docs sprint:
 ---
 
 **Ready for implementation.**
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): da68e9e "docs: update critical documentation to v2.8.7 state" implements README status line, CHANGELOG fill, docs/WASM_BUILD.md, and legacy-directive archive verbatim.
+<!-- queue:end -->

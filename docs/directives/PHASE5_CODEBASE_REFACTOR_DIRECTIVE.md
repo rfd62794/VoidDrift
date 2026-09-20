@@ -544,3 +544,17 @@ git revert <commit-hash>
 Clean foundation for Phase 2 (station modules/upgrades).
 
 **Go.**
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): src/components/ split into 7 files (resources.rs, events.rs, markers.rs, etc.); src/systems/ organized into 9 domain dirs, per ADR-006/007.
+<!-- queue:end -->

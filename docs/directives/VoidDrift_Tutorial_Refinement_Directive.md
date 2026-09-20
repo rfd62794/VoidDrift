@@ -218,3 +218,17 @@ Confirm itch.io build number changed post-publish.
 
 *VoidDrift Tutorial Refinement Directive*  
 *May 2026 — RFD IT Services Ltd.*
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): ae9ba42 "Add tutorial refinement — symbol status bar in drawer, pipeline discovery nudge (T-107), amber popup styling, drawer button highlight restoration".
+<!-- queue:end -->

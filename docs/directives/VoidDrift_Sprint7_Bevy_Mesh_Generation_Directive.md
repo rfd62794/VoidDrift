@@ -476,3 +476,17 @@ Confirm itch.io build number changed post-publish.
 
 *VoidDrift Sprint 7 Directive*  
 *May 2026 — RFD IT Services Ltd.*
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): 74dfb47 "Replace triangle mesh ships with procedural rocket meshes"; 2ff1cbb procedural asteroid body/band meshes; e6a16ac extracts shared mesh_builder.rs.
+<!-- queue:end -->

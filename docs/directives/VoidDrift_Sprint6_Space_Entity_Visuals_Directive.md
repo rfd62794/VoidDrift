@@ -239,3 +239,17 @@ Then run `.\publish.ps1 -Build` and confirm build number changed on itch.io.
 
 *VoidDrift Sprint 6 Directive*  
 *May 2026 — RFD IT Services Ltd.*
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): b701b17 adds ship.drone/ship.opening visual.toml configs (green/orange rockets); 64f68ee restores vertical drone-bay rocket orientation, matching directive scope.
+<!-- queue:end -->

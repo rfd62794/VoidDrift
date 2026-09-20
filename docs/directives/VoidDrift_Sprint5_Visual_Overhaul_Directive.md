@@ -302,3 +302,17 @@ Confirm itch.io build number changed post-publish.
 
 *VoidDrift Sprint 5 Directive*  
 *May 2026 — RFD IT Services Ltd.*
+
+<!-- queue:start -->
+## Queue
+
+| Field | Value |
+|---|---|
+| Status | Done |
+| Assigned to | - |
+| Branch | - |
+| Base branch | - |
+
+**Status log**
+- 2026-09-19 14:38 · robert-claude · none → Done — legacy close (triage approved 2026-09-19): 98f183f, 22d5d7d, 952c31f, c7054dd implement procedural ore polygon/ingot nodes; 25a409a "Merge dev into main - Sprint 5 complete"; current build tag v3.1.0-sprint5-visual-overhaul.
+<!-- queue:end -->
