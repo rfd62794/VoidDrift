@@ -4,6 +4,250 @@
 
 ---
 
+## Machine-Readable Roadmap (swarm)
+
+Why these milestones: the repo's own queue orders launch blockers first — they
+gate the $4.99 itch.io release (docs/state/current.md "Open Directives",
+ADR-017). Structural rework comes second: current.md names it "dev branch,
+between sprints", and both Phase 4b content and the economy redesign land
+cleaner on split modules. Phase 4b follows README.md's roadmap table; the
+economy redesign is last because its own phase doc requires the refactor to
+finish first (docs/phases/phase-economy-redesign-planned.md). The phase tables
+below are the April 2026 snapshot — kept as history; this block is the live
+plan.
+
+```yaml roadmap
+status: draft            # draft | approved
+approved: ""             # "2026-09-22 Robert" once approved
+reviewed: "2026-09-22"   # last human or model review - the swarm re-plans when stale
+replan_after_days: 14    # reviewed older than this -> stale (default 14)
+stop_if: "The TypeScript rebuild in web/ replaces the Rust/Bevy game as the shipping line, or Robert pulls the game from sale."
+revive_if: ""            # parked repos only: what would revive it
+milestones:
+  - id: M1
+    title: Launch blockers cleared for the $4.99 itch.io release
+    status: active       # pending | active | done | blocked
+    exit:                # all must hold for the milestone to be done
+      - test: "cargo test"
+      - grep: {path: "assets/balance.toml", pattern: "max_per_field = [2-9]"}
+      - grep: {path: "Cargo.toml", pattern: "bevy_audio|kira|rodio"}
+    steps:
+      - id: M1.1
+        title: 'Audio pass — sound effects and ambient (issue #9)'
+        kind: feature    # tests | docs | refactor | fix | feature | design
+        size: M          # S < 30 min | M one agent run | L = split it
+        value: 5         # 1-5, how much it moves the milestone
+        needs: []        # step ids in this roadmap that must be done first
+        status: pending  # pending | queued | done
+        directive: ""    # filled by the swarm when it creates one
+        detail: 'current.md lists "#9 Audio Pass" as a launch blocker. Cargo.toml enables no audio feature today, so the step picks an approved backend (bevy_audio or an ADR''d alternative), adds sound effects and ambient, and keeps Mali-G57 constraints in mind.'
+        accept:
+          - grep: {path: "Cargo.toml", pattern: "bevy_audio|kira|rodio"}
+          - test: "cargo test"
+      - id: M1.2
+        title: 'Production tree zoom/scroll (issue #7)'
+        kind: feature
+        size: M
+        value: 3
+        needs: []
+        status: pending
+        directive: ""
+        detail: 'The production tree rendered in src/systems/ui/hud/prod_tree.rs has no zoom or scroll; issue #7 is a launch blocker. Add zoom/scroll input consistent with the existing pinch_zoom_system pattern in src/systems/visuals/map.rs.'
+        accept:
+          - grep: {path: "src/systems/ui/hud/prod_tree.rs", pattern: "zoom|scroll"}
+          - test: "cargo test"
+      - id: M1.3
+        title: 'Increase asteroid density (issue #18)'
+        kind: fix
+        size: S
+        value: 3
+        needs: []
+        status: pending
+        directive: ""
+        detail: assets/balance.toml sets max_per_field = 1, flagged "too sparse for gameplay" in current.md. Raise it (and station.max_active_asteroids headroom if needed) and sanity-check against the respawn cap logic in src/world/asteroid.rs.
+        accept:
+          - grep: {path: "assets/balance.toml", pattern: "max_per_field = [2-9]"}
+          - test: "cargo test"
+      - id: M1.4
+        title: 'Finish tutorial refinement and symbol bar logic (issue #13)'
+        kind: feature
+        size: M
+        value: 2
+        needs: []
+        status: pending
+        directive: ""
+        detail: 'Part of #13 landed (symbol status bar in drawer, ae9ba42; T-107 added then removed in 7183c34). Close out the remaining tutorial refinement and symbol-bar logic still flagged pending in current.md; tutorial content lives in assets/content/tutorial.yaml.'
+        accept:
+          - test: "cargo test"
+      - id: M1.5
+        title: 'Android store assets for Google Play submission (issue #5)'
+        kind: docs
+        size: M
+        value: 2
+        needs: []
+        status: pending
+        directive: ""
+        detail: Produce the store listing assets (icon, feature graphic, screenshots, listing copy) under android/store/ needed for Google Play submission. capture_gate_evidence.ps1 exists for device-correct screenshots on the Moto G 2025.
+        accept:
+          - file: "android/store"
+  - id: M2
+    title: Structural rework — god classes split, drone spawn debt paid
+    status: pending
+    exit:
+      - test: "cargo test"
+      - grep: {path: "src/economy/process.rs", pattern: "spawn_drone_ship_with_visuals"}
+      - file: "src/config/visual_utils.rs"
+    steps:
+      - id: M2.1
+        title: Pay ADR-021 debt — factory drones spawn with visuals; delete empty mod.rs stubs
+        kind: fix
+        size: S
+        value: 4
+        needs: []
+        status: pending
+        directive: ""
+        detail: 'ADR-021 "Known Debt": auto_build_drones_system in src/economy/process.rs calls spawn_drone_ship, producing invisible drones — switch to spawn_drone_ship_with_visuals. Also delete the empty mod.rs stubs left in src/systems/game_loop/, src/systems/setup/, src/systems/asteroid/.'
+        accept:
+          - grep: {path: "src/economy/process.rs", pattern: "spawn_drone_ship_with_visuals"}
+          - test: "cargo test"
+      - id: M2.2
+        title: 'Split hud/mod.rs god class (TD-001 / issue #16)'
+        kind: refactor
+        size: M
+        value: 5
+        needs: []
+        status: pending
+        directive: ""
+        detail: hud/mod.rs (~1040 lines per current.md) still mixes cargo display, station visuals, production tree orchestration, and tab logic. Extract the remaining cohesive systems into focused hud/ submodules alongside the existing buttons.rs, content.rs, overlays.rs, prod_tree.rs, state_machine.rs. No behavior change.
+        accept:
+          - test: "cargo test"
+      - id: M2.3
+        title: 'Split Layer 1 god files — resources.rs, save.rs; move color utils (issues #23, #24, #25)'
+        kind: refactor
+        size: M
+        value: 4
+        needs: []
+        status: pending
+        directive: ""
+        detail: 'Per current.md: components/resources.rs splits into states/resources/station/narrative modules; persistence/save.rs into save_data/save_system/save_paths; color conversion functions move out of config/visual.rs into src/config/visual_utils.rs. Mechanical moves only.'
+        accept:
+          - file: "src/systems/persistence/save_data.rs"
+          - file: "src/config/visual_utils.rs"
+          - test: "cargo test"
+      - id: M2.4
+        title: 'Split Layer 3 god files and remove dead code (issues #30, #31, #32)'
+        kind: refactor
+        size: M
+        value: 3
+        needs: [M2.3]
+        status: pending
+        directive: ""
+        detail: Split scenes/main_menu.rs into menu_ui/save_load/menu_setup and visuals/component_nodes.rs into per-component files; remove the ui_layout_system no-op in viewport.rs and legacy tutorial beats T-001..T-006 that can never fire. Needs M2.3 first so the save.rs split and the menu save/load extraction do not collide on the same files.
+        accept:
+          - file: "src/scenes/menu_setup.rs"
+          - test: "cargo test"
+      - id: M2.5
+        title: 'Config-driven signal triggers and laser tier validation (issues #28, #19)'
+        kind: refactor
+        size: M
+        value: 3
+        needs: []
+        status: pending
+        directive: ""
+        detail: src/systems/narrative/signal.rs carries 30+ hardcoded triggers and src/economy/mining.rs hardcodes laser tier validation. Move both into config — the assets/content/*.yaml and assets/balance.toml loading pattern already exists — so content and balance changes stop requiring code edits.
+        accept:
+          - test: "cargo test"
+  - id: M3
+    title: Phase 4b — narrative drops and faction voices
+    status: pending
+    exit:
+      - test: "cargo test"
+      - grep: {path: "assets/content/requests.yaml", pattern: "Pirate"}
+      - grep: {path: "assets/content/echo.yaml", pattern: "faction"}
+    steps:
+      - id: M3.1
+        title: Memory fragments delivered through bottle collection
+        kind: feature
+        size: M
+        value: 4
+        needs: []
+        status: pending
+        directive: ""
+        detail: 'Phase 4b per README.md and docs/roadmap.md: memory fragments arrive through the existing bottle mechanic (bottle_spawn_system / bottle_input_system) and surface in the Logs tab via check_log_unlocks. Add fragment entries under assets/content/ and wire their unlock triggers — fragments only, no dialogue trees or cutscenes (ADR-010).'
+        accept:
+          - test: "cargo test"
+      - id: M3.2
+        title: Faction voice differentiation in log and Echo content
+        kind: feature
+        size: M
+        value: 3
+        needs: [M3.1]
+        status: pending
+        directive: ""
+        detail: Differentiate faction voices through log entry tone (docs/roadmap.md Phase 4). Tag or group content by faction in assets/content/echo.yaml and logs.yaml so content_router and check_log_unlocks can select per-faction voice; keep the established YAML content-loading pattern.
+        accept:
+          - grep: {path: "assets/content/echo.yaml", pattern: "faction"}
+          - test: "cargo test"
+      - id: M3.3
+        title: First Human and Pirate faction bottles and requests
+        kind: feature
+        size: M
+        value: 3
+        needs: [M3.2]
+        status: pending
+        directive: ""
+        detail: Add First Human and Pirate faction bottles plus additional Signal requests with escalating narrative weight (docs/roadmap.md Phase 4). assets/content/requests.yaml already defines the faction_request schema (see FirstLight) — extend it rather than inventing a new format. Needs M3.2 so the new factions ship with distinct voices.
+        accept:
+          - grep: {path: "assets/content/requests.yaml", pattern: "Pirate"}
+          - test: "cargo test"
+  - id: M4
+    title: Economy redesign groundwork — reconcile spec, then engine tiers and Helium
+    status: pending
+    exit:
+      - test: "cargo test"
+      - grep: {path: "src/components/game_state.rs", pattern: "engine_tier|EngineTier"}
+      - grep: {path: "assets/balance.toml", pattern: "helium|Helium"}
+    steps:
+      - id: M4.1
+        title: Reconcile the economy redesign spec with the shipped four-ore economy
+        kind: design
+        size: M
+        value: 3
+        needs: [M2.3]
+        status: pending
+        directive: ""
+        detail: docs/phases/phase-economy-redesign-planned.md describes a Magnetite/Power-Cell economy that no longer exists — the shipped game runs Iron/Tungsten/Nickel/Aluminum (current.md "Current Economy"). Update the phase doc and docs/design/ECONOMY.md so the three-track plan maps onto the live economy before any code changes. Needs the Layer 1 splits (M2.3) done so the spec targets the settled module layout.
+        accept:
+          - grep: {path: "docs/phases/phase-economy-redesign-planned.md", pattern: "Iron"}
+          - file: "docs/design/ECONOMY.md"
+      - id: M4.2
+        title: Engine tier enum and fuel boost groundwork on Ship
+        kind: feature
+        size: M
+        value: 3
+        needs: [M4.1]
+        status: pending
+        directive: ""
+        detail: The redesign adds EngineTier Mk I–V as permanent upgrades plus an optional Fuel Boost speed multiplier; SHIP_SPEED becomes the Mk I base (phase doc "Ship Changes"). Add the enum, the Ship fields (engine_tier, fuel_boost_active, fuel_boost_timer), and balance.toml entries without changing dispatch behavior yet.
+        accept:
+          - grep: {path: "src/components/game_state.rs", pattern: "engine_tier|EngineTier"}
+          - test: "cargo test"
+      - id: M4.3
+        title: Helium passive yield from asteroid mining
+        kind: feature
+        size: M
+        value: 2
+        needs: [M4.1]
+        status: pending
+        directive: ""
+        detail: Helium is a passive secondary yield (~2 per 100 ore) feeding the Gas track toward Fuel Cells (phase doc "Resource Changes"). Add the reserve field, balance.toml entries, mining-system accrual, and a first-detection signal.
+        accept:
+          - grep: {path: "assets/balance.toml", pattern: "helium|Helium"}
+          - test: "cargo test"
+```
+
+---
+
 ## Current State
 
 **Sprint:** Phase 3 Planning  
