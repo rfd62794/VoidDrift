@@ -145,12 +145,19 @@ the finding that was inaccurate. And any refused command, verbatim.
 
 | Field | Value |
 |---|---|
-| Status | Queued |
+| Status | Review |
 | Assigned to | devin |
-| Branch | - |
+| Branch | directive/voiddrift-auto-missing-roadmap-roadmap |
 | Base branch | - |
 | Policy | missing-roadmap |
 
 **Status log**
 - 2026-09-22 13:07 · backlog-policy · none → Queued — generated from a missing-roadmap finding authorised in backlog_policy.yaml
+- 2026-09-22 15:15 · robert-claude · Queued → Approved
+- 2026-09-22 15:15 · dispatcher · Approved → In progress — dispatched devin in C:\GitHub\.worktrees\VoidDrift--voiddrift-auto-missing-roadmap-roadmap; base origin/main (local main differs)
+- 2026-09-22 15:18 · agentflow-tick · In progress → Blocked — Devin run died on an unapproved confirmation-gated tool call in non-interactive mode before producing any output; redispatch with --permission-mode dangerous.
+- 2026-09-22 15:24 · robert-claude · Blocked → Queued — refused command was `ls docs\directives docs\adr tests 2>$null` - a redirect makes the call confirmation-gated. The prompt now forbids pipes and redirects (PR #44). Retrying.
+- 2026-09-22 15:24 · robert-claude · Queued → Approved
+- 2026-09-22 15:24 · dispatcher · Approved → In progress — dispatched devin in C:\GitHub\.worktrees\VoidDrift--voiddrift-auto-missing-roadmap-roadmap
+- 2026-09-22 15:34 · devin · In progress → Review — Created docs/DIRECTION.md and added a yaml roadmap block (4 milestones: M1 launch blockers, M2 structural rework, M3 Phase 4b narrative, M4 economy redesign groundwork) to docs/roadmap.md — all existing prose kept, purely additive. Committed 5a207dc on directive branch; git status --porcelain clean.
 <!-- queue:end -->
